@@ -679,12 +679,14 @@ export type Database = {
           ban_reason: string | null
           country: string | null
           created_at: string
+          discord_full_name: string | null
           discord_username: string | null
           email: string
           full_name: string
           gang_name: string | null
           gang_type: Database["public"]["Enums"]["gang_type"] | null
           id: string
+          ingame_name: string | null
           is_banned: boolean
           is_muted: boolean
           is_restricted: boolean
@@ -701,12 +703,14 @@ export type Database = {
           ban_reason?: string | null
           country?: string | null
           created_at?: string
+          discord_full_name?: string | null
           discord_username?: string | null
           email: string
           full_name: string
           gang_name?: string | null
           gang_type?: Database["public"]["Enums"]["gang_type"] | null
           id: string
+          ingame_name?: string | null
           is_banned?: boolean
           is_muted?: boolean
           is_restricted?: boolean
@@ -723,12 +727,14 @@ export type Database = {
           ban_reason?: string | null
           country?: string | null
           created_at?: string
+          discord_full_name?: string | null
           discord_username?: string | null
           email?: string
           full_name?: string
           gang_name?: string | null
           gang_type?: Database["public"]["Enums"]["gang_type"] | null
           id?: string
+          ingame_name?: string | null
           is_banned?: boolean
           is_muted?: boolean
           is_restricted?: boolean
@@ -1018,6 +1024,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          awarded_at: string
+          code: string
+          description: string | null
+          icon: string | null
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          code: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          code?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_by: string | null
@@ -1038,6 +1074,39 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          reward_tokens: number
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          reward_tokens?: number
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          reward_tokens?: number
+          status?: string
+          title?: string
           user_id?: string
         }
         Relationships: []
