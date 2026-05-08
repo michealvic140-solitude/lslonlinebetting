@@ -78,6 +78,7 @@ export type Database = {
           id: number
           maintenance_message: string | null
           maintenance_mode: boolean
+          max_payout: number
           min_stake: number
           popup_ad_active: boolean
           popup_ad_image: string | null
@@ -97,6 +98,7 @@ export type Database = {
           id?: number
           maintenance_message?: string | null
           maintenance_mode?: boolean
+          max_payout?: number
           min_stake?: number
           popup_ad_active?: boolean
           popup_ad_image?: string | null
@@ -116,6 +118,7 @@ export type Database = {
           id?: number
           maintenance_message?: string | null
           maintenance_mode?: boolean
+          max_payout?: number
           min_stake?: number
           popup_ad_active?: boolean
           popup_ad_image?: string | null

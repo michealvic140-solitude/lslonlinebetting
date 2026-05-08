@@ -1235,6 +1235,11 @@ function SettingsPanel() {
         <label className="text-xs text-muted-foreground">Minimum bet stake</label>
         <Input type="number" placeholder="2000000" value={s.min_stake ?? 2000000} onChange={(e) => setS({ ...s, min_stake: Number(e.target.value) })} />
       </div>
+      <div>
+        <label className="text-xs text-muted-foreground">Maximum payout (cash-out cap)</label>
+        <Input type="number" placeholder="100000000" value={s.max_payout ?? 100000000} onChange={(e) => setS({ ...s, max_payout: Number(e.target.value) })} />
+        <p className="text-[10px] text-muted-foreground mt-1">Any bet whose potential payout exceeds this is automatically capped at this amount.</p>
+      </div>
       <Input placeholder="Contact email" value={s.contact_email ?? ""} onChange={(e) => setS({ ...s, contact_email: e.target.value })} />
       <Input placeholder="Contact phone" value={s.contact_phone ?? ""} onChange={(e) => setS({ ...s, contact_phone: e.target.value })} />
       <Input placeholder="Contact WhatsApp" value={s.contact_whatsapp ?? ""} onChange={(e) => setS({ ...s, contact_whatsapp: e.target.value })} />
