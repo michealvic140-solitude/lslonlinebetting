@@ -11,10 +11,13 @@ export interface MatchRow {
   home_score: number; away_score: number;
   home_team: TeamRow | null; away_team: TeamRow | null;
   markets: MarketRow[];
+  category_id?: string | null;
+  category?: { id: string; name: string; icon: string | null } | null;
 }
 
 const matchSelect = `
-  id,name,status,start_time,location,is_featured,home_score,away_score,
+  id,name,status,start_time,location,is_featured,home_score,away_score,category_id,
+  category:category_id(id,name,icon),
   home_team:home_team_id(id,name,logo_url,gang_type),
   away_team:away_team_id(id,name,logo_url,gang_type),
   markets(id,name,is_open,odds(id,label,value,is_winner,market_id))
