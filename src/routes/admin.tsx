@@ -18,6 +18,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { fetchTeams } from "@/lib/queries";
+import {
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
+} from "recharts";
 import { useConfirm } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/admin")({
