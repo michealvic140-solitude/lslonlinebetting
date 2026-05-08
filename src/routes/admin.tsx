@@ -381,6 +381,12 @@ function MatchesPanel() {
     if (error) toast.error(error.message); else { logAudit("match_deleted", "match", id); load(); }
   }
 
+  async function updateLiveScore(m: any, hs: number, as: number) {
+    await supabase.from("matches").update({ home_score: hs, away_score: as }).eq("id", m.id);
+    await logAudit("match_live_score", "match", m.id, { home_score: hs, away_score: as });
+    load();
+  }
+
   return (
     <div className="space-y-4">
       <Button className="btn-luxury" onClick={() => setWizard(true)}><Plus className="h-4 w-4 mr-1" />New Match (Wizard)</Button>
@@ -398,10 +404,13 @@ function MatchesPanel() {
             </div>
             <div className="flex gap-1 items-center flex-wrap">
               <Badge variant="outline" className="capitalize">{m.status}</Badge>
+              {m.status === "live" && (
+                <LiveScoreEditor m={m} onSave={(hs, as) => updateLiveScore(m, hs, as)} />
+              )}
               {m.status === "scheduled" && <Button size="sm" onClick={() => setStatus(m.id, "live")}>Start Live</Button>}
               {m.status === "live" && <Button size="sm" onClick={() => settle(m)}>End Match</Button>}
               {m.status !== "cancelled" && m.status !== "ended" && <Button size="sm" variant="outline" onClick={() => setStatus(m.id, "cancelled")}>Cancel</Button>}
-              {m.status === "ended" && <Button size="sm" variant="destructive" onClick={() => deleteMatch(m.id)}><Trash2 className="h-3 w-3" /></Button>}
+              <Button size="sm" variant="destructive" onClick={() => deleteMatch(m.id)} title="Delete match"><Trash2 className="h-3 w-3" /></Button>
             </div>
           </Card>
         ))}
