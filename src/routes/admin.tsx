@@ -1446,7 +1446,7 @@ function BetTrackerPanel() {
     const ok = await confirm({ title: "Delete ticket?", description: `Tracking ${b.tracking_id}. Refund stake to user?`, tone: "danger", confirmText: "Delete (no refund)", cancelText: "Cancel" });
     if (!ok) return;
     const refund = window.confirm("Also REFUND the stake to the user?");
-    const { error } = await supabase.rpc("admin_delete_bet", { _bet_id: b.id, _refund: refund, _reason: null });
+    const { error } = await supabase.rpc("admin_delete_bet", { _bet_id: b.id, _refund: refund, _reason: undefined as any });
     if (error) toast.error(error.message); else { toast.success(refund ? "Ticket deleted & refunded" : "Ticket deleted"); load(); }
   }
 
