@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/Layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Ticket as TicketIcon, ChevronRight } from "lucide-react";
+import { Ticket as TicketIcon, ChevronRight, Wallet } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — LSL" }] }),
@@ -15,6 +15,7 @@ export const Route = createFileRoute("/dashboard")({
 function Dashboard() {
   const { user, profile } = useAuth();
   const [bets, setBets] = useState<any[]>([]);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
   useEffect(() => {
     if (!user) return;
     const load = () => supabase.from("bets")
@@ -24,6 +25,18 @@ function Dashboard() {
     load();
     const ch = supabase.channel(`my-bets-${user.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "bets", filter: `user_id=eq.${user.id}` }, load)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) return;
+    const load = () => supabase.from("withdrawal_requests")
+      .select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+      .then(({ data }) => setWithdrawals(data ?? []));
+    load();
+    const ch = supabase.channel(`my-wds-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "withdrawal_requests", filter: `user_id=eq.${user.id}` }, load)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [user?.id]);
@@ -69,6 +82,35 @@ function Dashboard() {
                 </div>
               </Card>
             </Link>
+          ))}
+        </div>
+
+        <div className="mt-10 flex items-center justify-between flex-wrap gap-2">
+          <h2 className="text-xl font-bold flex items-center gap-2"><Wallet className="h-5 w-5 text-primary" />My Withdrawals</h2>
+          <Link to="/withdraw" className="text-xs text-primary hover:underline">Request withdrawal →</Link>
+        </div>
+        <div className="space-y-3 mt-4">
+          {withdrawals.length === 0 && <p className="text-muted-foreground text-sm">No withdrawal requests yet.</p>}
+          {withdrawals.map((w) => (
+            <Card key={w.id} className="p-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold">{w.amount.toLocaleString()} tokens</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {w.ingame_name} · {w.gang_name}
+                    {w.ticket_ref && <> · ref {w.ticket_ref}</>}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(w.created_at).toLocaleString()}</div>
+                  {w.admin_note && <div className="text-xs mt-1 text-muted-foreground">Admin: {w.admin_note}</div>}
+                </div>
+                <Badge variant="outline" className={
+                  w.status === 'approved' ? 'border-emerald-500/50 text-emerald-300' :
+                  w.status === 'rejected' ? 'border-destructive/50 text-destructive' :
+                  w.status === 'paid' ? 'border-emerald-500/50 text-emerald-300' :
+                  'border-amber-500/50 text-amber-300'
+                }>{String(w.status).toUpperCase()}</Badge>
+              </div>
+            </Card>
           ))}
         </div>
       </div>
