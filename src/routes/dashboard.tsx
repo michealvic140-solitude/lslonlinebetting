@@ -5,7 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/Layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Ticket as TicketIcon, ChevronRight, Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { Ticket as TicketIcon, ChevronRight, Wallet, UserCog, CreditCard, Coins, Tag, Trophy, ListChecks, Sparkles, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — LSL" }] }),
@@ -13,9 +18,11 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const { user, profile } = useAuth();
+  const { user, profile, roles } = useAuth();
   const [bets, setBets] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [promoOpen, setPromoOpen] = useState(false);
+  const isSponsor = roles?.includes("sponsor") || roles?.includes("admin");
   useEffect(() => {
     if (!user) return;
     const load = () => supabase.from("bets")
@@ -46,14 +53,36 @@ function Dashboard() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-10">
-        <h1 className="text-3xl font-bold text-primary mb-6">Your Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="p-5"><div className="text-xs text-muted-foreground">Token Balance</div><div className="text-3xl font-bold text-primary">{profile?.token_balance.toLocaleString() ?? 0}</div></Card>
-          <Card className="p-5"><div className="text-xs text-muted-foreground">Active Bets</div><div className="text-3xl font-bold">{bets.filter(b => b.status === 'open').length}</div></Card>
-          <Card className="p-5"><div className="text-xs text-muted-foreground">Total Bets</div><div className="text-3xl font-bold">{bets.length}</div></Card>
+        <div className="mb-8">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Welcome back</p>
+          <h1 className="text-4xl md:text-5xl font-extrabold gradient-gold-text mt-1">{profile?.full_name?.split(" ")[0] ?? "Shooter"}</h1>
         </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <StatCard label="Token Balance" value={profile?.token_balance.toLocaleString() ?? "0"} accent="primary" />
+          <StatCard label="Active Bets" value={String(bets.filter(b => b.status === 'open').length)} />
+          <StatCard label="Won" value={String(bets.filter(b => b.status === 'won').length)} accent="emerald" />
+          <StatCard label="Total Bets" value={String(bets.length)} />
+        </div>
+
+        {/* Quick panels */}
+        <h2 className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">Quick Access</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+          <PanelCard to="#bets" icon={TicketIcon} title="Bet Slips" subtitle={`${bets.length} total`} />
+          <PanelCard to="/profile" icon={UserCog} title="Edit Profile" subtitle="Update details" />
+          <PanelCard to="/withdraw" icon={Wallet} title="Withdrawal" subtitle="Cash out tokens" />
+          <PanelCard icon={CreditCard} title="Deposit" subtitle="Coming soon" comingSoon />
+          <PanelCard to="/checkout" icon={Coins} title="Request Tokens" subtitle="Top up balance" />
+          {isSponsor && (
+            <PanelCard onClick={() => setPromoOpen(true)} icon={Tag} title="Promo Codes" subtitle="Sponsor only" gold />
+          )}
+          <PanelCard icon={ListChecks} title="Tasks" subtitle="Coming soon" comingSoon />
+          <PanelCard icon={Trophy} title="Achievements" subtitle="Coming soon" comingSoon />
+        </div>
+
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><TicketIcon className="h-5 w-5 text-primary" />My Bet Tickets</h2>
-        <div className="space-y-3">
+        <div id="bets" className="space-y-3 scroll-mt-24">
           {bets.length === 0 && <p className="text-muted-foreground text-sm">No bets yet.</p>}
           {bets.map((b) => (
             <Link key={b.id} to="/ticket/$id" params={{ id: b.id }}>
