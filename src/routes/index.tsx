@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { MatchCardLive } from "@/components/MatchCardLive";
 import { EventBanner } from "@/components/EventBanner";
 import { AnnouncementSlider, HighlightsRow, AdsRow } from "@/components/HomeContent";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 import { Crosshair, Flame, Trophy, ChevronRight, Skull, Coins, Ticket as TicketIcon } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import { fetchMatches, fetchSettings, type MatchRow } from "@/lib/queries";
@@ -46,7 +48,18 @@ function Index() {
 
   const live = matches.filter((m) => m.status === "live");
   const upcoming = matches.filter((m) => m.status === "scheduled");
-  const featured = matches.find((m) => m.is_featured) ?? upcoming[0];
+  const featuredAll = matches.filter((m) => m.is_featured && m.status !== "ended");
+  const featuredFallback = featuredAll.length === 0 && upcoming[0] ? [upcoming[0]] : featuredAll;
+
+  // Group upcoming by category for the category sections
+  const byCategory: Record<string, { name: string; icon: string | null; items: MatchRow[] }> = {};
+  for (const m of [...live, ...upcoming]) {
+    const cat = m.category;
+    if (!cat) continue;
+    if (!byCategory[cat.id]) byCategory[cat.id] = { name: cat.name, icon: cat.icon, items: [] };
+    byCategory[cat.id].items.push(m);
+  }
+  const categoryGroups = Object.entries(byCategory);
   const tagline = settings?.hero_tagline || "Season 4 · Live";
 
   return (
@@ -86,6 +99,21 @@ function Index() {
       <section className="container mt-10 grid lg:grid-cols-[1fr_280px] gap-6">
         <div className="space-y-10">
           {loading && <p className="text-muted-foreground">Loading league…</p>}
+          {!loading && featuredFallback.length > 0 && (
+            <div>
+              <SectionHeader icon={Trophy} title="Featured Matches" subtitle="The biggest matchups of the round." />
+              <div className="mt-4">
+                <Carousel opts={{ loop: featuredFallback.length > 1 }} plugins={featuredFallback.length > 1 ? [Autoplay({ delay: 5000, stopOnInteraction: false })] : []}>
+                  <CarouselContent>
+                    {featuredFallback.map((m) => (
+                      <CarouselItem key={m.id}><MatchCardLive match={m} /></CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  {featuredFallback.length > 1 && (<><CarouselPrevious /><CarouselNext /></>)}
+                </Carousel>
+              </div>
+            </div>
+          )}
           {!loading && live.length > 0 && (
             <div>
               <SectionHeader icon={Flame} title="Live Now" subtitle="Live odds. Markets close round-by-round." />
@@ -106,12 +134,14 @@ function Index() {
               )}
             </div>
           )}
-          {featured && (
-            <div>
-              <SectionHeader icon={Trophy} title="Featured Match" subtitle="The biggest matchup of the round." />
-              <div className="mt-4"><MatchCardLive match={featured} /></div>
+          {categoryGroups.map(([id, g]) => (
+            <div key={id}>
+              <SectionHeader icon={Crosshair} title={g.name} subtitle={`${g.items.length} match${g.items.length === 1 ? "" : "es"} in this category.`} />
+              <div className="grid md:grid-cols-2 gap-4 mt-4">
+                {g.items.map((m) => <MatchCardLive key={m.id} match={m} />)}
+              </div>
             </div>
-          )}
+          ))}
         </div>
 
         <aside className="lg:sticky lg:top-20 self-start">
