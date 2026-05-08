@@ -42,8 +42,9 @@ function AdminPage() {
         </div>
 
         <Stats />
-        <Tabs defaultValue="users">
+        <Tabs defaultValue="analytics">
           <TabsList className="flex flex-wrap h-auto justify-start">
+            <TabsTrigger value="analytics"><BarChart3 className="h-3 w-3 mr-1" />Analytics</TabsTrigger>
             <TabsTrigger value="users"><Users className="h-3 w-3 mr-1" />Users</TabsTrigger>
             <TabsTrigger value="matches"><Trophy className="h-3 w-3 mr-1" />Matches</TabsTrigger>
             <TabsTrigger value="events"><Calendar className="h-3 w-3 mr-1" />Events</TabsTrigger>
@@ -56,7 +57,6 @@ function AdminPage() {
             <TabsTrigger value="appeals"><AlertTriangle className="h-3 w-3 mr-1" />Appeals</TabsTrigger>
             <TabsTrigger value="notify"><Send className="h-3 w-3 mr-1" />Notify</TabsTrigger>
             <TabsTrigger value="audit"><History className="h-3 w-3 mr-1" />Audit</TabsTrigger>
-            <TabsTrigger value="analytics"><BarChart3 className="h-3 w-3 mr-1" />Analytics</TabsTrigger>
             <TabsTrigger value="settings"><SettingsIcon className="h-3 w-3 mr-1" />Settings</TabsTrigger>
           </TabsList>
           <TabsContent value="users" className="mt-4"><UsersPanel /></TabsContent>
