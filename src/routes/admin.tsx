@@ -1239,20 +1239,20 @@ function AnalyticsPanel() {
           <AreaChart data={series}>
             <defs>
               <linearGradient id="gStake" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.6} />
+                <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="gBets" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.6} />
+                <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
-            <RTooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-            <Area type="monotone" dataKey="staked" stroke="hsl(var(--primary))" fill="url(#gStake)" name="Staked" />
-            <Area type="monotone" dataKey="bets" stroke="hsl(var(--accent))" fill="url(#gBets)" name="Bets" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={10} />
+            <YAxis stroke="var(--muted-foreground)" fontSize={10} />
+            <RTooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} />
+            <Area type="monotone" dataKey="staked" stroke="var(--primary)" fill="url(#gStake)" name="Staked" />
+            <Area type="monotone" dataKey="bets" stroke="var(--accent)" fill="url(#gBets)" name="Bets" />
           </AreaChart>
         </ResponsiveContainer>
       </Card>
@@ -1260,11 +1260,11 @@ function AnalyticsPanel() {
         <div className="text-sm font-bold mb-3">New users per day</div>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={series}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
-            <RTooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-            <Bar dataKey="users" fill="hsl(var(--primary))" radius={[6,6,0,0]} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={10} />
+            <YAxis stroke="var(--muted-foreground)" fontSize={10} />
+            <RTooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} />
+            <Bar dataKey="users" fill="var(--primary)" radius={[6,6,0,0]} />
           </BarChart>
         </ResponsiveContainer>
       </Card>
