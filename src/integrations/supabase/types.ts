@@ -14,16 +14,310 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bets: {
+        Row: {
+          amount: number
+          created_at: string
+          gang_id: string
+          id: string
+          match_id: string
+          payout: number
+          status: Database["public"]["Enums"]["bet_status"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          gang_id: string
+          id?: string
+          match_id: string
+          payout?: number
+          status?: Database["public"]["Enums"]["bet_status"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          gang_id?: string
+          id?: string
+          match_id?: string
+          payout?: number
+          status?: Database["public"]["Enums"]["bet_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bets_gang_id_fkey"
+            columns: ["gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bets_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          match_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          match_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          match_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gangs: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          losses: number
+          name: string
+          tag: string
+          wins: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          losses?: number
+          name: string
+          tag: string
+          wins?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          losses?: number
+          name?: string
+          tag?: string
+          wins?: number
+        }
+        Relationships: []
+      }
+      matches: {
+        Row: {
+          created_at: string
+          description: string | null
+          gang_a_id: string
+          gang_b_id: string
+          id: string
+          pool_a: number
+          pool_b: number
+          resolved_at: string | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["match_status"]
+          title: string
+          winner_gang_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          gang_a_id: string
+          gang_b_id: string
+          id?: string
+          pool_a?: number
+          pool_b?: number
+          resolved_at?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["match_status"]
+          title: string
+          winner_gang_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          gang_a_id?: string
+          gang_b_id?: string
+          id?: string
+          pool_a?: number
+          pool_b?: number
+          resolved_at?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["match_status"]
+          title?: string
+          winner_gang_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_gang_a_id_fkey"
+            columns: ["gang_a_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_gang_b_id_fkey"
+            columns: ["gang_b_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_winner_gang_id_fkey"
+            columns: ["winner_gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bets_lost: number
+          bets_won: number
+          coins: number
+          created_at: string
+          id: string
+          total_wagered: number
+          total_won: number
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bets_lost?: number
+          bets_won?: number
+          coins?: number
+          created_at?: string
+          id: string
+          total_wagered?: number
+          total_won?: number
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bets_lost?: number
+          bets_won?: number
+          coins?: number
+          created_at?: string
+          id?: string
+          total_wagered?: number
+          total_won?: number
+          username?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      place_bet: {
+        Args: { _amount: number; _gang_id: string; _match_id: string }
+        Returns: {
+          amount: number
+          created_at: string
+          gang_id: string
+          id: string
+          match_id: string
+          payout: number
+          status: Database["public"]["Enums"]["bet_status"]
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      resolve_match: {
+        Args: { _match_id: string; _winner_gang_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "member"
+      bet_status: "pending" | "won" | "lost" | "refunded"
+      match_status: "open" | "live" | "closed" | "resolved" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +444,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "member"],
+      bet_status: ["pending", "won", "lost", "refunded"],
+      match_status: ["open", "live", "closed", "resolved", "cancelled"],
+    },
   },
 } as const
