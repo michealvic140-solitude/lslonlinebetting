@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "LOMITA SHOOTERS LEAGUE LSL" },
+      { name: "description", content: "Register and start betting for your favorite gang" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "LOMITA SHOOTERS LEAGUE LSL" },
+      { property: "og:description", content: "Register and start betting for your favorite gang" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "LOMITA SHOOTERS LEAGUE LSL" },
+      { name: "twitter:description", content: "Register and start betting for your favorite gang" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/BYQo4V4f1lQqjhKCpZPzcRqu1AS2/social-images/social-1778121108538-357075.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/BYQo4V4f1lQqjhKCpZPzcRqu1AS2/social-images/social-1778121108538-357075.webp" },
     ],
     links: [
       {
@@ -108,12 +112,33 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { AuthProvider } from "@/contexts/AuthContext";
+import { BetSlipProvider } from "@/contexts/BetSlipContext";
+import { Toaster } from "@/components/ui/sonner";
+
+import { MaintenanceGate } from "@/components/MaintenanceGate";
+import { BanGate } from "@/components/BanGate";
+import { ConfirmProvider } from "@/components/ConfirmDialog";
+import { PopupAd } from "@/components/PopupAd";
+import { BetSlipFab } from "@/components/BetSlip";
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AuthProvider>
+        <BetSlipProvider>
+          <ConfirmProvider>
+            <MaintenanceGate>
+              <Outlet />
+            </MaintenanceGate>
+            <BanGate />
+            <PopupAd />
+            <BetSlipFab />
+            <Toaster />
+          </ConfirmProvider>
+        </BetSlipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

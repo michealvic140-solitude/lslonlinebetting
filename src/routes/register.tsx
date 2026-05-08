@@ -1,0 +1,83 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import { Layout } from "@/components/Layout";
+
+export const Route = createFileRoute("/register")({
+  head: () => ({ meta: [{ title: "Join the League — Lomita Shooters League" }] }),
+  component: RegisterPage,
+});
+
+function RegisterPage() {
+  const nav = useNavigate();
+  const [f, setF] = useState({ full_name: "", email: "", password: "", phone: "", discord_username: "", country: "", gang_name: "", gang_type: "" });
+  const [accepted, setAccepted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }));
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accepted) return toast.error("You must accept the terms");
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email: f.email, password: f.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: { full_name: f.full_name, phone: f.phone, discord_username: f.discord_username,
+          country: f.country, gang_name: f.gang_name, gang_type: f.gang_type },
+      },
+    });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Account created! Check your email to verify.");
+    nav({ to: "/login" });
+  };
+
+  return (
+    <Layout>
+      <div className="container mx-auto px-4 py-12 max-w-xl">
+        <Card className="p-8 backdrop-blur-xl bg-card/60 border-primary/30">
+          <h1 className="text-3xl font-bold text-primary mb-1">Join the League</h1>
+          <p className="text-sm text-muted-foreground mb-6">Pick your gang. Earn your tokens.</p>
+          <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2"><Label>Full name *</Label><Input required value={f.full_name} onChange={(e) => set("full_name", e.target.value)} /></div>
+            <div><Label>Email *</Label><Input type="email" required value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
+            <div><Label>Password *</Label><Input type="password" required minLength={6} value={f.password} onChange={(e) => set("password", e.target.value)} /></div>
+            <div><Label>Phone</Label><Input value={f.phone} onChange={(e) => set("phone", e.target.value)} /></div>
+            <div><Label>Discord</Label><Input value={f.discord_username} onChange={(e) => set("discord_username", e.target.value)} /></div>
+            <div><Label>Country</Label><Input value={f.country} onChange={(e) => set("country", e.target.value)} /></div>
+            <div className="md:col-span-2"><Label>Faction or Gang</Label>
+              <Select value={f.gang_type} onValueChange={(v) => set("gang_type", v)}>
+                <SelectTrigger><SelectValue placeholder="Select F (Faction) or G (Gang)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="F">F — Faction</SelectItem>
+                  <SelectItem value="G">G — Gang</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {f.gang_type && (
+              <div className="md:col-span-2">
+                <Label>{f.gang_type === "F" ? "Faction name" : "Gang name"} *</Label>
+                <Input required placeholder={`Enter your ${f.gang_type === "F" ? "faction" : "gang"} name`} value={f.gang_name} onChange={(e) => set("gang_name", e.target.value)} />
+              </div>
+            )}
+            <div className="md:col-span-2 flex items-start gap-2 text-sm">
+              <Checkbox id="terms" checked={accepted} onCheckedChange={(v) => setAccepted(!!v)} />
+              <label htmlFor="terms" className="text-muted-foreground">I accept the platform terms. Virtual tokens only — not real money.</label>
+            </div>
+            <Button type="submit" disabled={loading} className="md:col-span-2 w-full">{loading ? "Creating..." : "Create Account"}</Button>
+          </form>
+          <p className="mt-4 text-sm text-center">Already a member? <Link to="/login" className="text-primary hover:underline">Sign in</Link></p>
+        </Card>
+      </div>
+    </Layout>
+  );
+}
