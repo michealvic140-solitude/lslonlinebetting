@@ -1394,3 +1394,218 @@ function LeaderboardAdminPanel() {
     </div>
   );
 }
+
+/* ============================ LIVE SCORE EDITOR ============================ */
+function LiveScoreEditor({ m, onSave }: { m: any; onSave: (hs: number, as: number) => void }) {
+  const [hs, setHs] = useState<number>(m.home_score ?? 0);
+  const [as_, setAs] = useState<number>(m.away_score ?? 0);
+  return (
+    <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30">
+      <span className="text-[10px] uppercase tracking-widest text-emerald-300 mr-1">LIVE</span>
+      <Input type="number" value={hs} onChange={(e) => setHs(Number(e.target.value))} className="h-7 w-12 text-center text-xs" />
+      <span className="text-xs text-muted-foreground">–</span>
+      <Input type="number" value={as_} onChange={(e) => setAs(Number(e.target.value))} className="h-7 w-12 text-center text-xs" />
+      <Button size="sm" className="h-7" onClick={() => onSave(hs, as_)}><Check className="h-3 w-3" /></Button>
+    </div>
+  );
+}
+
+/* ============================ BET TRACKER ============================ */
+function BetTrackerPanel() {
+  const confirm = useConfirm();
+  const [bets, setBets] = useState<any[]>([]);
+  const [filter, setFilter] = useState<string>("all");
+  const [q, setQ] = useState("");
+
+  async function load() {
+    let qb = supabase.from("bets")
+      .select("*, profiles:user_id(full_name,email,ingame_name), bet_selections(*, matches:match_id(name))")
+      .order("created_at", { ascending: false }).limit(200);
+    if (filter !== "all") qb = qb.eq("status", filter as any);
+    const { data } = await qb;
+    setBets(data ?? []);
+  }
+  useEffect(() => { load(); }, [filter]);
+  useEffect(() => {
+    const ch = supabase.channel("admin-bettracker").on("postgres_changes", { event: "*", schema: "public", table: "bets" }, load).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  async function suspend(b: any) {
+    const reason = window.prompt("Reason for suspending this ticket?") ?? null;
+    const ok = await confirm({ title: "Suspend ticket?", description: `Tracking ${b.tracking_id} will be suspended. User will be notified.`, tone: "danger", confirmText: "Suspend" });
+    if (!ok) return;
+    const { error } = await supabase.rpc("admin_suspend_bet", { _bet_id: b.id, _reason: reason });
+    if (error) toast.error(error.message); else { toast.success("Ticket suspended"); load(); }
+  }
+  async function unsuspend(b: any) {
+    const { error } = await supabase.rpc("admin_unsuspend_bet", { _bet_id: b.id });
+    if (error) toast.error(error.message); else { toast.success("Ticket reactivated"); load(); }
+  }
+  async function del(b: any) {
+    const ok = await confirm({ title: "Delete ticket?", description: `Tracking ${b.tracking_id}. Refund stake to user?`, tone: "danger", confirmText: "Delete (no refund)", cancelText: "Cancel" });
+    if (!ok) return;
+    const refund = window.confirm("Also REFUND the stake to the user?");
+    const { error } = await supabase.rpc("admin_delete_bet", { _bet_id: b.id, _refund: refund, _reason: null });
+    if (error) toast.error(error.message); else { toast.success(refund ? "Ticket deleted & refunded" : "Ticket deleted"); load(); }
+  }
+
+  const filtered = bets.filter((b) => {
+    if (!q) return true;
+    const s = q.toLowerCase();
+    return b.tracking_id?.toLowerCase().includes(s) || b.booking_code?.toLowerCase().includes(s) || b.profiles?.email?.toLowerCase().includes(s) || b.profiles?.full_name?.toLowerCase().includes(s);
+  });
+
+  return (
+    <div className="space-y-3">
+      <Card className="glass p-3 flex flex-wrap items-center gap-2">
+        <ClipboardList className="h-4 w-4 text-primary" />
+        <div className="font-bold text-sm">Bet Ticket Tracker</div>
+        <div className="flex-1" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tracking, code, user…" className="max-w-xs" />
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {["all","open","won","lost","suspended","cashed_out","void"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </Card>
+      <div className="space-y-2">
+        {filtered.length === 0 && <p className="text-sm text-muted-foreground">No tickets match.</p>}
+        {filtered.map((b) => (
+          <Card key={b.id} className="glass p-3">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-mono text-xs text-primary font-bold">{b.tracking_id}</span>
+                  <span className="font-mono text-[10px] text-muted-foreground">· {b.booking_code}</span>
+                  <Badge variant="outline" className={
+                    b.status === 'won' ? 'border-emerald-500/50 text-emerald-300' :
+                    b.status === 'lost' ? 'border-destructive/50 text-destructive' :
+                    b.status === 'suspended' ? 'border-amber-500/50 text-amber-300' :
+                    'border-primary/50 text-primary'
+                  }>{b.status}</Badge>
+                </div>
+                <div className="text-xs mt-1">
+                  <span className="font-bold">{b.profiles?.full_name || b.profiles?.email}</span>
+                  {b.profiles?.ingame_name && <span className="text-muted-foreground"> · {b.profiles.ingame_name}</span>}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Stake {Number(b.stake).toLocaleString()} · Odds {Number(b.total_odds).toFixed(2)} · Payout {Number(b.potential_payout).toLocaleString()} · {new Date(b.created_at).toLocaleString()}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1 truncate">
+                  {(b.bet_selections ?? []).map((s: any) => `${s.matches?.name ?? "Match"}: ${s.selection_label} @${Number(s.locked_odds).toFixed(2)}`).join(" · ")}
+                </div>
+              </div>
+              <div className="flex gap-1 items-center">
+                <Button asChild size="sm" variant="outline"><a href={`/ticket/${b.id}`}>View</a></Button>
+                {b.status === "open" && <Button size="sm" variant="outline" onClick={() => suspend(b)}><Pause className="h-3 w-3" /></Button>}
+                {b.status === "suspended" && <Button size="sm" variant="outline" onClick={() => unsuspend(b)}><Play className="h-3 w-3" /></Button>}
+                <Button size="sm" variant="destructive" onClick={() => del(b)}><Trash2 className="h-3 w-3" /></Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ============================ PROMO CODE REQUESTS ============================ */
+function PromoRequestsPanel() {
+  const confirm = useConfirm();
+  const [reqs, setReqs] = useState<any[]>([]);
+  const [filter, setFilter] = useState<string>("pending");
+  async function load() {
+    let qb = supabase.from("promo_code_requests")
+      .select("*, profiles:user_id(full_name,email)")
+      .order("created_at", { ascending: false });
+    if (filter !== "all") qb = qb.eq("status", filter);
+    const { data } = await qb;
+    setReqs(data ?? []);
+  }
+  useEffect(() => { load(); }, [filter]);
+  useEffect(() => {
+    const ch = supabase.channel("admin-promo-reqs").on("postgres_changes", { event: "*", schema: "public", table: "promo_code_requests" }, load).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  async function approve(r: any) {
+    const note = window.prompt("Optional note to sponsor?") ?? null;
+    const ok = await confirm({ title: "Approve & generate code?", description: `Will create a ${Number(r.amount).toLocaleString()}-token promo code with ${r.usage_limit} uses.`, confirmText: "Approve" });
+    if (!ok) return;
+    const { error } = await supabase.rpc("approve_promo_request", { _id: r.id, _note: note });
+    if (error) toast.error(error.message); else { toast.success("Promo code approved & generated"); load(); }
+  }
+  async function decline(r: any) {
+    const note = window.prompt("Reason for decline?") ?? null;
+    const ok = await confirm({ title: "Decline request?", tone: "danger", confirmText: "Decline" });
+    if (!ok) return;
+    const { error } = await supabase.rpc("decline_promo_request", { _id: r.id, _note: note });
+    if (error) toast.error(error.message); else { toast.success("Request declined"); load(); }
+  }
+
+  return (
+    <div className="space-y-3">
+      <Card className="glass p-3 flex items-center gap-3">
+        <Tag className="h-4 w-4 text-amber-300" />
+        <div className="font-bold text-sm">Promo Code Requests (Sponsors)</div>
+        <div className="flex-1" />
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+          <SelectContent>{["pending","approved","declined","all"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+        </Select>
+      </Card>
+      <div className="space-y-2">
+        {reqs.length === 0 && <p className="text-sm text-muted-foreground">No requests.</p>}
+        {reqs.map((r) => (
+          <Card key={r.id} className="glass p-3">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="min-w-0 flex-1">
+                <div className="font-bold text-sm">{r.profiles?.full_name || r.profiles?.email}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {Number(r.amount).toLocaleString()} tokens × {r.usage_limit} uses · {new Date(r.created_at).toLocaleString()}
+                </div>
+                {r.reason && <div className="text-xs mt-1">"{r.reason}"</div>}
+                {r.generated_code && <div className="text-xs font-mono mt-1 text-emerald-300">Code: {r.generated_code}</div>}
+                {r.admin_note && <div className="text-xs text-muted-foreground mt-1">Admin: {r.admin_note}</div>}
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <Badge variant="outline" className={
+                  r.status === "approved" ? "border-emerald-500/50 text-emerald-300" :
+                  r.status === "declined" ? "border-destructive/50 text-destructive" :
+                  "border-amber-500/50 text-amber-300"
+                }>{r.status}</Badge>
+                {r.status === "pending" && (
+                  <div className="flex gap-1">
+                    <Button size="sm" onClick={() => approve(r)}><Check className="h-3 w-3 mr-1" />Approve</Button>
+                    <Button size="sm" variant="destructive" onClick={() => decline(r)}><X className="h-3 w-3 mr-1" />Decline</Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ============================ ADMIN AI (COMING SOON) ============================ */
+function AdminAIPanel() {
+  return (
+    <Card className="relative overflow-hidden glass-strong border-primary/30 p-10 text-center">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 pointer-events-none" />
+      <div className="relative z-10 max-w-md mx-auto">
+        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/30 to-accent/30 grid place-items-center mx-auto mb-4">
+          <Sparkles className="h-8 w-8 text-primary" />
+        </div>
+        <h2 className="text-2xl font-extrabold gradient-gold-text mb-2">Admin AI</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Smart copilot for moderation, analytics summaries, fraud detection, and one-tap actions across the entire platform.
+        </p>
+        <Badge variant="outline" className="border-primary/50 text-primary"><Lock className="h-3 w-3 mr-1" />Coming Soon</Badge>
+      </div>
+    </Card>
+  );
+}
