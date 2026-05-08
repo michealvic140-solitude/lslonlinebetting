@@ -5,7 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/Layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Ticket as TicketIcon, ChevronRight, Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { Ticket as TicketIcon, ChevronRight, Wallet, UserCog, CreditCard, Coins, Tag, Trophy, ListChecks, Sparkles, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — LSL" }] }),
@@ -13,9 +18,11 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const { user, profile } = useAuth();
+  const { user, profile, roles } = useAuth();
   const [bets, setBets] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [promoOpen, setPromoOpen] = useState(false);
+  const isSponsor = roles?.includes("sponsor") || roles?.includes("admin");
   useEffect(() => {
     if (!user) return;
     const load = () => supabase.from("bets")
@@ -46,14 +53,36 @@ function Dashboard() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-10">
-        <h1 className="text-3xl font-bold text-primary mb-6">Your Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="p-5"><div className="text-xs text-muted-foreground">Token Balance</div><div className="text-3xl font-bold text-primary">{profile?.token_balance.toLocaleString() ?? 0}</div></Card>
-          <Card className="p-5"><div className="text-xs text-muted-foreground">Active Bets</div><div className="text-3xl font-bold">{bets.filter(b => b.status === 'open').length}</div></Card>
-          <Card className="p-5"><div className="text-xs text-muted-foreground">Total Bets</div><div className="text-3xl font-bold">{bets.length}</div></Card>
+        <div className="mb-8">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Welcome back</p>
+          <h1 className="text-4xl md:text-5xl font-extrabold gradient-gold-text mt-1">{profile?.full_name?.split(" ")[0] ?? "Shooter"}</h1>
         </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <StatCard label="Token Balance" value={profile?.token_balance.toLocaleString() ?? "0"} accent="primary" />
+          <StatCard label="Active Bets" value={String(bets.filter(b => b.status === 'open').length)} />
+          <StatCard label="Won" value={String(bets.filter(b => b.status === 'won').length)} accent="emerald" />
+          <StatCard label="Total Bets" value={String(bets.length)} />
+        </div>
+
+        {/* Quick panels */}
+        <h2 className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">Quick Access</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+          <PanelCard to="#bets" icon={TicketIcon} title="Bet Slips" subtitle={`${bets.length} total`} />
+          <PanelCard to="/profile" icon={UserCog} title="Edit Profile" subtitle="Update details" />
+          <PanelCard to="/withdraw" icon={Wallet} title="Withdrawal" subtitle="Cash out tokens" />
+          <PanelCard icon={CreditCard} title="Deposit" subtitle="Coming soon" comingSoon />
+          <PanelCard to="/checkout" icon={Coins} title="Request Tokens" subtitle="Top up balance" />
+          {isSponsor && (
+            <PanelCard onClick={() => setPromoOpen(true)} icon={Tag} title="Promo Codes" subtitle="Sponsor only" gold />
+          )}
+          <PanelCard icon={ListChecks} title="Tasks" subtitle="Coming soon" comingSoon />
+          <PanelCard icon={Trophy} title="Achievements" subtitle="Coming soon" comingSoon />
+        </div>
+
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><TicketIcon className="h-5 w-5 text-primary" />My Bet Tickets</h2>
-        <div className="space-y-3">
+        <div id="bets" className="space-y-3 scroll-mt-24">
           {bets.length === 0 && <p className="text-muted-foreground text-sm">No bets yet.</p>}
           {bets.map((b) => (
             <Link key={b.id} to="/ticket/$id" params={{ id: b.id }}>
@@ -114,6 +143,69 @@ function Dashboard() {
           ))}
         </div>
       </div>
+      <PromoRequestDialog open={promoOpen} onClose={() => setPromoOpen(false)} userId={user.id} />
     </Layout>
+  );
+}
+
+function StatCard({ label, value, accent }: { label: string; value: string; accent?: "primary" | "emerald" }) {
+  const tone = accent === "primary" ? "text-primary" : accent === "emerald" ? "text-emerald-300" : "text-foreground";
+  return (
+    <Card className="p-5 backdrop-blur-xl bg-card/60 border-primary/20 hover:border-primary/40 transition">
+      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className={`text-2xl md:text-3xl font-extrabold mt-1 ${tone}`}>{value}</div>
+    </Card>
+  );
+}
+
+function PanelCard({ to, onClick, icon: Icon, title, subtitle, comingSoon, gold }: any) {
+  const inner = (
+    <Card className={`relative overflow-hidden p-4 backdrop-blur-xl bg-card/60 border ${gold ? "border-amber-500/40" : "border-primary/20"} hover:border-primary/60 transition group ${comingSoon ? "opacity-70" : "hover:-translate-y-0.5"} cursor-${comingSoon ? "not-allowed" : "pointer"}`}>
+      <div className={`h-10 w-10 rounded-xl grid place-items-center mb-3 ${gold ? "bg-gradient-to-br from-amber-400/30 to-amber-600/20" : "bg-gradient-to-br from-primary/30 to-accent/20"}`}>
+        <Icon className={`h-5 w-5 ${gold ? "text-amber-300" : "text-primary"}`} />
+      </div>
+      <div className="font-bold text-sm flex items-center gap-1.5">{title}{comingSoon && <Lock className="h-3 w-3 text-muted-foreground" />}</div>
+      <div className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</div>
+      {!comingSoon && <ChevronRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />}
+      {gold && <Sparkles className="absolute top-3 right-3 h-3 w-3 text-amber-300 animate-pulse" />}
+    </Card>
+  );
+  if (comingSoon) return <div>{inner}</div>;
+  if (to && to.startsWith("#")) return <a href={to}>{inner}</a>;
+  if (to) return <Link to={to}>{inner}</Link>;
+  return <button type="button" onClick={onClick} className="text-left">{inner}</button>;
+}
+
+function PromoRequestDialog({ open, onClose, userId }: { open: boolean; onClose: () => void; userId: string }) {
+  const [amount, setAmount] = useState(1_000_000);
+  const [usageLimit, setUsageLimit] = useState(1);
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  async function submit() {
+    if (amount <= 0 || usageLimit <= 0) return toast.error("Invalid amount or usage limit");
+    setSubmitting(true);
+    const { error } = await supabase.from("promo_code_requests").insert({ user_id: userId, amount, usage_limit: usageLimit, reason });
+    setSubmitting(false);
+    if (error) return toast.error(error.message);
+    toast.success("Promo code request submitted");
+    onClose();
+  }
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="glass-strong border-amber-500/30 max-w-md backdrop-blur-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Tag className="h-5 w-5 text-amber-300" />Request a Promo Code</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Token amount per redemption</label><Input type="number" min={1} value={amount} onChange={(e) => setAmount(Number(e.target.value))} /></div>
+          <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Number of uses</label><Input type="number" min={1} value={usageLimit} onChange={(e) => setUsageLimit(Number(e.target.value))} /></div>
+          <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Reason / campaign</label><Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="What's this promo for?" /></div>
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+            <Button onClick={submit} disabled={submitting} className="flex-1 btn-luxury">{submitting ? "Submitting…" : "Submit Request"}</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
