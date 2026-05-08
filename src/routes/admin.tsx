@@ -1432,7 +1432,7 @@ function BetTrackerPanel() {
   }, []);
 
   async function suspend(b: any) {
-    const reason = window.prompt("Reason for suspending this ticket?") ?? null;
+    const reason = window.prompt("Reason for suspending this ticket?") ?? undefined;
     const ok = await confirm({ title: "Suspend ticket?", description: `Tracking ${b.tracking_id} will be suspended. User will be notified.`, tone: "danger", confirmText: "Suspend" });
     if (!ok) return;
     const { error } = await supabase.rpc("admin_suspend_bet", { _bet_id: b.id, _reason: reason });
@@ -1531,14 +1531,14 @@ function PromoRequestsPanel() {
   }, []);
 
   async function approve(r: any) {
-    const note = window.prompt("Optional note to sponsor?") ?? null;
+    const note = window.prompt("Optional note to sponsor?") ?? undefined;
     const ok = await confirm({ title: "Approve & generate code?", description: `Will create a ${Number(r.amount).toLocaleString()}-token promo code with ${r.usage_limit} uses.`, confirmText: "Approve" });
     if (!ok) return;
     const { error } = await supabase.rpc("approve_promo_request", { _id: r.id, _note: note });
     if (error) toast.error(error.message); else { toast.success("Promo code approved & generated"); load(); }
   }
   async function decline(r: any) {
-    const note = window.prompt("Reason for decline?") ?? null;
+    const note = window.prompt("Reason for decline?") ?? undefined;
     const ok = await confirm({ title: "Decline request?", tone: "danger", confirmText: "Decline" });
     if (!ok) return;
     const { error } = await supabase.rpc("decline_promo_request", { _id: r.id, _note: note });
