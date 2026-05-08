@@ -12,7 +12,9 @@ import { ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign in — Lomita Shooters League" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({ banned: s.banned === "1" || s.banned === 1 ? 1 : undefined }),
+  validateSearch: (s: Record<string, unknown>): { banned?: number } => {
+    return s.banned === "1" || s.banned === 1 ? { banned: 1 } : {};
+  },
   component: LoginPage,
 });
 
