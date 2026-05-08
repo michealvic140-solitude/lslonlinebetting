@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Switch } from "@/components/ui/switch";
 import {
   Shield, Users, Trophy, Coins, Megaphone, Settings as SettingsIcon, Ticket, AlertTriangle,
-  Calendar, Tag, Image as ImageIcon, BarChart3, History, Send, Plus, Trash2, Pencil, ChevronRight, ChevronLeft, Wallet, ListOrdered,
+  Calendar, Tag, Image as ImageIcon, BarChart3, History, Send, Plus, Trash2, Pencil, ChevronRight, ChevronLeft, Wallet, ListOrdered, Sparkles, ClipboardList, Lock, Pause, Play, Check, X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
@@ -54,10 +54,13 @@ function AdminPage() {
             <TabsTrigger value="promos"><Tag className="h-3 w-3 mr-1" />Promo Codes</TabsTrigger>
             <TabsTrigger value="content"><Megaphone className="h-3 w-3 mr-1" />Content</TabsTrigger>
             <TabsTrigger value="tickets"><Ticket className="h-3 w-3 mr-1" />Tickets</TabsTrigger>
+            <TabsTrigger value="bettracker"><ClipboardList className="h-3 w-3 mr-1" />Bet Tracker</TabsTrigger>
+            <TabsTrigger value="promoreqs"><Tag className="h-3 w-3 mr-1" />Promo Requests</TabsTrigger>
             <TabsTrigger value="appeals"><AlertTriangle className="h-3 w-3 mr-1" />Appeals</TabsTrigger>
             <TabsTrigger value="notify"><Send className="h-3 w-3 mr-1" />Notify</TabsTrigger>
             <TabsTrigger value="audit"><History className="h-3 w-3 mr-1" />Audit</TabsTrigger>
             <TabsTrigger value="settings"><SettingsIcon className="h-3 w-3 mr-1" />Settings</TabsTrigger>
+            <TabsTrigger value="adminai"><Sparkles className="h-3 w-3 mr-1" />Admin AI</TabsTrigger>
           </TabsList>
           <TabsContent value="users" className="mt-4"><UsersPanel /></TabsContent>
           <TabsContent value="matches" className="mt-4"><MatchesPanel /></TabsContent>
@@ -68,11 +71,14 @@ function AdminPage() {
           <TabsContent value="promos" className="mt-4"><PromoPanel /></TabsContent>
           <TabsContent value="content" className="mt-4"><ContentPanel /></TabsContent>
           <TabsContent value="tickets" className="mt-4"><TicketsPanel /></TabsContent>
+          <TabsContent value="bettracker" className="mt-4"><BetTrackerPanel /></TabsContent>
+          <TabsContent value="promoreqs" className="mt-4"><PromoRequestsPanel /></TabsContent>
           <TabsContent value="appeals" className="mt-4"><AppealsPanel /></TabsContent>
           <TabsContent value="notify" className="mt-4"><NotifyPanel /></TabsContent>
           <TabsContent value="audit" className="mt-4"><AuditPanel /></TabsContent>
           <TabsContent value="analytics" className="mt-4"><AnalyticsPanel /></TabsContent>
           <TabsContent value="settings" className="mt-4"><SettingsPanel /></TabsContent>
+          <TabsContent value="adminai" className="mt-4"><AdminAIPanel /></TabsContent>
         </Tabs>
       </div>
     </Layout>
