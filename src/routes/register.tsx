@@ -17,7 +17,7 @@ export const Route = createFileRoute("/register")({
 
 function RegisterPage() {
   const nav = useNavigate();
-  const [f, setF] = useState({ full_name: "", email: "", password: "", phone: "", discord_username: "", country: "", gang_name: "", gang_type: "" });
+  const [f, setF] = useState({ full_name: "", ingame_name: "", email: "", password: "", phone: "", discord_username: "", discord_full_name: "", country: "", server: "LOMITA AFR", gang_name: "", gang_type: "" });
   const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -27,12 +27,14 @@ function RegisterPage() {
     e.preventDefault();
     if (!accepted) return toast.error("You must accept the terms");
     setLoading(true);
+    if (!f.discord_username.trim()) { setLoading(false); return toast.error("Discord username is required"); }
     const { error } = await supabase.auth.signUp({
       email: f.email, password: f.password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: { full_name: f.full_name, phone: f.phone, discord_username: f.discord_username,
-          country: f.country, gang_name: f.gang_name, gang_type: f.gang_type },
+        data: { full_name: f.full_name, ingame_name: f.ingame_name, phone: f.phone,
+          discord_username: f.discord_username, discord_full_name: f.discord_full_name,
+          country: f.country, server: f.server, gang_name: f.gang_name, gang_type: f.gang_type },
       },
     });
     setLoading(false);
@@ -49,11 +51,14 @@ function RegisterPage() {
           <p className="text-sm text-muted-foreground mb-6">Pick your gang. Earn your tokens.</p>
           <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2"><Label>Full name *</Label><Input required value={f.full_name} onChange={(e) => set("full_name", e.target.value)} /></div>
+            <div className="md:col-span-2"><Label>In-game name *</Label><Input required value={f.ingame_name} onChange={(e) => set("ingame_name", e.target.value)} /></div>
             <div><Label>Email *</Label><Input type="email" required value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
             <div><Label>Password *</Label><Input type="password" required minLength={6} value={f.password} onChange={(e) => set("password", e.target.value)} /></div>
             <div><Label>Phone</Label><Input value={f.phone} onChange={(e) => set("phone", e.target.value)} /></div>
-            <div><Label>Discord</Label><Input value={f.discord_username} onChange={(e) => set("discord_username", e.target.value)} /></div>
             <div><Label>Country</Label><Input value={f.country} onChange={(e) => set("country", e.target.value)} /></div>
+            <div><Label>Server</Label><Input value={f.server} onChange={(e) => set("server", e.target.value)} /></div>
+            <div><Label>Discord full name</Label><Input value={f.discord_full_name} onChange={(e) => set("discord_full_name", e.target.value)} /></div>
+            <div><Label>Discord username *</Label><Input required value={f.discord_username} onChange={(e) => set("discord_username", e.target.value)} /></div>
             <div className="md:col-span-2"><Label>Faction or Gang</Label>
               <Select value={f.gang_type} onValueChange={(v) => set("gang_type", v)}>
                 <SelectTrigger><SelectValue placeholder="Select F (Faction) or G (Gang)" /></SelectTrigger>

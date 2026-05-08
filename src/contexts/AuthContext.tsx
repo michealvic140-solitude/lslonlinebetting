@@ -75,7 +75,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     const ch = supabase.channel(`me-${user.id}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
-        (payload) => setProfile((prev) => ({ ...(prev as Profile), ...(payload.new as Profile) })))
+        (payload) => {
+          const next = payload.new as Profile;
+          setProfile((prev) => ({ ...(prev as Profile), ...next }));
+          // Auto kick-out if user just got banned
+          if (next?.is_banned) {
+            supabase.auth.signOut().then(() => {
+              if (typeof window !== "undefined") window.location.href = "/login?banned=1";
+            });
+          }
+        })
       .on("postgres_changes", { event: "*", schema: "public", table: "user_roles", filter: `user_id=eq.${user.id}` },
         () => loadUserData(user.id))
       .subscribe();
