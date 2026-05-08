@@ -41,17 +41,23 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
   const { selections, remove, clear, reorder, totalOdds, stake, setStake } = useBetSlip();
   const { user, profile, refresh } = useAuth();
   const [minStake, setMinStake] = useState(2_000_000);
+  const [maxPayout, setMaxPayout] = useState(100_000_000);
   const [submitting, setSubmitting] = useState(false);
   const [placed, setPlaced] = useState<any>(null);
   const confirm = useConfirm();
   const nav = useNavigate();
 
   useEffect(() => {
-    supabase.from("app_settings").select("min_stake").eq("id", 1).maybeSingle()
-      .then(({ data }) => { if (data?.min_stake) setMinStake(Number(data.min_stake)); });
+    supabase.from("app_settings").select("min_stake,max_payout").eq("id", 1).maybeSingle()
+      .then(({ data }) => {
+        if (data?.min_stake) setMinStake(Number(data.min_stake));
+        if ((data as any)?.max_payout) setMaxPayout(Number((data as any).max_payout));
+      });
   }, [open]);
 
-  const payout = Math.floor(stake * totalOdds);
+  const rawPayout = Math.floor(stake * totalOdds);
+  const payout = Math.min(rawPayout, maxPayout);
+  const capped = rawPayout > maxPayout;
 
   async function place() {
     if (!user || !profile) { nav({ to: "/login" }); return; }
@@ -62,7 +68,7 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
 
     const ok = await confirm({
       title: "Confirm bet placement",
-      description: `Stake ${stake.toLocaleString()} on ${selections.length} selection(s) at total odds ${totalOdds.toFixed(2)}. Potential payout: ${payout.toLocaleString()} tokens. Tokens will be deducted immediately.`,
+      description: `Stake ${stake.toLocaleString()} on ${selections.length} selection(s) at total odds ${totalOdds.toFixed(2)}. Potential payout: ${payout.toLocaleString()} tokens${capped ? ` (capped at max ${maxPayout.toLocaleString()})` : ""}. Tokens will be deducted immediately.`,
       confirmText: "Place Bet",
     });
     if (!ok) return;
