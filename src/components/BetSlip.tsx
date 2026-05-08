@@ -157,6 +157,11 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
               <span className="text-xs text-muted-foreground">Potential payout</span>
               <span className="font-bold text-accent flex items-center gap-1"><Coins className="h-3 w-3" />{payout.toLocaleString()}</span>
             </Card>
+            {capped && (
+              <p className="text-[10px] text-amber-400 text-center">
+                Payout capped at the maximum of {maxPayout.toLocaleString()} tokens (uncapped: {rawPayout.toLocaleString()}).
+              </p>
+            )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={clear} className="flex-1"><Trash2 className="h-4 w-4 mr-1" />Clear</Button>
               <Button className="btn-luxury flex-1" disabled={submitting} onClick={place}>{submitting ? "Placing…" : "Place Bet"}</Button>
