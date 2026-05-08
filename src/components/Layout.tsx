@@ -68,7 +68,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         )}
       </header>
       <main className="relative">{children}</main>
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl bg-card/80 border-t border-border">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl bg-card/80 border-t border-border safe-bottom">
         <div className="overflow-x-auto">
           <div className="flex items-center gap-1 px-2 py-2 min-w-max">
             <MobLink to="/" icon={Home} label="Home" />
