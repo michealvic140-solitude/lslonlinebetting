@@ -18,6 +18,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { fetchTeams } from "@/lib/queries";
+import {
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
+} from "recharts";
 import { useConfirm } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/admin")({
@@ -1156,6 +1160,7 @@ function humanize(action: string) { return action.replace(/_/g, " "); }
 /* ============================ ANALYTICS ============================ */
 function AnalyticsPanel() {
   const [stats, setStats] = useState<any>(null);
+  const [series, setSeries] = useState<any[]>([]);
   useEffect(() => {
     (async () => {
       const [u, b, t, r] = await Promise.all([
@@ -1183,6 +1188,23 @@ function AnalyticsPanel() {
         debits: txs.filter((x: any) => x.amount < 0).reduce((a, x: any) => a + Math.abs(x.amount), 0),
         credits: txs.filter((x: any) => x.amount > 0).reduce((a, x: any) => a + x.amount, 0),
       });
+      // Build last 14 day series
+      const days: Record<string, { day: string; bets: number; staked: number; users: number }> = {};
+      const today = new Date(); today.setHours(0,0,0,0);
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(today); d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(5, 10);
+        days[d.toISOString().slice(0,10)] = { day: key, bets: 0, staked: 0, users: 0 };
+      }
+      bets.forEach((x: any) => {
+        const k = (x.created_at ?? "").slice(0, 10);
+        if (days[k]) { days[k].bets += 1; days[k].staked += Number(x.stake ?? 0); }
+      });
+      users.forEach((x: any) => {
+        const k = (x.created_at ?? "").slice(0, 10);
+        if (days[k]) days[k].users += 1;
+      });
+      setSeries(Object.values(days));
     })();
   }, []);
   if (!stats) return <div>Loading…</div>;
@@ -1202,13 +1224,50 @@ function AnalyticsPanel() {
     { label: "Token debits", value: stats.debits.toLocaleString() },
   ];
   return (
-    <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      {items.map((x) => (
-        <Card key={x.label} className="glass p-4">
-          <div className="text-2xl font-bold gradient-gold-text">{x.value}</div>
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{x.label}</div>
-        </Card>
-      ))}
+    <div className="space-y-4">
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {items.map((x) => (
+          <Card key={x.label} className="glass p-4">
+            <div className="text-2xl font-bold gradient-gold-text">{x.value}</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{x.label}</div>
+          </Card>
+        ))}
+      </div>
+      <Card className="glass p-4">
+        <div className="text-sm font-bold mb-3">Last 14 days · Bets & Stake</div>
+        <ResponsiveContainer width="100%" height={240}>
+          <AreaChart data={series}>
+            <defs>
+              <linearGradient id="gStake" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.6} />
+                <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="gBets" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.6} />
+                <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={10} />
+            <YAxis stroke="var(--muted-foreground)" fontSize={10} />
+            <RTooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} />
+            <Area type="monotone" dataKey="staked" stroke="var(--primary)" fill="url(#gStake)" name="Staked" />
+            <Area type="monotone" dataKey="bets" stroke="var(--accent)" fill="url(#gBets)" name="Bets" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </Card>
+      <Card className="glass p-4">
+        <div className="text-sm font-bold mb-3">New users per day</div>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={series}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={10} />
+            <YAxis stroke="var(--muted-foreground)" fontSize={10} />
+            <RTooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} />
+            <Bar dataKey="users" fill="var(--primary)" radius={[6,6,0,0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
     </div>
   );
 }
