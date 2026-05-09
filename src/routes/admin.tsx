@@ -458,9 +458,9 @@ function MatchesPanel() {
     load();
   }
   async function settle(m: any) {
-    const home = prompt(`Final score for ${m.home_team?.name}?`); if (home === null) return;
-    const away = prompt(`Final score for ${m.away_team?.name}?`); if (away === null) return;
-    const hs = Number(home), as = Number(away);
+    const ok = await confirm({ title: "End match and settle bets?", description: `Final score will be ${m.home_team?.name} ${m.home_score}–${m.away_score} ${m.away_team?.name}. Suspended/refunded tickets will not be credited.`, confirmText: "Settle match" });
+    if (!ok) return;
+    const hs = Number(m.home_score ?? 0), as = Number(m.away_score ?? 0);
     let winnerId = null;
     if (hs > as) winnerId = m.home_team_id;
     else if (as > hs) winnerId = m.away_team_id;
@@ -533,6 +533,7 @@ async function settleBetsForMatch(matchId: string, winnerTeamId: string | null) 
     const allWon = betSels.every((s: any) => s.result === "won");
     const { data: bet } = await supabase.from("bets").select("*").eq("id", bid).single();
     if (!bet) continue;
+    if (["suspended", "refunded", "void", "cashed_out"].includes(bet.status)) continue;
     const status = allWon ? "won" : "lost";
     await supabase.from("bets").update({ status, settled_at: new Date().toISOString() }).eq("id", bid);
     if (allWon) {
