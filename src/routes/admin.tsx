@@ -1667,10 +1667,9 @@ function BetTrackerPanel() {
   }, []);
 
   async function suspend(b: any) {
-    const reason = window.prompt("Reason for suspending this ticket?") ?? undefined;
-    const ok = await confirm({ title: "Suspend ticket?", description: `Tracking ${b.tracking_id} will be suspended. User will be notified.`, tone: "danger", confirmText: "Suspend" });
-    if (!ok) return;
-    const { error } = await supabase.rpc("admin_suspend_bet", { _bet_id: b.id, _reason: reason });
+    const ok = await confirm({ title: "Suspend / flag ticket?", description: `Tracking ${b.tracking_id} will stop from crediting until admin unsuspends it.`, tone: "danger", confirmText: "Suspend ticket", inputLabel: "Reason", inputPlaceholder: "Why is this betslip being suspended?" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await supabase.rpc("admin_suspend_bet", { _bet_id: b.id, _reason: ok.value || undefined });
     if (error) toast.error(error.message); else { toast.success("Ticket suspended"); load(); }
   }
   async function unsuspend(b: any) {
@@ -1678,11 +1677,16 @@ function BetTrackerPanel() {
     if (error) toast.error(error.message); else { toast.success("Ticket reactivated"); load(); }
   }
   async function del(b: any) {
-    const ok = await confirm({ title: "Delete ticket?", description: `Tracking ${b.tracking_id}. Refund stake to user?`, tone: "danger", confirmText: "Delete (no refund)", cancelText: "Cancel" });
-    if (!ok) return;
-    const refund = window.confirm("Also REFUND the stake to the user?");
-    const { error } = await supabase.rpc("admin_delete_bet", { _bet_id: b.id, _refund: refund, _reason: undefined as any });
+    const ok = await confirm({ title: "Delete ticket?", description: `Tracking ${b.tracking_id}. You can optionally refund the stake before removal.`, tone: "danger", confirmText: "Delete ticket", cancelText: "Cancel", checkboxLabel: "Refund stake to user", inputLabel: "Admin note", inputPlaceholder: "Optional reason shown in logs…" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await supabase.rpc("admin_delete_bet", { _bet_id: b.id, _refund: ok.checked, _reason: ok.value || undefined });
     if (error) toast.error(error.message); else { toast.success(refund ? "Ticket deleted & refunded" : "Ticket deleted"); load(); }
+  }
+  async function refund(b: any) {
+    const ok = await confirm({ title: "Mark ticket as refunded?", description: `Refunds ${Number(b.stake).toLocaleString()} tokens and closes ${b.tracking_id}.`, confirmText: "Refund stake", inputLabel: "Refund reason", inputPlaceholder: "Reason for refund…" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await supabase.rpc("admin_refund_bet", { _bet_id: b.id, _reason: ok.value || undefined });
+    if (error) toast.error(error.message); else { toast.success("Ticket refunded"); load(); }
   }
 
   const filtered = bets.filter((b) => {
@@ -1701,7 +1705,7 @@ function BetTrackerPanel() {
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {["all","open","won","lost","suspended","cashed_out","void"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            {["all","open","won","lost","suspended","refunded","cashed_out","void"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
       </Card>
@@ -1736,6 +1740,7 @@ function BetTrackerPanel() {
                 <Button asChild size="sm" variant="outline"><a href={`/ticket/${b.id}`}>View</a></Button>
                 {b.status === "open" && <Button size="sm" variant="outline" onClick={() => suspend(b)}><Pause className="h-3 w-3" /></Button>}
                 {b.status === "suspended" && <Button size="sm" variant="outline" onClick={() => unsuspend(b)}><Play className="h-3 w-3" /></Button>}
+                {!["won", "cashed_out", "refunded"].includes(b.status) && <Button size="sm" variant="outline" onClick={() => refund(b)}><RotateCw className="h-3 w-3" /></Button>}
                 <Button size="sm" variant="destructive" onClick={() => del(b)}><Trash2 className="h-3 w-3" /></Button>
               </div>
             </div>
@@ -1766,17 +1771,15 @@ function PromoRequestsPanel() {
   }, []);
 
   async function approve(r: any) {
-    const note = window.prompt("Optional note to sponsor?") ?? undefined;
-    const ok = await confirm({ title: "Approve & generate code?", description: `Will create a ${Number(r.amount).toLocaleString()}-token promo code with ${r.usage_limit} uses.`, confirmText: "Approve" });
-    if (!ok) return;
-    const { error } = await supabase.rpc("approve_promo_request", { _id: r.id, _note: note });
+    const ok = await confirm({ title: "Approve & generate code?", description: `Will create a ${Number(r.amount).toLocaleString()}-token promo code with ${r.usage_limit} uses.`, confirmText: "Approve", inputLabel: "Note to sponsor", inputPlaceholder: "Optional approval note…" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await supabase.rpc("approve_promo_request", { _id: r.id, _note: ok.value || undefined });
     if (error) toast.error(error.message); else { toast.success("Promo code approved & generated"); load(); }
   }
   async function decline(r: any) {
-    const note = window.prompt("Reason for decline?") ?? undefined;
-    const ok = await confirm({ title: "Decline request?", tone: "danger", confirmText: "Decline" });
-    if (!ok) return;
-    const { error } = await supabase.rpc("decline_promo_request", { _id: r.id, _note: note });
+    const ok = await confirm({ title: "Decline request?", tone: "danger", confirmText: "Decline", inputLabel: "Reason", inputPlaceholder: "Tell the sponsor why it was declined…" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await supabase.rpc("decline_promo_request", { _id: r.id, _note: ok.value || undefined });
     if (error) toast.error(error.message); else { toast.success("Request declined"); load(); }
   }
 
