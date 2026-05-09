@@ -134,6 +134,58 @@ async function logAudit(action: string, target_type: string, target_id?: string,
   await supabase.from("audit_logs").insert({ actor_id: u.id, action, target_type, target_id, metadata: metadata ?? {} });
 }
 
+function AdminTab({ icon: Icon, label, count = 0 }: { icon: any; label: string; count?: number }) {
+  return (
+    <span className="relative inline-flex items-center gap-1">
+      <Icon className="h-3 w-3" />{label}
+      {count > 0 && <span className="ml-0.5 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background" title={`${count} new/pending`} />}
+    </span>
+  );
+}
+
+function ChatMonitorPanel() {
+  const [msgs, setMsgs] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, any>>({});
+  async function load() {
+    const { data } = await supabase.from("chat_messages").select("*").order("created_at", { ascending: false }).limit(120);
+    setMsgs(data ?? []);
+    const ids = Array.from(new Set((data ?? []).map((m: any) => m.user_id).filter(Boolean)));
+    if (ids.length) {
+      const { data: p } = await supabase.from("profiles").select("id,full_name,email,gang_name,is_muted,is_banned").in("id", ids);
+      const map: Record<string, any> = {}; (p ?? []).forEach((x: any) => { map[x.id] = x; }); setProfiles(map);
+    }
+  }
+  useEffect(() => {
+    load();
+    const ch = supabase.channel("admin-chat-monitor").on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, load).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+  async function del(id: string) { await supabase.from("chat_messages").delete().eq("id", id); load(); }
+  return (
+    <div className="space-y-3">
+      <Card className="glass-strong p-4 flex items-center gap-3">
+        <MessageSquare className="h-5 w-5 text-primary" />
+        <div><div className="font-bold">Live Chat Monitor</div><div className="text-xs text-muted-foreground">Newest messages across all rooms with quick moderation access.</div></div>
+      </Card>
+      {msgs.map((m) => {
+        const p = profiles[m.user_id];
+        return (
+          <Card key={m.id} className="glass p-3 flex items-start gap-3 flex-wrap">
+            <Badge variant="outline" className="capitalize border-primary/40 text-primary">{m.room}</Badge>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-bold">{p?.full_name ?? "Unknown"} <span className="text-xs text-muted-foreground">{p?.email}</span></div>
+              {m.content && <div className="text-sm mt-1 break-words">{m.content}</div>}
+              {m.image_url && <a href={m.image_url} target="_blank" rel="noreferrer"><img src={m.image_url} alt="Chat upload" className="mt-2 max-h-28 rounded-lg border border-border" /></a>}
+              <div className="text-[10px] text-muted-foreground mt-1">{p?.gang_name ?? "Independent"} · {new Date(m.created_at).toLocaleString()}</div>
+            </div>
+            <Button size="sm" variant="destructive" onClick={() => del(m.id)}><Trash2 className="h-3 w-3" /></Button>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
 function Stats() {
   const [s, setS] = useState({ users: 0, matches: 0, pending: 0, tokens: 0 });
   useEffect(() => {
