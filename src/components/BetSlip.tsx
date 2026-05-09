@@ -7,8 +7,9 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Ticket, X, ChevronUp, ChevronDown, Trash2, Coins, CheckCircle2, Copy, Share2, ExternalLink } from "lucide-react";
+import { Ticket, X, ChevronUp, ChevronDown, Trash2, Coins, CheckCircle2, Copy, Share2, ExternalLink, Gem, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export function BetSlipFab() {
@@ -29,10 +30,16 @@ function FabShell({ onClick, count }: { onClick: () => void; count: number }) {
   if (count === 0) return null;
   return (
     <button onClick={onClick}
-      className="fixed bottom-24 md:bottom-6 right-4 z-40 h-14 px-5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-2xl flex items-center gap-2 font-bold backdrop-blur-xl border border-primary/30 hover:scale-105 transition">
-      <Ticket className="h-5 w-5" />
-      <span>Bet Slip</span>
-      <span className="bg-background/30 text-xs rounded-full h-6 min-w-6 px-2 grid place-items-center">{count}</span>
+      className="fixed bottom-24 md:bottom-6 right-4 z-40 overflow-hidden rounded-2xl border border-primary/40 bg-gradient-luxury text-foreground shadow-luxury backdrop-blur-2xl hover:-translate-y-1 transition min-w-44">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
+      <div className="flex items-center gap-3 px-4 py-3">
+        <span className="h-10 w-10 rounded-xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold"><Ticket className="h-5 w-5" /></span>
+        <span className="text-left leading-tight">
+          <span className="block text-[10px] uppercase tracking-widest text-muted-foreground">Ready slip</span>
+          <span className="block font-extrabold">{count} selection{count === 1 ? "" : "s"}</span>
+        </span>
+        <span className="ml-auto h-7 min-w-7 rounded-full bg-accent/20 text-accent border border-accent/30 text-xs font-black grid place-items-center px-2">{count}</span>
+      </div>
     </button>
   );
 }
@@ -105,10 +112,17 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && closeAll()}>
-      <SheetContent side="right" className="w-full sm:max-w-md backdrop-blur-2xl bg-card/80 border-l-primary/30">
+      <SheetContent side="right" className="w-full sm:max-w-md backdrop-blur-2xl bg-card/90 border-l-primary/30 p-0 overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            {placed ? <><CheckCircle2 className="h-5 w-5 text-emerald-400" />Ticket Placed</> : <><Ticket className="h-5 w-5 text-primary" />Bet Slip</>}
+          <SheetTitle className="flex items-center gap-3 px-6 pt-6">
+            <span className="h-11 w-11 rounded-2xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold">
+              {placed ? <CheckCircle2 className="h-5 w-5" /> : <Ticket className="h-5 w-5" />}
+            </span>
+            <span className="leading-tight">
+              <span className="block text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Luxury ticket desk</span>
+              <span className="block text-2xl gradient-gold-text">{placed ? "Ticket Placed" : "Bet Slip"}</span>
+            </span>
           </SheetTitle>
         </SheetHeader>
 
@@ -116,21 +130,24 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
           <PlacedPreview bet={placed} onView={() => { closeAll(); nav({ to: "/ticket/$id", params: { id: placed.id } }); }} onClose={closeAll} />
         ) : (
         <>
-        <div className="mt-4 space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+        <div className="px-6 mt-4 space-y-3 max-h-[50vh] overflow-y-auto pr-4">
           {selections.length === 0 && <p className="text-sm text-muted-foreground">No selections yet. Tap odds on a match to add.</p>}
           {selections.map((s, i) => (
-            <Card key={s.odd_id} className="glass p-3 text-sm">
+            <Card key={s.odd_id} className="relative overflow-hidden glass p-3 text-sm border-primary/20">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-gold opacity-70" />
               <div className="flex items-start gap-2">
                 <div className="flex flex-col gap-0.5">
                   <button disabled={i===0} onClick={() => reorder(i, i-1)} className="text-muted-foreground disabled:opacity-30"><ChevronUp className="h-3 w-3" /></button>
                   <button disabled={i===selections.length-1} onClick={() => reorder(i, i+1)} className="text-muted-foreground disabled:opacity-30"><ChevronDown className="h-3 w-3" /></button>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold truncate">{s.match_name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{s.market_name} · {s.selection_label}</div>
+                  <div className="font-extrabold truncate">{s.match_name}</div>
+                  <div className="text-xs text-muted-foreground truncate">{s.market_name}</div>
+                  <Badge variant="outline" className="mt-2 border-accent/40 text-accent bg-accent/10 text-[10px]">{s.selection_label}</Badge>
                 </div>
                 <div className="text-right">
-                  <div className="font-mono font-bold text-primary">{s.odds.toFixed(2)}</div>
+                  <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Odds</div>
+                  <div className="font-mono font-black text-primary text-lg">{s.odds.toFixed(2)}</div>
                   <button onClick={() => remove(s.odd_id)} className="text-destructive"><X className="h-4 w-4" /></button>
                 </div>
               </div>
@@ -139,23 +156,32 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
         </div>
 
         {selections.length > 0 && (
-          <div className="mt-4 space-y-3 border-t border-border pt-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Total odds</span>
-              <span className="font-bold text-primary">{totalOdds.toFixed(2)}</span>
+          <div className="mt-4 space-y-4 border-t border-border px-6 py-5 bg-background/30">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <Card className="glass p-3">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Total odds</div>
+                <div className="font-black text-2xl gradient-gold-text">{totalOdds.toFixed(2)}</div>
+              </Card>
+              <Card className="glass p-3">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Selections</div>
+                <div className="font-black text-2xl text-accent">{selections.length}</div>
+              </Card>
             </div>
             <div>
               <label className="text-xs uppercase tracking-widest text-muted-foreground">Stake (min {minStake.toLocaleString()})</label>
-              <Input type="number" min={minStake} step={100000} value={stake} onChange={(e) => setStake(Number(e.target.value))} />
+              <Input className="mt-1 h-12 text-lg font-bold" type="number" min={minStake} step={100000} value={stake} onChange={(e) => setStake(Number(e.target.value))} />
               <div className="flex flex-wrap gap-1 mt-1">
                 {[minStake, minStake*2, minStake*5, profile?.token_balance ?? 0].filter((v, i, a) => v > 0 && a.indexOf(v) === i).map((v) => (
-                  <button key={v} onClick={() => setStake(v)} className="text-[10px] px-2 py-0.5 rounded bg-muted hover:bg-primary/20">{v === (profile?.token_balance ?? 0) ? "MAX" : v.toLocaleString()}</button>
+                  <button key={v} onClick={() => setStake(v)} className="text-[10px] px-2.5 py-1 rounded-full bg-muted hover:bg-primary/20 border border-border">{v === (profile?.token_balance ?? 0) ? "MAX" : v.toLocaleString()}</button>
                 ))}
               </div>
             </div>
-            <Card className="glass p-3 flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Potential payout</span>
-              <span className="font-bold text-accent flex items-center gap-1"><Coins className="h-3 w-3" />{payout.toLocaleString()}</span>
+            <Card className="relative overflow-hidden glass p-4 flex items-center justify-between border-accent/30">
+              <div>
+                <div className="text-xs text-muted-foreground flex items-center gap-1"><Gem className="h-3 w-3 text-primary" />Potential payout</div>
+                <div className="font-black text-2xl text-accent flex items-center gap-1"><Coins className="h-5 w-5" />{payout.toLocaleString()}</div>
+              </div>
+              <ShieldCheck className="h-8 w-8 text-primary/50" />
             </Card>
             {capped && (
               <p className="text-[10px] text-amber-400 text-center">
