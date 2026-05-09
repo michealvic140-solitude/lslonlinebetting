@@ -1047,6 +1047,7 @@ function CategoriesPanel() {
 /* ============================ TICKETS ============================ */
 function TicketsPanel() {
   const [tickets, setTickets] = useState<any[]>([]);
+  const [active, setActive] = useState<any | null>(null);
   const confirm = useConfirm();
   async function load() {
     const { data } = await supabase.from("support_tickets").select("*, profiles:user_id(full_name,email)").order("created_at", { ascending: false }).limit(200);
@@ -1068,9 +1069,13 @@ function TicketsPanel() {
   }
   return (
     <div className="space-y-2">
+      <Card className="glass-strong p-4 flex items-center gap-3">
+        <Ticket className="h-5 w-5 text-primary" />
+        <div><div className="font-bold">Support Ticket Reports</div><div className="text-xs text-muted-foreground">Open, reply, attach images, close/reopen, or delete user reports directly.</div></div>
+      </Card>
       {tickets.length === 0 && <p className="text-muted-foreground text-sm">No tickets.</p>}
       {tickets.map((t) => (
-        <Card key={t.id} className="glass p-3 flex items-center gap-3 flex-wrap">
+        <Card key={t.id} className="glass p-3 flex items-center gap-3 flex-wrap hover:border-primary/50 transition">
           <div className="flex-1 min-w-0">
             <div className="font-bold truncate">{t.subject}</div>
             <div className="text-xs text-muted-foreground">{t.profiles?.full_name} · {new Date(t.created_at).toLocaleString()}</div>
@@ -1080,11 +1085,82 @@ function TicketsPanel() {
             <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>{["open", "in_progress", "resolved", "closed"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
           </Select>
-          <Button size="sm" variant="outline" asChild><a href={`/ticket/${t.id}`}>Open</a></Button>
+          <Button size="sm" variant="outline" onClick={() => setActive(t)}><Eye className="h-3 w-3 mr-1" />Reply</Button>
           <Button size="sm" variant="destructive" onClick={() => del(t.id)}><Trash2 className="h-3 w-3" /></Button>
         </Card>
       ))}
+      {active && <AdminTicketDialog ticket={active} onClose={() => { setActive(null); load(); }} />}
     </div>
+  );
+}
+
+function AdminTicketDialog({ ticket, onClose }: { ticket: any; onClose: () => void }) {
+  const { user } = useAuth();
+  const [msgs, setMsgs] = useState<any[]>([]);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const confirm = useConfirm();
+  async function load() {
+    const { data } = await supabase.from("ticket_messages").select("*, profiles:user_id(full_name,email)").eq("ticket_id", ticket.id).order("created_at", { ascending: true });
+    setMsgs(data ?? []);
+  }
+  useEffect(() => {
+    load();
+    const ch = supabase.channel(`admin-ticket-${ticket.id}`).on("postgres_changes", { event: "*", schema: "public", table: "ticket_messages", filter: `ticket_id=eq.${ticket.id}` }, load).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [ticket.id]);
+  async function send(imageUrl?: string) {
+    if (!user || (!text.trim() && !imageUrl)) return;
+    setSending(true);
+    const content = text.trim(); setText("");
+    const { error } = await supabase.from("ticket_messages").insert({ ticket_id: ticket.id, user_id: user.id, content: content || null, image_url: imageUrl ?? null });
+    if (error) toast.error(error.message); else await supabase.from("support_tickets").update({ status: "in_progress" as any, updated_at: new Date().toISOString() }).eq("id", ticket.id);
+    setSending(false); load();
+  }
+  async function upload(file: File) {
+    const path = `${ticket.id}/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("ticket-uploads").upload(path, file);
+    if (error) { toast.error(error.message); return; }
+    await send(supabase.storage.from("ticket-uploads").getPublicUrl(path).data.publicUrl);
+  }
+  async function updateStatus(status: string) { await supabase.from("support_tickets").update({ status: status as any }).eq("id", ticket.id); toast.success("Ticket updated"); onClose(); }
+  async function deleteTicket() {
+    if (!await confirm({ title: "Delete this support ticket?", description: "All replies and uploaded references on this report will be removed.", tone: "danger", confirmText: "Delete forever" })) return;
+    await supabase.from("ticket_messages").delete().eq("ticket_id", ticket.id);
+    await supabase.from("support_tickets").delete().eq("id", ticket.id);
+    toast.success("Ticket deleted"); onClose();
+  }
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="glass-strong max-w-3xl max-h-[88vh] overflow-hidden border-primary/30 p-0">
+        <DialogHeader className="p-5 border-b border-border">
+          <DialogTitle className="flex items-center gap-2"><Ticket className="h-5 w-5 text-primary" />{ticket.subject}</DialogTitle>
+          <div className="text-xs text-muted-foreground">{ticket.profiles?.full_name} · {ticket.profiles?.email}</div>
+        </DialogHeader>
+        <div className="max-h-[52vh] overflow-y-auto p-5 space-y-3">
+          {msgs.map((m) => (
+            <div key={m.id} className={`flex ${m.user_id === user?.id ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[78%] rounded-xl p-3 text-sm border ${m.user_id === user?.id ? "bg-primary/15 border-primary/35" : "bg-secondary/60 border-border"}`}>
+                <div className="text-[10px] text-muted-foreground mb-1">{m.profiles?.full_name ?? (m.is_ai ? "AI Assistant" : "User")} · {new Date(m.created_at).toLocaleString()}</div>
+                {m.content && <div className="whitespace-pre-wrap">{m.content}</div>}
+                {m.image_url && <a href={m.image_url} target="_blank" rel="noreferrer"><img src={m.image_url} alt="Ticket upload" className="mt-2 max-h-52 rounded-lg border border-border" /></a>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="p-5 border-t border-border space-y-3">
+          <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Reply to this user report…" />
+          <div className="flex gap-2 flex-wrap">
+            <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+            <Button variant="outline" onClick={() => fileRef.current?.click()}><ImageIcon className="h-4 w-4 mr-1" />Image</Button>
+            <Button className="btn-luxury" disabled={sending || !text.trim()} onClick={() => send()}><Send className="h-4 w-4 mr-1" />Reply</Button>
+            <Button variant="outline" onClick={() => updateStatus(ticket.status === "closed" ? "open" : "closed")}>{ticket.status === "closed" ? "Reopen" : "Close"}</Button>
+            <Button variant="destructive" onClick={deleteTicket}><Trash2 className="h-4 w-4 mr-1" />Delete</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
