@@ -773,6 +773,7 @@ function EventsPanel() {
 function TokensPanel() {
   const [reqs, setReqs] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
+  const confirm = useConfirm();
 
   async function load() {
     const { data } = await supabase.from("token_requests").select("*").order("created_at", { ascending: false }).limit(100);
@@ -796,7 +797,9 @@ function TokensPanel() {
     toast.success("Approved"); load();
   }
   async function reject(r: any) {
-    const reason = prompt("Reason for denial?"); if (reason === null) return;
+    const res = await confirm({ title: "Deny token request?", description: `Reject ${Number(r.amount).toLocaleString()} tokens for ${profiles[r.user_id]?.full_name ?? "this user"}.`, tone: "danger", confirmText: "Deny request", inputLabel: "Reason", inputPlaceholder: "Explain why this request is denied…" });
+    if (!res || typeof res !== "object") return;
+    const reason = res.value;
     await supabase.from("token_requests").update({ status: "denied", review_note: reason, reviewed_at: new Date().toISOString() }).eq("id", r.id);
     await supabase.from("notifications").insert({ user_id: r.user_id, title: "Token request denied", body: `Reason: ${reason || "—"}` });
     await logAudit("token_request_denied", "token_request", r.id, { reason });
@@ -1179,7 +1182,9 @@ function AppealsPanel() {
   }
   useEffect(() => { load(); }, []);
   async function respond(a: any, status: "approved" | "denied") {
-    const note = prompt("Response to user?") ?? "";
+    const res = await confirm({ title: status === "approved" ? "Approve appeal and unban?" : "Deny appeal?", description: "Write the response the user will see.", tone: status === "denied" ? "danger" : "default", confirmText: status === "approved" ? "Approve" : "Deny", inputLabel: "Admin response", inputPlaceholder: "Response to user…" });
+    if (!res || typeof res !== "object") return;
+    const note = res.value;
     await supabase.from("ban_appeals").update({ status, admin_response: note, reviewed_at: new Date().toISOString() }).eq("id", a.id);
     if (status === "approved") {
       await supabase.from("profiles").update({ is_banned: false, ban_reason: null }).eq("id", a.user_id);
@@ -1542,9 +1547,11 @@ function WithdrawalsPanel() {
       description: approve ? "Tokens stay deducted; user will be notified." : "Tokens will be refunded to the user.",
       tone: approve ? "default" : "danger",
       confirmText: approve ? "Approve" : "Decline & refund",
+      inputLabel: approve ? "Instructions for user" : "Reason for declining",
+      inputPlaceholder: approve ? "Optional payout instructions…" : "Optional decline reason…",
     });
-    if (!ok) return;
-    const note = window.prompt(approve ? "Instructions for user (optional)" : "Reason for declining (optional)") ?? "";
+    if (!ok || typeof ok !== "object") return;
+    const note = ok.value;
     const { error } = await supabase.rpc("review_withdrawal_request", { _id: r.id, _approve: approve, _note: note || undefined });
     if (error) toast.error(error.message); else { toast.success("Done"); logAudit(`withdrawal_${approve ? "approved" : "declined"}`, "withdrawal", r.id); load(); }
   }
