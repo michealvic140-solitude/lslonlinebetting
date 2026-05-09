@@ -1171,6 +1171,7 @@ function AdminTicketDialog({ ticket, onClose }: { ticket: any; onClose: () => vo
 function AppealsPanel() {
   const [list, setList] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
+  const confirm = useConfirm();
   async function load() {
     const { data } = await supabase.from("ban_appeals").select("*").order("created_at", { ascending: false });
     setList(data ?? []);
