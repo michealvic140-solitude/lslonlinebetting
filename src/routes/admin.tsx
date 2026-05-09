@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Switch } from "@/components/ui/switch";
 import {
   Shield, Users, Trophy, Coins, Megaphone, Settings as SettingsIcon, Ticket, AlertTriangle,
-  Calendar, Tag, Image as ImageIcon, BarChart3, History, Send, Plus, Trash2, Pencil, ChevronRight, ChevronLeft, Wallet, ListOrdered, Sparkles, ClipboardList, Lock, Pause, Play, Check, X,
+  Calendar, Tag, Image as ImageIcon, BarChart3, History, Send, Plus, Trash2, Pencil, ChevronRight, ChevronLeft, Wallet, ListOrdered, Sparkles, ClipboardList, Lock, Pause, Play, Check, X, MessageSquare, Eye, RotateCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
@@ -32,35 +32,73 @@ export const Route = createFileRoute("/admin")({
 function AdminPage() {
   const { isAdmin, loading } = useAuth();
   const nav = useNavigate();
+  const [alerts, setAlerts] = useState<Record<string, number>>({});
   useEffect(() => { if (!loading && !isAdmin) nav({ to: "/" }); }, [isAdmin, loading, nav]);
+  useEffect(() => {
+    if (!isAdmin) return;
+    const loadAlerts = async () => {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const [users, tokens, withdrawals, tickets, bets, promos, appeals, chat] = await Promise.all([
+        supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", since),
+        supabase.from("token_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("withdrawal_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("support_tickets").select("id", { count: "exact", head: true }).neq("status", "closed"),
+        supabase.from("bets").select("id", { count: "exact", head: true }).gte("created_at", since),
+        supabase.from("promo_code_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("ban_appeals").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("chat_messages").select("id", { count: "exact", head: true }).gte("created_at", since),
+      ]);
+      setAlerts({ users: users.count ?? 0, tokens: tokens.count ?? 0, withdrawals: withdrawals.count ?? 0, tickets: tickets.count ?? 0, bettracker: bets.count ?? 0, promoreqs: promos.count ?? 0, appeals: appeals.count ?? 0, chat: chat.count ?? 0 });
+    };
+    loadAlerts();
+    const ch = supabase.channel("admin-alert-indicators")
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "token_requests" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "withdrawal_requests" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "ticket_messages" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bets" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "promo_code_requests" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "ban_appeals" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, loadAlerts)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [isAdmin]);
   if (loading) return <Layout><div className="container py-10">Loading…</div></Layout>;
   if (!isAdmin) return null;
 
   return (
     <Layout>
       <div className="container py-8 space-y-6">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Shield className="h-6 w-6 text-accent" />
-          <h1 className="text-3xl font-bold gradient-emerald-text">Admin Console</h1>
-          <Badge variant="outline" className="border-accent/40 text-accent">Restricted</Badge>
+        <div className="relative overflow-hidden glass-strong rounded-2xl p-5 border-primary/30 shadow-luxury">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold"><Shield className="h-6 w-6" /></div>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Command center</p>
+              <h1 className="text-3xl font-bold gradient-emerald-text">Admin Console</h1>
+            </div>
+            <Badge variant="outline" className="border-accent/40 text-accent ml-auto">Restricted</Badge>
+          </div>
         </div>
 
         <Stats />
         <Tabs defaultValue="analytics">
-          <TabsList className="flex flex-wrap h-auto justify-start">
+          <TabsList className="glass-strong flex flex-wrap h-auto justify-start gap-1 p-2 rounded-2xl">
             <TabsTrigger value="analytics"><BarChart3 className="h-3 w-3 mr-1" />Analytics</TabsTrigger>
-            <TabsTrigger value="users"><Users className="h-3 w-3 mr-1" />Users</TabsTrigger>
+            <TabsTrigger value="users"><AdminTab icon={Users} label="Users" count={alerts.users} /></TabsTrigger>
             <TabsTrigger value="matches"><Trophy className="h-3 w-3 mr-1" />Matches</TabsTrigger>
             <TabsTrigger value="events"><Calendar className="h-3 w-3 mr-1" />Events</TabsTrigger>
-            <TabsTrigger value="tokens"><Coins className="h-3 w-3 mr-1" />Tokens</TabsTrigger>
-            <TabsTrigger value="withdrawals"><Wallet className="h-3 w-3 mr-1" />Withdrawals</TabsTrigger>
+            <TabsTrigger value="tokens"><AdminTab icon={Coins} label="Tokens" count={alerts.tokens} /></TabsTrigger>
+            <TabsTrigger value="withdrawals"><AdminTab icon={Wallet} label="Withdrawals" count={alerts.withdrawals} /></TabsTrigger>
             <TabsTrigger value="leaderboard"><ListOrdered className="h-3 w-3 mr-1" />Leaderboard</TabsTrigger>
             <TabsTrigger value="promos"><Tag className="h-3 w-3 mr-1" />Promo Codes</TabsTrigger>
             <TabsTrigger value="content"><Megaphone className="h-3 w-3 mr-1" />Content</TabsTrigger>
-            <TabsTrigger value="tickets"><Ticket className="h-3 w-3 mr-1" />Tickets</TabsTrigger>
-            <TabsTrigger value="bettracker"><ClipboardList className="h-3 w-3 mr-1" />Bet Tracker</TabsTrigger>
-            <TabsTrigger value="promoreqs"><Tag className="h-3 w-3 mr-1" />Promo Requests</TabsTrigger>
-            <TabsTrigger value="appeals"><AlertTriangle className="h-3 w-3 mr-1" />Appeals</TabsTrigger>
+            <TabsTrigger value="tickets"><AdminTab icon={Ticket} label="Tickets" count={alerts.tickets} /></TabsTrigger>
+            <TabsTrigger value="bettracker"><AdminTab icon={ClipboardList} label="Bet Tracker" count={alerts.bettracker} /></TabsTrigger>
+            <TabsTrigger value="promoreqs"><AdminTab icon={Tag} label="Promo Requests" count={alerts.promoreqs} /></TabsTrigger>
+            <TabsTrigger value="appeals"><AdminTab icon={AlertTriangle} label="Appeals" count={alerts.appeals} /></TabsTrigger>
+            <TabsTrigger value="chat"><AdminTab icon={MessageSquare} label="Chat" count={alerts.chat} /></TabsTrigger>
             <TabsTrigger value="notify"><Send className="h-3 w-3 mr-1" />Notify</TabsTrigger>
             <TabsTrigger value="audit"><History className="h-3 w-3 mr-1" />Audit</TabsTrigger>
             <TabsTrigger value="settings"><SettingsIcon className="h-3 w-3 mr-1" />Settings</TabsTrigger>
@@ -78,6 +116,7 @@ function AdminPage() {
           <TabsContent value="bettracker" className="mt-4"><BetTrackerPanel /></TabsContent>
           <TabsContent value="promoreqs" className="mt-4"><PromoRequestsPanel /></TabsContent>
           <TabsContent value="appeals" className="mt-4"><AppealsPanel /></TabsContent>
+          <TabsContent value="chat" className="mt-4"><ChatMonitorPanel /></TabsContent>
           <TabsContent value="notify" className="mt-4"><NotifyPanel /></TabsContent>
           <TabsContent value="audit" className="mt-4"><AuditPanel /></TabsContent>
           <TabsContent value="analytics" className="mt-4"><AnalyticsPanel /></TabsContent>
