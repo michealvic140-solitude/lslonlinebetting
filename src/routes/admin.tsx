@@ -1796,6 +1796,65 @@ function BetTrackerPanel() {
   );
 }
 
+function TasksAchievementsPanel() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<any[]>([]);
+  const [draft, setDraft] = useState({ user_id: "", title: "", description: "", reward_tokens: 0 });
+  async function load() {
+    const [{ data: u }, { data: t }, { data: a }] = await Promise.all([
+      supabase.from("profiles").select("id,full_name,email").order("created_at", { ascending: false }).limit(500),
+      supabase.from("user_tasks").select("*, profiles:user_id(full_name,email)").order("created_at", { ascending: false }).limit(200),
+      supabase.from("user_achievements").select("*, profiles:user_id(full_name,email)").order("awarded_at", { ascending: false }).limit(200),
+    ]);
+    setUsers(u ?? []); setTasks(t ?? []); setAchievements(a ?? []);
+  }
+  useEffect(() => { load(); }, []);
+  async function createTask() {
+    if (!draft.user_id || !draft.title) { toast.error("Pick a user and enter a task title"); return; }
+    const { error } = await supabase.from("user_tasks").insert({ user_id: draft.user_id, title: draft.title, description: draft.description || null, reward_tokens: draft.reward_tokens || 0 });
+    if (error) toast.error(error.message); else { toast.success("Task assigned"); setDraft({ user_id: "", title: "", description: "", reward_tokens: 0 }); load(); }
+  }
+  async function markDone(task: any) {
+    await supabase.from("user_tasks").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", task.id);
+    if (task.reward_tokens > 0) {
+      const { data: p } = await supabase.from("profiles").select("token_balance").eq("id", task.user_id).single();
+      if (p) await supabase.from("profiles").update({ token_balance: (p.token_balance ?? 0) + task.reward_tokens }).eq("id", task.user_id);
+    }
+    await supabase.from("notifications").insert({ user_id: task.user_id, title: "Task completed", body: `${task.title}${task.reward_tokens ? ` · +${task.reward_tokens} tokens` : ""}` });
+    toast.success("Task completed"); load();
+  }
+  return (
+    <div className="space-y-4">
+      <Card className="glass-strong p-4 space-y-3">
+        <div className="flex items-center gap-2 font-bold"><ClipboardList className="h-4 w-4 text-primary" />User Tasks</div>
+        <div className="grid md:grid-cols-4 gap-2">
+          <Select value={draft.user_id} onValueChange={(v) => setDraft({ ...draft, user_id: v })}>
+            <SelectTrigger><SelectValue placeholder="Assign to user" /></SelectTrigger>
+            <SelectContent>{users.map((u) => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}</SelectContent>
+          </Select>
+          <Input placeholder="Task title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+          <Input placeholder="Description" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+          <Input type="number" placeholder="Reward tokens" value={draft.reward_tokens || ""} onChange={(e) => setDraft({ ...draft, reward_tokens: Number(e.target.value) })} />
+        </div>
+        <Button className="btn-luxury" onClick={createTask}><Plus className="h-4 w-4 mr-1" />Assign task</Button>
+      </Card>
+      <div className="grid lg:grid-cols-2 gap-4">
+        <Card className="glass p-4 space-y-2">
+          <div className="font-bold">Active platform tasks</div>
+          {tasks.length === 0 && <p className="text-sm text-muted-foreground">No tasks yet.</p>}
+          {tasks.map((t) => <div key={t.id} className="rounded-lg border border-border/70 p-3 text-sm"><div className="font-bold">{t.title}</div><div className="text-xs text-muted-foreground">{t.profiles?.full_name || t.profiles?.email} · {t.status} · reward {Number(t.reward_tokens).toLocaleString()}</div>{t.status !== "completed" && <Button size="sm" variant="outline" className="mt-2" onClick={() => markDone(t)}><Check className="h-3 w-3 mr-1" />Mark complete</Button>}</div>)}
+        </Card>
+        <Card className="glass p-4 space-y-2">
+          <div className="font-bold">Achievements <Badge variant="outline" className="ml-2 border-primary/40 text-primary">Coming soon</Badge></div>
+          {achievements.length === 0 && <p className="text-sm text-muted-foreground">No achievements awarded yet.</p>}
+          {achievements.map((a) => <div key={a.id} className="rounded-lg border border-border/70 p-3 text-sm"><div className="font-bold">{a.icon} {a.title}</div><div className="text-xs text-muted-foreground">{a.profiles?.full_name || a.profiles?.email} · {new Date(a.awarded_at).toLocaleString()}</div></div>)}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 /* ============================ PROMO CODE REQUESTS ============================ */
 function PromoRequestsPanel() {
   const confirm = useConfirm();
