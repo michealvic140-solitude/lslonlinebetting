@@ -33,6 +33,7 @@ function AdminPage() {
   const { isAdmin, loading } = useAuth();
   const nav = useNavigate();
   const [alerts, setAlerts] = useState<Record<string, number>>({});
+  const [activeTab, setActiveTab] = useState("analytics");
   useEffect(() => { if (!loading && !isAdmin) nav({ to: "/" }); }, [isAdmin, loading, nav]);
   useEffect(() => {
     if (!isAdmin) return;
@@ -83,8 +84,9 @@ function AdminPage() {
         </div>
 
         <Stats />
-        <Tabs defaultValue="analytics">
-          <TabsList className="glass-strong flex flex-wrap h-auto justify-start gap-1 p-2 rounded-2xl">
+        <AdminSectionRail alerts={alerts} onOpen={setActiveTab} />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="glass-strong flex w-full max-w-full overflow-x-auto h-auto justify-start gap-1 p-2 rounded-2xl md:flex-wrap">
             <TabsTrigger value="analytics"><BarChart3 className="h-3 w-3 mr-1" />Analytics</TabsTrigger>
             <TabsTrigger value="users"><AdminTab icon={Users} label="Users" count={alerts.users} /></TabsTrigger>
             <TabsTrigger value="matches"><Trophy className="h-3 w-3 mr-1" />Matches</TabsTrigger>
@@ -260,7 +262,7 @@ function UsersPanel() {
           <SelectTrigger><SelectValue placeholder="Role" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All roles</SelectItem>
-            {(["viewer", "shooter", "gang_leader", "registered", "moderator", "admin"] as AppRole[]).map((r) => (
+            {(["viewer", "shooter", "gang_leader", "registered", "sponsor", "moderator", "admin"] as AppRole[]).map((r) => (
               <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
             ))}
           </SelectContent>
@@ -1701,7 +1703,8 @@ function BetTrackerPanel() {
         <ClipboardList className="h-4 w-4 text-primary" />
         <div className="font-bold text-sm">Bet Ticket Tracker</div>
         <div className="flex-1" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tracking, code, user…" className="max-w-xs" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tracking, code, user…" className="w-full md:max-w-xs" />
+        <Button size="sm" variant="outline" onClick={load}><RotateCw className="h-3 w-3 mr-1" />Refresh</Button>
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
           <SelectContent>
