@@ -1785,7 +1785,7 @@ function BetTrackerPanel() {
                 {!["won", "cashed_out", "refunded", "void"].includes(b.status) && <Button size="sm" variant="outline" onClick={() => voidBet(b)}>Void</Button>}
                 {!["won", "cashed_out", "refunded"].includes(b.status) && <Button size="sm" variant="outline" onClick={() => refund(b)}><RotateCw className="h-3 w-3" /></Button>}
                 <Button size="sm" variant="destructive" onClick={() => del(b)}><Trash2 className="h-3 w-3" /></Button>
-              </div></div>
+              </div>
             </div>
           </Card>
         ))}
