@@ -33,6 +33,7 @@ function AdminPage() {
   const { isAdmin, loading } = useAuth();
   const nav = useNavigate();
   const [alerts, setAlerts] = useState<Record<string, number>>({});
+  const [activeTab, setActiveTab] = useState("analytics");
   useEffect(() => { if (!loading && !isAdmin) nav({ to: "/" }); }, [isAdmin, loading, nav]);
   useEffect(() => {
     if (!isAdmin) return;
@@ -83,8 +84,9 @@ function AdminPage() {
         </div>
 
         <Stats />
-        <Tabs defaultValue="analytics">
-          <TabsList className="glass-strong flex flex-wrap h-auto justify-start gap-1 p-2 rounded-2xl">
+        <AdminSectionRail alerts={alerts} onOpen={setActiveTab} />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="glass-strong flex w-full max-w-full overflow-x-auto h-auto justify-start gap-1 p-2 rounded-2xl md:flex-wrap">
             <TabsTrigger value="analytics"><BarChart3 className="h-3 w-3 mr-1" />Analytics</TabsTrigger>
             <TabsTrigger value="users"><AdminTab icon={Users} label="Users" count={alerts.users} /></TabsTrigger>
             <TabsTrigger value="matches"><Trophy className="h-3 w-3 mr-1" />Matches</TabsTrigger>
@@ -95,6 +97,7 @@ function AdminPage() {
             <TabsTrigger value="promos"><Tag className="h-3 w-3 mr-1" />Promo Codes</TabsTrigger>
             <TabsTrigger value="content"><Megaphone className="h-3 w-3 mr-1" />Content</TabsTrigger>
             <TabsTrigger value="tickets"><AdminTab icon={Ticket} label="Tickets" count={alerts.tickets} /></TabsTrigger>
+            <TabsTrigger value="tasks"><ClipboardList className="h-3 w-3 mr-1" />Tasks & Achievements</TabsTrigger>
             <TabsTrigger value="bettracker"><AdminTab icon={ClipboardList} label="Bet Tracker" count={alerts.bettracker} /></TabsTrigger>
             <TabsTrigger value="promoreqs"><AdminTab icon={Tag} label="Promo Requests" count={alerts.promoreqs} /></TabsTrigger>
             <TabsTrigger value="appeals"><AdminTab icon={AlertTriangle} label="Appeals" count={alerts.appeals} /></TabsTrigger>
@@ -113,6 +116,7 @@ function AdminPage() {
           <TabsContent value="promos" className="mt-4"><PromoPanel /></TabsContent>
           <TabsContent value="content" className="mt-4"><ContentPanel /></TabsContent>
           <TabsContent value="tickets" className="mt-4"><TicketsPanel /></TabsContent>
+          <TabsContent value="tasks" className="mt-4"><TasksAchievementsPanel /></TabsContent>
           <TabsContent value="bettracker" className="mt-4"><BetTrackerPanel /></TabsContent>
           <TabsContent value="promoreqs" className="mt-4"><PromoRequestsPanel /></TabsContent>
           <TabsContent value="appeals" className="mt-4"><AppealsPanel /></TabsContent>
@@ -140,6 +144,30 @@ function AdminTab({ icon: Icon, label, count = 0 }: { icon: any; label: string; 
       <Icon className="h-3 w-3" />{label}
       {count > 0 && <span className="ml-0.5 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background" title={`${count} new/pending`} />}
     </span>
+  );
+}
+
+function AdminSectionRail({ alerts, onOpen }: { alerts: Record<string, number>; onOpen: (tab: string) => void }) {
+  const items = [
+    { tab: "tickets", icon: Ticket, label: "Open reports", count: alerts.tickets ?? 0 },
+    { tab: "bettracker", icon: ClipboardList, label: "Booked tickets", count: alerts.bettracker ?? 0 },
+    { tab: "tokens", icon: Coins, label: "Token requests", count: alerts.tokens ?? 0 },
+    { tab: "withdrawals", icon: Wallet, label: "Withdrawals", count: alerts.withdrawals ?? 0 },
+    { tab: "promoreqs", icon: Tag, label: "Promo requests", count: alerts.promoreqs ?? 0 },
+    { tab: "appeals", icon: AlertTriangle, label: "Ban appeals", count: alerts.appeals ?? 0 },
+  ];
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+      {items.map((item) => (
+        <button key={item.tab} onClick={() => onOpen(item.tab)} className="group relative overflow-hidden rounded-xl border border-primary/20 bg-card/70 p-3 text-left shadow-luxury transition hover:-translate-y-0.5 hover:border-primary/50">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-gold" />
+          <item.icon className="h-4 w-4 text-primary mb-2" />
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.label}</div>
+          <div className="mt-1 text-2xl font-black gradient-gold-text">{item.count}</div>
+          {item.count > 0 && <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background" />}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -260,7 +288,7 @@ function UsersPanel() {
           <SelectTrigger><SelectValue placeholder="Role" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All roles</SelectItem>
-            {(["viewer", "shooter", "gang_leader", "registered", "moderator", "admin"] as AppRole[]).map((r) => (
+            {(["viewer", "shooter", "gang_leader", "registered", "sponsor", "moderator", "admin"] as AppRole[]).map((r) => (
               <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
             ))}
           </SelectContent>
@@ -1075,6 +1103,8 @@ function TicketsPanel() {
       <Card className="glass-strong p-4 flex items-center gap-3">
         <Ticket className="h-5 w-5 text-primary" />
         <div><div className="font-bold">Support Ticket Reports</div><div className="text-xs text-muted-foreground">Open, reply, attach images, close/reopen, or delete user reports directly.</div></div>
+        <div className="flex-1" />
+        <Button size="sm" variant="outline" onClick={load}><RotateCw className="h-3 w-3 mr-1" />Refresh</Button>
       </Card>
       {tickets.length === 0 && <p className="text-muted-foreground text-sm">No tickets.</p>}
       {tickets.map((t) => (
@@ -1662,9 +1692,12 @@ function BetTrackerPanel() {
   }
   useEffect(() => { load(); }, [filter]);
   useEffect(() => {
-    const ch = supabase.channel("admin-bettracker").on("postgres_changes", { event: "*", schema: "public", table: "bets" }, load).subscribe();
+    const ch = supabase.channel("admin-bettracker")
+      .on("postgres_changes", { event: "*", schema: "public", table: "bets" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bet_selections" }, load)
+      .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+  }, [filter]);
 
   async function suspend(b: any) {
     const ok = await confirm({ title: "Suspend / flag ticket?", description: `Tracking ${b.tracking_id} will stop from crediting until admin unsuspends it.`, tone: "danger", confirmText: "Suspend ticket", inputLabel: "Reason", inputPlaceholder: "Why is this betslip being suspended?" });
@@ -1688,6 +1721,12 @@ function BetTrackerPanel() {
     const { error } = await supabase.rpc("admin_refund_bet", { _bet_id: b.id, _reason: ok.value || undefined });
     if (error) toast.error(error.message); else { toast.success("Ticket refunded"); load(); }
   }
+  async function voidBet(b: any) {
+    const ok = await confirm({ title: "Mark ticket as void?", description: `Void ${b.tracking_id}. You can return the stake while keeping the ticket record visible.`, confirmText: "Mark void", checkboxLabel: "Refund stake to user", inputLabel: "Void reason", inputPlaceholder: "Reason for voiding this ticket…" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await (supabase as any).rpc("admin_void_bet", { _bet_id: b.id, _refund: ok.checked, _reason: ok.value || undefined });
+    if (error) toast.error(error.message); else { toast.success(ok.checked ? "Ticket voided & refunded" : "Ticket voided"); load(); }
+  }
 
   const filtered = bets.filter((b) => {
     if (!q) return true;
@@ -1701,7 +1740,8 @@ function BetTrackerPanel() {
         <ClipboardList className="h-4 w-4 text-primary" />
         <div className="font-bold text-sm">Bet Ticket Tracker</div>
         <div className="flex-1" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tracking, code, user…" className="max-w-xs" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tracking, code, user…" className="w-full md:max-w-xs" />
+        <Button size="sm" variant="outline" onClick={load}><RotateCw className="h-3 w-3 mr-1" />Refresh</Button>
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -1732,20 +1772,84 @@ function BetTrackerPanel() {
                 <div className="text-xs text-muted-foreground mt-0.5">
                   Stake {Number(b.stake).toLocaleString()} · Odds {Number(b.total_odds).toFixed(2)} · Payout {Number(b.potential_payout).toLocaleString()} · {new Date(b.created_at).toLocaleString()}
                 </div>
-                <div className="text-[11px] text-muted-foreground mt-1 truncate">
-                  {(b.bet_selections ?? []).map((s: any) => `${s.matches?.name ?? "Match"}: ${s.selection_label} @${Number(s.locked_odds).toFixed(2)}`).join(" · ")}
+                <div className="mt-3 grid gap-1.5">
+                  {(b.bet_selections ?? []).map((s: any) => (
+                    <div key={s.id} className="rounded-lg border border-border/70 bg-background/30 px-2 py-1.5 text-[11px] text-muted-foreground">
+                      <span className="font-semibold text-foreground">{s.matches?.name ?? "Match"}</span> · {s.selection_label} <span className="font-mono text-primary">@{Number(s.locked_odds).toFixed(2)}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="flex gap-1 items-center">
+              <div className="flex gap-1 items-center flex-wrap justify-end">
                 <Button asChild size="sm" variant="outline"><a href={`/ticket/${b.id}`}>View</a></Button>
                 {b.status === "open" && <Button size="sm" variant="outline" onClick={() => suspend(b)}><Pause className="h-3 w-3" /></Button>}
                 {b.status === "suspended" && <Button size="sm" variant="outline" onClick={() => unsuspend(b)}><Play className="h-3 w-3" /></Button>}
+                {!["won", "cashed_out", "refunded", "void"].includes(b.status) && <Button size="sm" variant="outline" onClick={() => voidBet(b)}>Void</Button>}
                 {!["won", "cashed_out", "refunded"].includes(b.status) && <Button size="sm" variant="outline" onClick={() => refund(b)}><RotateCw className="h-3 w-3" /></Button>}
                 <Button size="sm" variant="destructive" onClick={() => del(b)}><Trash2 className="h-3 w-3" /></Button>
               </div>
             </div>
           </Card>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function TasksAchievementsPanel() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<any[]>([]);
+  const [draft, setDraft] = useState({ user_id: "", title: "", description: "", reward_tokens: 0 });
+  async function load() {
+    const [{ data: u }, { data: t }, { data: a }] = await Promise.all([
+      supabase.from("profiles").select("id,full_name,email").order("created_at", { ascending: false }).limit(500),
+      supabase.from("user_tasks").select("*, profiles:user_id(full_name,email)").order("created_at", { ascending: false }).limit(200),
+      supabase.from("user_achievements").select("*, profiles:user_id(full_name,email)").order("awarded_at", { ascending: false }).limit(200),
+    ]);
+    setUsers(u ?? []); setTasks(t ?? []); setAchievements(a ?? []);
+  }
+  useEffect(() => { load(); }, []);
+  async function createTask() {
+    if (!draft.user_id || !draft.title) { toast.error("Pick a user and enter a task title"); return; }
+    const { error } = await supabase.from("user_tasks").insert({ user_id: draft.user_id, title: draft.title, description: draft.description || null, reward_tokens: draft.reward_tokens || 0 });
+    if (error) toast.error(error.message); else { toast.success("Task assigned"); setDraft({ user_id: "", title: "", description: "", reward_tokens: 0 }); load(); }
+  }
+  async function markDone(task: any) {
+    await supabase.from("user_tasks").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", task.id);
+    if (task.reward_tokens > 0) {
+      const { data: p } = await supabase.from("profiles").select("token_balance").eq("id", task.user_id).single();
+      if (p) await supabase.from("profiles").update({ token_balance: (p.token_balance ?? 0) + task.reward_tokens }).eq("id", task.user_id);
+    }
+    await supabase.from("notifications").insert({ user_id: task.user_id, title: "Task completed", body: `${task.title}${task.reward_tokens ? ` · +${task.reward_tokens} tokens` : ""}` });
+    toast.success("Task completed"); load();
+  }
+  return (
+    <div className="space-y-4">
+      <Card className="glass-strong p-4 space-y-3">
+        <div className="flex items-center gap-2 font-bold"><ClipboardList className="h-4 w-4 text-primary" />User Tasks</div>
+        <div className="grid md:grid-cols-4 gap-2">
+          <Select value={draft.user_id} onValueChange={(v) => setDraft({ ...draft, user_id: v })}>
+            <SelectTrigger><SelectValue placeholder="Assign to user" /></SelectTrigger>
+            <SelectContent>{users.map((u) => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}</SelectContent>
+          </Select>
+          <Input placeholder="Task title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+          <Input placeholder="Description" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+          <Input type="number" placeholder="Reward tokens" value={draft.reward_tokens || ""} onChange={(e) => setDraft({ ...draft, reward_tokens: Number(e.target.value) })} />
+        </div>
+        <Button className="btn-luxury" onClick={createTask}><Plus className="h-4 w-4 mr-1" />Assign task</Button>
+      </Card>
+      <div className="grid lg:grid-cols-2 gap-4">
+        <Card className="glass p-4 space-y-2">
+          <div className="font-bold">Active platform tasks</div>
+          {tasks.length === 0 && <p className="text-sm text-muted-foreground">No tasks yet.</p>}
+          {tasks.map((t) => <div key={t.id} className="rounded-lg border border-border/70 p-3 text-sm"><div className="font-bold">{t.title}</div><div className="text-xs text-muted-foreground">{t.profiles?.full_name || t.profiles?.email} · {t.status} · reward {Number(t.reward_tokens).toLocaleString()}</div>{t.status !== "completed" && <Button size="sm" variant="outline" className="mt-2" onClick={() => markDone(t)}><Check className="h-3 w-3 mr-1" />Mark complete</Button>}</div>)}
+        </Card>
+        <Card className="glass p-4 space-y-2">
+          <div className="font-bold">Achievements <Badge variant="outline" className="ml-2 border-primary/40 text-primary">Coming soon</Badge></div>
+          {achievements.length === 0 && <p className="text-sm text-muted-foreground">No achievements awarded yet.</p>}
+          {achievements.map((a) => <div key={a.id} className="rounded-lg border border-border/70 p-3 text-sm"><div className="font-bold">{a.icon} {a.title}</div><div className="text-xs text-muted-foreground">{a.profiles?.full_name || a.profiles?.email} · {new Date(a.awarded_at).toLocaleString()}</div></div>)}
+        </Card>
       </div>
     </div>
   );

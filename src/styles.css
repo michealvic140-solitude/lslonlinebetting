@@ -105,6 +105,8 @@
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    overflow-x: hidden;
   }
   body {
     background: var(--background);
@@ -117,8 +119,9 @@
     overflow-x: hidden;
     overscroll-behavior-y: none;
     -webkit-font-smoothing: antialiased;
+    width: 100%;
   }
-  #root, main { min-width: 0; }
+  #root, main { min-width: 0; width: 100%; }
   img, video, canvas, svg { max-width: 100%; height: auto; }
   input, textarea, select { font-size: 16px; } /* prevent iOS zoom on focus */
   @supports (padding: env(safe-area-inset-top)) {
