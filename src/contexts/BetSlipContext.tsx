@@ -51,6 +51,7 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
     setSelections((prev) => {
       const filtered = prev.filter((x) => x.match_id !== s.match_id);
       const next = [...filtered, s];
+      setOpen(true);
       return next;
     });
   const remove = (oddId: string) => setSelections((p) => p.filter((s) => s.odd_id !== oddId));

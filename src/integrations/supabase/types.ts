@@ -855,13 +855,6 @@ export type Database = {
             foreignKeyName: "promo_redemptions_promo_id_fkey"
             columns: ["promo_id"]
             isOneToOne: false
-            referencedRelation: "promo_code_usage_log"
-            referencedColumns: ["promo_id"]
-          },
-          {
-            foreignKeyName: "promo_redemptions_promo_id_fkey"
-            columns: ["promo_id"]
-            isOneToOne: false
             referencedRelation: "promo_codes"
             referencedColumns: ["id"]
           },
@@ -1162,34 +1155,11 @@ export type Database = {
       }
     }
     Views: {
-      promo_code_usage_log: {
-        Row: {
-          amount: number | null
-          code: string | null
-          created_by: string | null
-          generated_at: string | null
-          generated_by_email: string | null
-          generated_by_name: string | null
-          is_active: boolean | null
-          promo_id: string | null
-          redemption_id: string | null
-          usage_limit: number | null
-          used_at: string | null
-          used_by: string | null
-          used_by_email: string | null
-          used_by_name: string | null
-          used_count: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       admin_delete_bet: {
         Args: { _bet_id: string; _reason?: string; _refund?: boolean }
-        Returns: undefined
-      }
-      admin_refund_bet: {
-        Args: { _bet_id: string; _reason?: string }
         Returns: undefined
       }
       admin_suspend_bet: {
@@ -1197,10 +1167,6 @@ export type Database = {
         Returns: undefined
       }
       admin_unsuspend_bet: { Args: { _bet_id: string }; Returns: undefined }
-      admin_void_bet: {
-        Args: { _bet_id: string; _reason?: string; _refund?: boolean }
-        Returns: undefined
-      }
       approve_promo_request: {
         Args: { _id: string; _note?: string }
         Returns: string
@@ -1243,18 +1209,11 @@ export type Database = {
         | "moderator"
         | "admin"
         | "sponsor"
-      bet_status:
-        | "open"
-        | "won"
-        | "lost"
-        | "cashed_out"
-        | "void"
-        | "suspended"
-        | "refunded"
+      bet_status: "open" | "won" | "lost" | "cashed_out" | "void" | "suspended"
       chat_room: "general" | "gang" | "moderator"
       gang_type: "G" | "F"
       match_status: "scheduled" | "live" | "ended" | "cancelled"
-      ticket_status: "open" | "in_progress" | "pending" | "resolved" | "closed"
+      ticket_status: "open" | "pending" | "resolved" | "closed"
       token_request_status: "pending" | "approved" | "denied"
       withdrawal_status: "pending" | "approved" | "declined"
     }
@@ -1393,19 +1352,11 @@ export const Constants = {
         "admin",
         "sponsor",
       ],
-      bet_status: [
-        "open",
-        "won",
-        "lost",
-        "cashed_out",
-        "void",
-        "suspended",
-        "refunded",
-      ],
+      bet_status: ["open", "won", "lost", "cashed_out", "void", "suspended"],
       chat_room: ["general", "gang", "moderator"],
       gang_type: ["G", "F"],
       match_status: ["scheduled", "live", "ended", "cancelled"],
-      ticket_status: ["open", "in_progress", "pending", "resolved", "closed"],
+      ticket_status: ["open", "pending", "resolved", "closed"],
       token_request_status: ["pending", "approved", "denied"],
       withdrawal_status: ["pending", "approved", "declined"],
     },
