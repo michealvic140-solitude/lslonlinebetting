@@ -112,7 +112,7 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && closeAll()}>
-      <SheetContent side="right" className="w-full sm:max-w-md backdrop-blur-2xl bg-card/90 border-l-primary/30 p-0 overflow-hidden">
+      <SheetContent side="right" className="w-full sm:max-w-md h-[100dvh] max-h-[100dvh] backdrop-blur-2xl bg-card/90 border-l-primary/30 p-0 overflow-y-auto">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
         <SheetHeader>
           <SheetTitle className="flex items-center gap-3 px-6 pt-6">
@@ -129,8 +129,8 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
         {placed ? (
           <PlacedPreview bet={placed} onView={() => { closeAll(); nav({ to: "/ticket/$id", params: { id: placed.id } }); }} onClose={closeAll} />
         ) : (
-        <>
-        <div className="px-6 mt-4 space-y-3 max-h-[50vh] overflow-y-auto pr-4">
+        <div className="flex min-h-0 flex-col pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+        <div className="px-6 mt-4 space-y-3 max-h-none overflow-visible pr-4">
           {selections.length === 0 && <p className="text-sm text-muted-foreground">No selections yet. Tap odds on a match to add.</p>}
           {selections.map((s, i) => (
             <Card key={s.odd_id} className="relative overflow-hidden glass p-3 text-sm border-primary/20">
@@ -156,7 +156,7 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
         </div>
 
         {selections.length > 0 && (
-          <div className="mt-4 space-y-4 border-t border-border px-6 py-5 bg-background/30">
+          <div className="sticky bottom-0 mt-4 space-y-4 border-t border-border px-6 py-5 bg-background/90 backdrop-blur-xl shadow-luxury">
             <div className="grid grid-cols-2 gap-3 text-sm">
               <Card className="glass p-3">
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Total odds</div>
@@ -195,7 +195,7 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
             <p className="text-[10px] text-muted-foreground text-center">Tokens are deducted on placement. Cash-out available only after the match ends and your bet wins.</p>
           </div>
         )}
-        </>
+        </div>
         )}
       </SheetContent>
     </Sheet>
