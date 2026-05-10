@@ -1101,6 +1101,8 @@ function TicketsPanel() {
       <Card className="glass-strong p-4 flex items-center gap-3">
         <Ticket className="h-5 w-5 text-primary" />
         <div><div className="font-bold">Support Ticket Reports</div><div className="text-xs text-muted-foreground">Open, reply, attach images, close/reopen, or delete user reports directly.</div></div>
+        <div className="flex-1" />
+        <Button size="sm" variant="outline" onClick={load}><RotateCw className="h-3 w-3 mr-1" />Refresh</Button>
       </Card>
       {tickets.length === 0 && <p className="text-muted-foreground text-sm">No tickets.</p>}
       {tickets.map((t) => (
