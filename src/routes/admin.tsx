@@ -1690,9 +1690,12 @@ function BetTrackerPanel() {
   }
   useEffect(() => { load(); }, [filter]);
   useEffect(() => {
-    const ch = supabase.channel("admin-bettracker").on("postgres_changes", { event: "*", schema: "public", table: "bets" }, load).subscribe();
+    const ch = supabase.channel("admin-bettracker")
+      .on("postgres_changes", { event: "*", schema: "public", table: "bets" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bet_selections" }, load)
+      .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+  }, [filter]);
 
   async function suspend(b: any) {
     const ok = await confirm({ title: "Suspend / flag ticket?", description: `Tracking ${b.tracking_id} will stop from crediting until admin unsuspends it.`, tone: "danger", confirmText: "Suspend ticket", inputLabel: "Reason", inputPlaceholder: "Why is this betslip being suspended?" });
@@ -1715,6 +1718,12 @@ function BetTrackerPanel() {
     if (!ok || typeof ok !== "object") return;
     const { error } = await supabase.rpc("admin_refund_bet", { _bet_id: b.id, _reason: ok.value || undefined });
     if (error) toast.error(error.message); else { toast.success("Ticket refunded"); load(); }
+  }
+  async function voidBet(b: any) {
+    const ok = await confirm({ title: "Mark ticket as void?", description: `Void ${b.tracking_id}. You can return the stake while keeping the ticket record visible.`, confirmText: "Mark void", checkboxLabel: "Refund stake to user", inputLabel: "Void reason", inputPlaceholder: "Reason for voiding this ticket…" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await (supabase as any).rpc("admin_void_bet", { _bet_id: b.id, _refund: ok.checked, _reason: ok.value || undefined });
+    if (error) toast.error(error.message); else { toast.success(ok.checked ? "Ticket voided & refunded" : "Ticket voided"); load(); }
   }
 
   const filtered = bets.filter((b) => {
