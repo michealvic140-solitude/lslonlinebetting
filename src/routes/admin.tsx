@@ -1770,17 +1770,22 @@ function BetTrackerPanel() {
                 <div className="text-xs text-muted-foreground mt-0.5">
                   Stake {Number(b.stake).toLocaleString()} · Odds {Number(b.total_odds).toFixed(2)} · Payout {Number(b.potential_payout).toLocaleString()} · {new Date(b.created_at).toLocaleString()}
                 </div>
-                <div className="text-[11px] text-muted-foreground mt-1 truncate">
-                  {(b.bet_selections ?? []).map((s: any) => `${s.matches?.name ?? "Match"}: ${s.selection_label} @${Number(s.locked_odds).toFixed(2)}`).join(" · ")}
+                <div className="mt-3 grid gap-1.5">
+                  {(b.bet_selections ?? []).map((s: any) => (
+                    <div key={s.id} className="rounded-lg border border-border/70 bg-background/30 px-2 py-1.5 text-[11px] text-muted-foreground">
+                      <span className="font-semibold text-foreground">{s.matches?.name ?? "Match"}</span> · {s.selection_label} <span className="font-mono text-primary">@{Number(s.locked_odds).toFixed(2)}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="flex gap-1 items-center">
+              <div className="flex gap-1 items-center flex-wrap justify-end">
                 <Button asChild size="sm" variant="outline"><a href={`/ticket/${b.id}`}>View</a></Button>
                 {b.status === "open" && <Button size="sm" variant="outline" onClick={() => suspend(b)}><Pause className="h-3 w-3" /></Button>}
                 {b.status === "suspended" && <Button size="sm" variant="outline" onClick={() => unsuspend(b)}><Play className="h-3 w-3" /></Button>}
+                {!["won", "cashed_out", "refunded", "void"].includes(b.status) && <Button size="sm" variant="outline" onClick={() => voidBet(b)}>Void</Button>}
                 {!["won", "cashed_out", "refunded"].includes(b.status) && <Button size="sm" variant="outline" onClick={() => refund(b)}><RotateCw className="h-3 w-3" /></Button>}
                 <Button size="sm" variant="destructive" onClick={() => del(b)}><Trash2 className="h-3 w-3" /></Button>
-              </div>
+              </div></div>
             </div>
           </Card>
         ))}
