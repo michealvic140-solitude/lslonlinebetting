@@ -145,6 +145,30 @@ function AdminTab({ icon: Icon, label, count = 0 }: { icon: any; label: string; 
   );
 }
 
+function AdminSectionRail({ alerts, onOpen }: { alerts: Record<string, number>; onOpen: (tab: string) => void }) {
+  const items = [
+    { tab: "tickets", icon: Ticket, label: "Open reports", count: alerts.tickets ?? 0 },
+    { tab: "bettracker", icon: ClipboardList, label: "Booked tickets", count: alerts.bettracker ?? 0 },
+    { tab: "tokens", icon: Coins, label: "Token requests", count: alerts.tokens ?? 0 },
+    { tab: "withdrawals", icon: Wallet, label: "Withdrawals", count: alerts.withdrawals ?? 0 },
+    { tab: "promoreqs", icon: Tag, label: "Promo requests", count: alerts.promoreqs ?? 0 },
+    { tab: "appeals", icon: AlertTriangle, label: "Ban appeals", count: alerts.appeals ?? 0 },
+  ];
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+      {items.map((item) => (
+        <button key={item.tab} onClick={() => onOpen(item.tab)} className="group relative overflow-hidden rounded-xl border border-primary/20 bg-card/70 p-3 text-left shadow-luxury transition hover:-translate-y-0.5 hover:border-primary/50">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-gold" />
+          <item.icon className="h-4 w-4 text-primary mb-2" />
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.label}</div>
+          <div className="mt-1 text-2xl font-black gradient-gold-text">{item.count}</div>
+          {item.count > 0 && <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background" />}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function ChatMonitorPanel() {
   const [msgs, setMsgs] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
