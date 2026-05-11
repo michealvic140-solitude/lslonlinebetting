@@ -189,7 +189,15 @@ export type Database = {
           status?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ban_appeals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bet_selections: {
         Row: {
@@ -299,7 +307,15 @@ export type Database = {
           tracking_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       categories: {
         Row: {
@@ -347,7 +363,15 @@ export type Database = {
           room?: Database["public"]["Enums"]["chat_room"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       events: {
         Row: {
@@ -597,7 +621,15 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       odds: {
         Row: {
@@ -790,7 +822,15 @@ export type Database = {
           usage_limit?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "promo_code_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       promo_codes: {
         Row: {
@@ -801,6 +841,8 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean
+          max_uses: number | null
+          target_user_ids: string[] | null
           usage_limit: number
           used_count: number
         }
@@ -812,6 +854,8 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          max_uses?: number | null
+          target_user_ids?: string[] | null
           usage_limit?: number
           used_count?: number
         }
@@ -823,6 +867,8 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          max_uses?: number | null
+          target_user_ids?: string[] | null
           usage_limit?: number
           used_count?: number
         }
@@ -865,6 +911,13 @@ export type Database = {
             referencedRelation: "promo_codes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "promo_redemptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       support_tickets: {
@@ -895,7 +948,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       teams: {
         Row: {
@@ -957,6 +1018,13 @@ export type Database = {
             referencedRelation: "support_tickets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ticket_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       token_requests: {
@@ -996,7 +1064,15 @@ export type Database = {
           status?: Database["public"]["Enums"]["token_request_status"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "token_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       token_transactions: {
         Row: {
@@ -1029,7 +1105,15 @@ export type Database = {
           metadata?: Json | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "token_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_achievements: {
         Row: {
@@ -1059,7 +1143,15 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -1083,7 +1175,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_tasks: {
         Row: {
@@ -1116,7 +1216,15 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       withdrawal_requests: {
         Row: {
@@ -1158,7 +1266,15 @@ export type Database = {
           ticket_ref?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "withdrawal_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1167,20 +1283,32 @@ export type Database = {
           amount: number | null
           code: string | null
           created_by: string | null
+          expires_at: string | null
           generated_at: string | null
           generated_by_email: string | null
           generated_by_name: string | null
           is_active: boolean | null
+          max_uses: number | null
           promo_id: string | null
           redemption_id: string | null
+          target_user_ids: string[] | null
           usage_limit: number | null
           used_at: string | null
           used_by: string | null
           used_by_email: string | null
+          used_by_gang_name: string | null
           used_by_name: string | null
           used_count: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "promo_redemptions_user_id_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
