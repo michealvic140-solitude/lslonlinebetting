@@ -189,7 +189,10 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{ended ? "Final" : live ? "Live" : "Score"}</div>
                       <div className={`font-mono font-extrabold text-base ${live ? "neon-green animate-pulse" : ""}`}>{m ? `${m.home_score}-${m.away_score}` : "—"}</div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right relative">
+                      <span className="absolute -top-7 right-0 h-9 w-9 rounded-full bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold border-2 border-background">
+                        <SIcon className="h-4 w-4" />
+                      </span>
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Odds</div>
                       <div className="font-mono font-black text-2xl gold-foil">{Number(s.locked_odds).toFixed(2)}</div>
                     </div>
