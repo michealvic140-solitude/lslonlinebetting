@@ -10,7 +10,7 @@ import { EventBanner } from "@/components/EventBanner";
 import { AnnouncementSlider, HighlightsRow, AdsRow } from "@/components/HomeContent";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import { Crosshair, Flame, Trophy, ChevronRight, Skull, Coins, Ticket as TicketIcon } from "lucide-react";
+import { Crosshair, Flame, Trophy, ChevronRight, Skull, Coins, Ticket as TicketIcon, ClipboardPaste, X } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import { fetchMatches, fetchSettings, type MatchRow } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,7 +94,7 @@ function Index() {
       <AnnouncementSlider />
       <AdsRow />
 
-      <BookingCodeRedeem />
+      <BookingCodeFab />
 
       <section className="container mt-10 grid lg:grid-cols-[1fr_280px] gap-6">
         <div className="space-y-10">
@@ -168,9 +168,10 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function BookingCodeRedeem() {
+function BookingCodeFab() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const { add, clear } = useBetSlip();
   const nav = useNavigate();
@@ -178,8 +179,18 @@ function BookingCodeRedeem() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const c = params.get("code");
-    if (c) setCode(c.toUpperCase());
+    if (c) { setCode(c.toUpperCase()); setOpen(true); }
   }, []);
+
+  async function pasteFromClipboard() {
+    try {
+      const t = await navigator.clipboard.readText();
+      if (t) { setCode(t.trim().toUpperCase()); toast.success("Pasted from clipboard"); }
+      else toast.error("Clipboard is empty");
+    } catch {
+      toast.error("Clipboard not accessible — paste manually");
+    }
+  }
 
   async function load() {
     if (!user) { nav({ to: "/login" }); return; }
@@ -203,21 +214,43 @@ function BookingCodeRedeem() {
     });
     if (added === 0) { toast.error("All matches in that booking have already started"); return; }
     toast.success(`Loaded ${added} pick(s) — set your stake and place the bet`);
+    setOpen(false);
     nav({ to: "/matches" });
   }
 
   return (
-    <section className="container mt-8">
-      <Card className="glass-strong p-4 flex flex-wrap items-center gap-3">
-        <TicketIcon className="h-5 w-5 text-primary" />
-        <div className="flex-1 min-w-[200px]">
-          <div className="font-bold text-sm">Play a friend's booking</div>
-          <div className="text-xs text-muted-foreground">Paste a booking code to copy their picks to your slip.</div>
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        aria-label="Paste booking code"
+        className="fixed bottom-24 md:bottom-6 left-4 z-40 group"
+      >
+        <span className="absolute inset-0 rounded-full bg-gradient-gold blur-md opacity-60 group-hover:opacity-90 transition" />
+        <span className="relative h-14 w-14 rounded-full bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold border border-primary/40 active:scale-95 transition">
+          <ClipboardPaste className="h-6 w-6" />
+        </span>
+        <span className="absolute -top-1 -right-1 h-4 px-1 rounded-full bg-accent text-accent-foreground text-[9px] font-black grid place-items-center shadow">CODE</span>
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-md grid place-items-center p-4" onClick={() => setOpen(false)}>
+          <Card className="glass-strong w-full max-w-md p-5 space-y-3 relative" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setOpen(false)} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+            <div className="flex items-center gap-2">
+              <span className="h-9 w-9 rounded-xl bg-gradient-gold grid place-items-center text-primary-foreground"><TicketIcon className="h-4 w-4" /></span>
+              <div>
+                <div className="font-bold">Play a friend's booking</div>
+                <div className="text-xs text-muted-foreground">Paste a booking code to copy their picks to your slip.</div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Input autoFocus value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="BOOKING CODE" className="font-mono uppercase" />
+              <Button variant="outline" onClick={pasteFromClipboard} title="Paste from clipboard"><ClipboardPaste className="h-4 w-4" /></Button>
+            </div>
+            <Button onClick={load} disabled={loading || !code.trim()} className="btn-luxury w-full">{loading ? "Loading…" : "Load picks"}</Button>
+          </Card>
         </div>
-        <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="BOOKING CODE" className="max-w-[200px] font-mono" />
-        <Button onClick={load} disabled={loading} className="btn-luxury">{loading ? "Loading…" : "Load picks"}</Button>
-      </Card>
-    </section>
+      )}
+    </>
   );
 }
 
