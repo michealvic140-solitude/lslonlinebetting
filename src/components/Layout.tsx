@@ -5,11 +5,40 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth, ROLE_COLORS, ROLE_LABELS } from "@/contexts/AuthContext";
 import { NotificationBell } from "@/components/NotificationBell";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useLocation } from "@tanstack/react-router";
+
+const CHAT_SEEN_KEY = "lsl-chat-last-seen";
+
+function useChatUnread() {
+  const { user } = useAuth();
+  const loc = useLocation();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!user) { setUnread(0); return; }
+    const onChat = loc.pathname === "/chat";
+    if (onChat) { localStorage.setItem(CHAT_SEEN_KEY, new Date().toISOString()); setUnread(0); return; }
+    const since = localStorage.getItem(CHAT_SEEN_KEY) || new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    let cancelled = false;
+    supabase.from("chat_messages").select("id", { count: "exact", head: true }).gt("created_at", since).neq("user_id", user.id)
+      .then(({ count }) => { if (!cancelled) setUnread(count ?? 0); });
+    const ch = supabase.channel("layout-chat-unread")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (p: any) => {
+        if ((p.new as any).user_id === user.id) return;
+        setUnread((n) => n + 1);
+      }).subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [user, loc.pathname]);
+
+  return unread;
+}
 
 export const Layout = ({ children }: { children: ReactNode }) => {
   const { user, profile, roles, isAdmin, signOut } = useAuth();
   const nav = useNavigate();
+  const chatUnread = useChatUnread();
 
   return (
     <div className="relative min-h-screen">
@@ -29,7 +58,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           <nav className="hidden md:flex items-center gap-1">
             <Link to="/matches"><Button variant="ghost" size="sm">Matches</Button></Link>
             <Link to="/leaderboard"><Button variant="ghost" size="sm">Leaderboard</Button></Link>
-            {user && <Link to="/chat"><Button variant="ghost" size="sm"><MessageSquare className="h-4 w-4" />Chat</Button></Link>}
+            {user && <Link to="/chat"><Button variant="ghost" size="sm" className="relative"><MessageSquare className="h-4 w-4" />Chat{chatUnread > 0 && <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-black grid place-items-center animate-pulse">{chatUnread > 9 ? "9+" : chatUnread}</span>}</Button></Link>}
             {user && <Link to="/dashboard"><Button variant="ghost" size="sm">Dashboard</Button></Link>}
             {user && <Link to="/checkout"><Button variant="ghost" size="sm">Buy</Button></Link>}
             {user && <Link to="/withdraw"><Button variant="ghost" size="sm"><Wallet className="h-4 w-4" />Withdraw</Button></Link>}
@@ -77,7 +106,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             <MobLink to="/leaderboard" icon={Trophy} label="Top" />
             {user && <>
               <MobLink to="/dashboard" icon={Ticket} label="Bets" />
-              <MobLink to="/chat" icon={MessageSquare} label="Chat" />
+              <MobLink to="/chat" icon={MessageSquare} label="Chat" badge={chatUnread} />
               <MobLink to="/profile" icon={UserIcon} label="Profile" />
               <MobLink to="/support" icon={LifeBuoy} label="Help" />
             </>}
@@ -91,8 +120,6 @@ export const Layout = ({ children }: { children: ReactNode }) => {
   );
 };
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 function SiteFooter() {
@@ -136,10 +163,13 @@ function SiteFooter() {
   );
 }
 
-function MobLink({ to, icon: Icon, label }: { to: string; icon: any; label: string }) {
+function MobLink({ to, icon: Icon, label, badge }: { to: string; icon: any; label: string; badge?: number }) {
   return (
-    <Link to={to} className="flex flex-col items-center px-3 py-1 rounded-lg text-[10px] min-w-[60px] text-muted-foreground [&.active]:text-primary [&.active]:bg-primary/10" activeProps={{ className: "active" }}>
-      <Icon className="h-5 w-5 mb-0.5" />
+    <Link to={to} className="relative flex flex-col items-center px-3 py-1 rounded-lg text-[10px] min-w-[60px] text-muted-foreground [&.active]:text-primary [&.active]:bg-primary/10" activeProps={{ className: "active" }}>
+      <span className="relative">
+        <Icon className="h-5 w-5 mb-0.5" />
+        {badge && badge > 0 ? <span className="absolute -top-1 -right-2 h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-black grid place-items-center animate-pulse">{badge > 9 ? "9+" : badge}</span> : null}
+      </span>
       {label}
     </Link>
   );
