@@ -186,7 +186,7 @@ function BookingCodeRedeem() {
     if (!code.trim()) return;
     setLoading(true);
     const { data: bet } = await supabase.from("bets")
-      .select("id, booking_code, bet_selections(*, matches:match_id(name, status), markets:market_id(name))")
+      .select("id, booking_code, bet_selections(*, matches!match_id(name, status), markets!market_id(name))")
       .eq("booking_code", code.trim().toUpperCase()).maybeSingle();
     setLoading(false);
     if (!bet) { toast.error("Booking code not found"); return; }

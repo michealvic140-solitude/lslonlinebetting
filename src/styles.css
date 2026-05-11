@@ -105,20 +105,21 @@
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    overflow-x: hidden;
   }
   body {
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
     background-image: var(--gradient-glow), var(--gradient-luxury);
-    background-attachment: fixed;
     min-height: 100vh;
     min-height: 100dvh;
     overflow-x: hidden;
-    overscroll-behavior-y: none;
     -webkit-font-smoothing: antialiased;
+    width: 100%;
   }
-  #root, main { min-width: 0; }
+  #root, main { min-width: 0; width: 100%; }
   img, video, canvas, svg { max-width: 100%; height: auto; }
   input, textarea, select { font-size: 16px; } /* prevent iOS zoom on focus */
   @supports (padding: env(safe-area-inset-top)) {
@@ -194,4 +195,89 @@
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* ===== Voucher visuals (luxury glass + circuit + holo) ===== */
+@layer utilities {
+  .voucher-bg {
+    background:
+      radial-gradient(ellipse at top left, oklch(0.32 0.10 158 / 0.55), transparent 60%),
+      radial-gradient(ellipse at bottom right, oklch(0.28 0.08 158 / 0.45), transparent 65%),
+      linear-gradient(165deg, oklch(0.18 0.06 158) 0%, oklch(0.13 0.05 158) 45%, oklch(0.10 0.04 158) 100%);
+  }
+  .voucher-frame {
+    box-shadow:
+      0 0 0 2px oklch(0.85 0.22 152 / 0.85),
+      0 0 0 4px oklch(0.10 0.03 158 / 0.95),
+      0 0 0 5px oklch(0.82 0.17 90 / 0.55),
+      0 0 24px -2px oklch(0.85 0.22 152 / 0.7),
+      0 0 50px -8px oklch(0.85 0.22 152 / 0.5),
+      inset 0 2px 0 oklch(0.95 0.05 90 / 0.10),
+      inset 0 -3px 0 oklch(0 0 0 / 0.6);
+  }
+  .voucher-circuit {
+    background-image:
+      linear-gradient(oklch(0.82 0.17 90 / 0.18) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.82 0.17 90 / 0.18) 1px, transparent 1px),
+      radial-gradient(circle, oklch(0.82 0.17 90 / 0.35) 1.6px, transparent 1.7px);
+    background-size: 32px 32px, 32px 32px, 64px 64px;
+    background-position: 0 0, 0 0, 16px 16px;
+    opacity: 0.35;
+  }
+  .voucher-inner {
+    background: linear-gradient(180deg, oklch(0.16 0.05 158 / 0.85), oklch(0.12 0.04 158 / 0.95));
+    border: 1px solid oklch(0.85 0.22 152 / 0.35);
+    box-shadow: inset 0 1px 0 oklch(0.95 0.05 90 / 0.08), inset 0 0 18px oklch(0.85 0.22 152 / 0.10);
+  }
+  .voucher-pill-gold {
+    background: oklch(0.18 0.06 158 / 0.95);
+    border: 2px solid oklch(0.82 0.17 90 / 0.85);
+    box-shadow: inset 0 1px 0 oklch(0.95 0.05 90 / 0.20), 0 0 16px -2px oklch(0.82 0.17 90 / 0.45);
+  }
+  .voucher-holo {
+    background:
+      conic-gradient(from 90deg at 50% 50%,
+        oklch(0.85 0.18 30 / 0.55),
+        oklch(0.85 0.18 90 / 0.55),
+        oklch(0.85 0.18 158 / 0.55),
+        oklch(0.85 0.18 240 / 0.55),
+        oklch(0.85 0.18 320 / 0.55),
+        oklch(0.85 0.18 30 / 0.55));
+    filter: blur(2px) saturate(140%);
+    mix-blend-mode: screen;
+    opacity: 0.55;
+  }
+  .voucher-perforation {
+    background-image: radial-gradient(circle, var(--background) 4px, transparent 4.5px);
+    background-size: 14px 14px;
+    background-position: 7px 0;
+  }
+  .voucher-perf-side {
+    background-image: radial-gradient(circle, var(--background) 4px, transparent 4.5px);
+    background-size: 14px 14px;
+    background-position: 0 7px;
+  }
+  .gold-foil {
+    background: linear-gradient(135deg,
+      oklch(0.95 0.10 92) 0%,
+      oklch(0.78 0.18 88) 25%,
+      oklch(0.62 0.14 80) 50%,
+      oklch(0.92 0.15 92) 75%,
+      oklch(0.62 0.14 80) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 1px 0 oklch(0 0 0 / 0.4));
+  }
+  .neon-green {
+    color: oklch(0.85 0.22 152);
+    text-shadow:
+      0 0 6px oklch(0.85 0.22 152 / 0.7),
+      0 0 18px oklch(0.65 0.22 152 / 0.5);
+  }
+  .neon-green-border {
+    box-shadow:
+      0 0 0 1px oklch(0.85 0.22 152 / 0.55),
+      0 0 14px -2px oklch(0.85 0.22 152 / 0.6);
+  }
 }

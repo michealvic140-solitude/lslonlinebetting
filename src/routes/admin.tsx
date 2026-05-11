@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Switch } from "@/components/ui/switch";
 import {
   Shield, Users, Trophy, Coins, Megaphone, Settings as SettingsIcon, Ticket, AlertTriangle,
-  Calendar, Tag, Image as ImageIcon, BarChart3, History, Send, Plus, Trash2, Pencil, ChevronRight, ChevronLeft, Wallet, ListOrdered, Sparkles, ClipboardList, Lock, Pause, Play, Check, X,
+  Calendar, Tag, Image as ImageIcon, BarChart3, History, Send, Plus, Trash2, Pencil, ChevronRight, ChevronLeft, Wallet, ListOrdered, Sparkles, ClipboardList, Lock, Pause, Play, Check, X, MessageSquare, Eye, RotateCw, Copy, Globe, MapPin, Smartphone, Clock, Filter,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
@@ -32,35 +32,76 @@ export const Route = createFileRoute("/admin")({
 function AdminPage() {
   const { isAdmin, loading } = useAuth();
   const nav = useNavigate();
+  const [alerts, setAlerts] = useState<Record<string, number>>({});
+  const [activeTab, setActiveTab] = useState("analytics");
   useEffect(() => { if (!loading && !isAdmin) nav({ to: "/" }); }, [isAdmin, loading, nav]);
+  useEffect(() => {
+    if (!isAdmin) return;
+    const loadAlerts = async () => {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const [users, tokens, withdrawals, tickets, bets, promos, appeals, chat] = await Promise.all([
+        supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", since),
+        supabase.from("token_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("withdrawal_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("support_tickets").select("id", { count: "exact", head: true }).neq("status", "closed"),
+        supabase.from("bets").select("id", { count: "exact", head: true }).gte("created_at", since),
+        supabase.from("promo_code_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("ban_appeals").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("chat_messages").select("id", { count: "exact", head: true }).gte("created_at", since),
+      ]);
+      setAlerts({ users: users.count ?? 0, tokens: tokens.count ?? 0, withdrawals: withdrawals.count ?? 0, tickets: tickets.count ?? 0, bettracker: bets.count ?? 0, promoreqs: promos.count ?? 0, appeals: appeals.count ?? 0, chat: chat.count ?? 0 });
+    };
+    loadAlerts();
+    const ch = supabase.channel("admin-alert-indicators")
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "token_requests" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "withdrawal_requests" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "ticket_messages" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bets" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "promo_code_requests" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "ban_appeals" }, loadAlerts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, loadAlerts)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [isAdmin]);
   if (loading) return <Layout><div className="container py-10">Loading…</div></Layout>;
   if (!isAdmin) return null;
 
   return (
     <Layout>
       <div className="container py-8 space-y-6">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Shield className="h-6 w-6 text-accent" />
-          <h1 className="text-3xl font-bold gradient-emerald-text">Admin Console</h1>
-          <Badge variant="outline" className="border-accent/40 text-accent">Restricted</Badge>
+        <div className="relative overflow-hidden glass-strong rounded-2xl p-5 border-primary/30 shadow-luxury">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold"><Shield className="h-6 w-6" /></div>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Command center</p>
+              <h1 className="text-3xl font-bold gradient-emerald-text">Admin Console</h1>
+            </div>
+            <Badge variant="outline" className="border-accent/40 text-accent ml-auto">Restricted</Badge>
+          </div>
         </div>
 
         <Stats />
-        <Tabs defaultValue="analytics">
-          <TabsList className="flex flex-wrap h-auto justify-start">
+        <AdminSectionRail alerts={alerts} onOpen={setActiveTab} />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="glass-strong flex w-full max-w-full overflow-x-auto h-auto justify-start gap-1 p-2 rounded-2xl md:flex-wrap">
             <TabsTrigger value="analytics"><BarChart3 className="h-3 w-3 mr-1" />Analytics</TabsTrigger>
-            <TabsTrigger value="users"><Users className="h-3 w-3 mr-1" />Users</TabsTrigger>
+            <TabsTrigger value="users"><AdminTab icon={Users} label="Users" count={alerts.users} /></TabsTrigger>
             <TabsTrigger value="matches"><Trophy className="h-3 w-3 mr-1" />Matches</TabsTrigger>
             <TabsTrigger value="events"><Calendar className="h-3 w-3 mr-1" />Events</TabsTrigger>
-            <TabsTrigger value="tokens"><Coins className="h-3 w-3 mr-1" />Tokens</TabsTrigger>
-            <TabsTrigger value="withdrawals"><Wallet className="h-3 w-3 mr-1" />Withdrawals</TabsTrigger>
+            <TabsTrigger value="tokens"><AdminTab icon={Coins} label="Tokens" count={alerts.tokens} /></TabsTrigger>
+            <TabsTrigger value="withdrawals"><AdminTab icon={Wallet} label="Withdrawals" count={alerts.withdrawals} /></TabsTrigger>
             <TabsTrigger value="leaderboard"><ListOrdered className="h-3 w-3 mr-1" />Leaderboard</TabsTrigger>
             <TabsTrigger value="promos"><Tag className="h-3 w-3 mr-1" />Promo Codes</TabsTrigger>
             <TabsTrigger value="content"><Megaphone className="h-3 w-3 mr-1" />Content</TabsTrigger>
-            <TabsTrigger value="tickets"><Ticket className="h-3 w-3 mr-1" />Tickets</TabsTrigger>
-            <TabsTrigger value="bettracker"><ClipboardList className="h-3 w-3 mr-1" />Bet Tracker</TabsTrigger>
-            <TabsTrigger value="promoreqs"><Tag className="h-3 w-3 mr-1" />Promo Requests</TabsTrigger>
-            <TabsTrigger value="appeals"><AlertTriangle className="h-3 w-3 mr-1" />Appeals</TabsTrigger>
+            <TabsTrigger value="tickets"><AdminTab icon={Ticket} label="Tickets" count={alerts.tickets} /></TabsTrigger>
+            <TabsTrigger value="tasks"><ClipboardList className="h-3 w-3 mr-1" />Tasks & Achievements</TabsTrigger>
+            <TabsTrigger value="bettracker"><AdminTab icon={ClipboardList} label="Bet Tracker" count={alerts.bettracker} /></TabsTrigger>
+            <TabsTrigger value="promoreqs"><AdminTab icon={Tag} label="Promo Requests" count={alerts.promoreqs} /></TabsTrigger>
+            <TabsTrigger value="appeals"><AdminTab icon={AlertTriangle} label="Appeals" count={alerts.appeals} /></TabsTrigger>
+            <TabsTrigger value="chat"><AdminTab icon={MessageSquare} label="Chat" count={alerts.chat} /></TabsTrigger>
             <TabsTrigger value="notify"><Send className="h-3 w-3 mr-1" />Notify</TabsTrigger>
             <TabsTrigger value="audit"><History className="h-3 w-3 mr-1" />Audit</TabsTrigger>
             <TabsTrigger value="settings"><SettingsIcon className="h-3 w-3 mr-1" />Settings</TabsTrigger>
@@ -75,9 +116,11 @@ function AdminPage() {
           <TabsContent value="promos" className="mt-4"><PromoPanel /></TabsContent>
           <TabsContent value="content" className="mt-4"><ContentPanel /></TabsContent>
           <TabsContent value="tickets" className="mt-4"><TicketsPanel /></TabsContent>
+          <TabsContent value="tasks" className="mt-4"><TasksAchievementsPanel /></TabsContent>
           <TabsContent value="bettracker" className="mt-4"><BetTrackerPanel /></TabsContent>
           <TabsContent value="promoreqs" className="mt-4"><PromoRequestsPanel /></TabsContent>
           <TabsContent value="appeals" className="mt-4"><AppealsPanel /></TabsContent>
+          <TabsContent value="chat" className="mt-4"><ChatMonitorPanel /></TabsContent>
           <TabsContent value="notify" className="mt-4"><NotifyPanel /></TabsContent>
           <TabsContent value="audit" className="mt-4"><AuditPanel /></TabsContent>
           <TabsContent value="analytics" className="mt-4"><AnalyticsPanel /></TabsContent>
@@ -92,7 +135,95 @@ function AdminPage() {
 async function logAudit(action: string, target_type: string, target_id?: string, metadata?: any) {
   const u = (await supabase.auth.getUser()).data.user;
   if (!u) return;
-  await supabase.from("audit_logs").insert({ actor_id: u.id, action, target_type, target_id, metadata: metadata ?? {} });
+  // Best-effort enrichment: where (route, user agent), and target user resolution
+  const enriched: any = {
+    ...(metadata ?? {}),
+    actor_email: u.email ?? null,
+    user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+    route: typeof window !== "undefined" ? window.location.pathname + window.location.search : null,
+    origin: typeof window !== "undefined" ? window.location.origin : null,
+    locale: typeof navigator !== "undefined" ? navigator.language : null,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    timestamp_iso: new Date().toISOString(),
+  };
+  if (target_type === "user" && target_id) enriched.target_user_id = target_id;
+  await supabase.from("audit_logs").insert({ actor_id: u.id, action, target_type, target_id, metadata: enriched });
+}
+
+function AdminTab({ icon: Icon, label, count = 0 }: { icon: any; label: string; count?: number }) {
+  return (
+    <span className="relative inline-flex items-center gap-1">
+      <Icon className="h-3 w-3" />{label}
+      {count > 0 && <span className="ml-0.5 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background" title={`${count} new/pending`} />}
+    </span>
+  );
+}
+
+function AdminSectionRail({ alerts, onOpen }: { alerts: Record<string, number>; onOpen: (tab: string) => void }) {
+  const items = [
+    { tab: "tickets", icon: Ticket, label: "Open reports", count: alerts.tickets ?? 0 },
+    { tab: "bettracker", icon: ClipboardList, label: "Booked tickets", count: alerts.bettracker ?? 0 },
+    { tab: "tokens", icon: Coins, label: "Token requests", count: alerts.tokens ?? 0 },
+    { tab: "withdrawals", icon: Wallet, label: "Withdrawals", count: alerts.withdrawals ?? 0 },
+    { tab: "promoreqs", icon: Tag, label: "Promo requests", count: alerts.promoreqs ?? 0 },
+    { tab: "appeals", icon: AlertTriangle, label: "Ban appeals", count: alerts.appeals ?? 0 },
+  ];
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+      {items.map((item) => (
+        <button key={item.tab} onClick={() => onOpen(item.tab)} className="group relative overflow-hidden rounded-xl border border-primary/20 bg-card/70 p-3 text-left shadow-luxury transition hover:-translate-y-0.5 hover:border-primary/50">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-gold" />
+          <item.icon className="h-4 w-4 text-primary mb-2" />
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.label}</div>
+          <div className="mt-1 text-2xl font-black gradient-gold-text">{item.count}</div>
+          {item.count > 0 && <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background" />}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ChatMonitorPanel() {
+  const [msgs, setMsgs] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, any>>({});
+  async function load() {
+    const { data } = await supabase.from("chat_messages").select("*").order("created_at", { ascending: false }).limit(120);
+    setMsgs(data ?? []);
+    const ids = Array.from(new Set((data ?? []).map((m: any) => m.user_id).filter(Boolean)));
+    if (ids.length) {
+      const { data: p } = await supabase.from("profiles").select("id,full_name,email,gang_name,is_muted,is_banned").in("id", ids);
+      const map: Record<string, any> = {}; (p ?? []).forEach((x: any) => { map[x.id] = x; }); setProfiles(map);
+    }
+  }
+  useEffect(() => {
+    load();
+    const ch = supabase.channel("admin-chat-monitor").on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, load).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+  async function del(id: string) { await supabase.from("chat_messages").delete().eq("id", id); load(); }
+  return (
+    <div className="space-y-3">
+      <Card className="glass-strong p-4 flex items-center gap-3">
+        <MessageSquare className="h-5 w-5 text-primary" />
+        <div><div className="font-bold">Live Chat Monitor</div><div className="text-xs text-muted-foreground">Newest messages across all rooms with quick moderation access.</div></div>
+      </Card>
+      {msgs.map((m) => {
+        const p = profiles[m.user_id];
+        return (
+          <Card key={m.id} className="glass p-3 flex items-start gap-3 flex-wrap">
+            <Badge variant="outline" className="capitalize border-primary/40 text-primary">{m.room}</Badge>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-bold">{p?.full_name ?? "Unknown"} <span className="text-xs text-muted-foreground">{p?.email}</span></div>
+              {m.content && <div className="text-sm mt-1 break-words">{m.content}</div>}
+              {m.image_url && <a href={m.image_url} target="_blank" rel="noreferrer"><img src={m.image_url} alt="Chat upload" className="mt-2 max-h-28 rounded-lg border border-border" /></a>}
+              <div className="text-[10px] text-muted-foreground mt-1">{p?.gang_name ?? "Independent"} · {new Date(m.created_at).toLocaleString()}</div>
+            </div>
+            <Button size="sm" variant="destructive" onClick={() => del(m.id)}><Trash2 className="h-3 w-3" /></Button>
+          </Card>
+        );
+      })}
+    </div>
+  );
 }
 
 function Stats() {
@@ -169,7 +300,7 @@ function UsersPanel() {
           <SelectTrigger><SelectValue placeholder="Role" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All roles</SelectItem>
-            {(["viewer", "shooter", "gang_leader", "registered", "moderator", "admin"] as AppRole[]).map((r) => (
+            {(["viewer", "shooter", "gang_leader", "registered", "sponsor", "moderator", "admin"] as AppRole[]).map((r) => (
               <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
             ))}
           </SelectContent>
@@ -273,79 +404,190 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
     toast.success(`− ${role}`); onClose();
   }
 
+  const wonCount = bets.filter((b: any) => b.status === "won").length;
+  const initials = (user.full_name ?? "U").split(" ").map((p: string) => p[0]).slice(0, 2).join("").toUpperCase();
+  const userIdShort = String(user.id).replace(/-/g, "").slice(0, 9);
+  function copyId() { navigator.clipboard.writeText(user.id); toast.success("User ID copied"); }
+
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Manage {user.full_name}</DialogTitle>
-        </DialogHeader>
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="tokens">Tokens</TabsTrigger>
-            <TabsTrigger value="roles">Roles</TabsTrigger>
-            <TabsTrigger value="actions">Actions</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
-          </TabsList>
-          <TabsContent value="profile" className="space-y-2 mt-3">
-            <Input placeholder="Full name" value={form.full_name ?? ""} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
-            <Input placeholder="Phone" value={form.phone ?? ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            <Input placeholder="Discord" value={form.discord_username ?? ""} onChange={(e) => setForm({ ...form, discord_username: e.target.value })} />
-            <Input placeholder="Country" value={form.country ?? ""} onChange={(e) => setForm({ ...form, country: e.target.value })} />
-            <Input placeholder="Gang name" value={form.gang_name ?? ""} onChange={(e) => setForm({ ...form, gang_name: e.target.value })} />
-            <Button className="btn-luxury" onClick={saveProfile}>Save profile</Button>
-          </TabsContent>
-          <TabsContent value="tokens" className="space-y-3 mt-3">
-            <div className="text-sm">Current balance: <span className="font-bold text-primary">{(user.token_balance ?? 0).toLocaleString()}</span></div>
-            <Input type="number" placeholder="Delta (use negative to remove)" value={tokenDelta || ""} onChange={(e) => setTokenDelta(Number(e.target.value))} />
-            <Input placeholder="Reason (required)" value={tokenReason} onChange={(e) => setTokenReason(e.target.value)} />
-            <Button className="btn-luxury" onClick={applyTokens}>Apply</Button>
-          </TabsContent>
-          <TabsContent value="roles" className="space-y-3 mt-3">
-            <div className="flex flex-wrap gap-1">
-              {roles.map((r) => (
-                <Badge key={r} variant="outline">{ROLE_LABELS[r as AppRole]} <button onClick={() => removeRole(r)} className="ml-1 text-destructive">×</button></Badge>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-0 border-primary/30 bg-gradient-to-b from-card to-background">
+        <div className="relative px-6 pt-10 pb-6">
+          {/* Avatar with golden glow */}
+          <div className="relative mx-auto h-24 w-24 -mt-4">
+            <div className="absolute inset-[-10px] rounded-3xl blur-2xl bg-[radial-gradient(circle,oklch(0.82_0.17_90/0.55),transparent_70%)]" />
+            <div className="relative h-24 w-24 rounded-3xl border-2 border-primary/70 bg-card grid place-items-center shadow-[0_0_30px_-4px_oklch(0.82_0.17_90/0.7)]">
+              {user.avatar_url
+                ? <img src={user.avatar_url} alt="" className="h-full w-full rounded-3xl object-cover" />
+                : <UserSilhouette />}
+            </div>
+          </div>
+
+          <div className="mt-3 flex justify-center gap-2 flex-wrap">
+            <span className={`inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full border ${user.is_banned ? "border-destructive/40 text-destructive bg-destructive/10" : "border-emerald-400/40 text-emerald-300 bg-emerald-500/10"}`}>
+              {user.is_banned ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+              {user.is_banned ? "Banned" : "Active"}
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full border border-primary/40 text-primary bg-primary/10">
+              <Trophy className="h-3 w-3" />{wonCount} Matches Won
+            </span>
+          </div>
+
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-display tracking-wider">Manage {user.full_name}</DialogTitle>
+          </DialogHeader>
+
+          <Tabs value={tab} onValueChange={setTab} className="mt-4">
+            <TabsList className="bg-transparent w-full justify-start gap-4 border-b border-border rounded-none p-0 h-auto">
+              {[
+                ["profile", "Profile"],
+                ["tokens", "Tokens"],
+                ["roles", "Roles"],
+                ["actions", "Actions"],
+                ["history", "History"],
+              ].map(([v, l]) => (
+                <TabsTrigger
+                  key={v}
+                  value={v}
+                  className="relative px-1 pb-2 rounded-none bg-transparent text-muted-foreground data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-0.5 data-[state=active]:after:bg-gradient-gold"
+                >{l}</TabsTrigger>
               ))}
-            </div>
-            <Select onValueChange={(v) => addRole(v as AppRole)}>
-              <SelectTrigger><SelectValue placeholder="Add role…" /></SelectTrigger>
-            <SelectContent>{(["viewer", "shooter", "gang_leader", "registered", "sponsor", "moderator", "admin"] as AppRole[]).map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
-            </Select>
-          </TabsContent>
-          <TabsContent value="actions" className="space-y-3 mt-3">
-            <Textarea placeholder="Reason (required for restrictive actions)" value={actionReason} onChange={(e) => setActionReason(e.target.value)} />
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant={user.is_banned ? "outline" : "destructive"} onClick={() => flagAction("is_banned", !user.is_banned, "ban_reason")}>{user.is_banned ? "Unban" : "Ban"}</Button>
-              <Button variant={user.is_muted ? "outline" : "destructive"} onClick={() => flagAction("is_muted", !user.is_muted, "mute_reason")}>{user.is_muted ? "Unmute chat" : "Mute chat"}</Button>
-              <Button variant={user.is_restricted ? "outline" : "destructive"} onClick={() => flagAction("is_restricted", !user.is_restricted, "restrict_reason")}>{user.is_restricted ? "Allow betting" : "Restrict betting"}</Button>
-            </div>
-          </TabsContent>
-          <TabsContent value="history" className="space-y-3 mt-3">
-            <div>
-              <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Recent bets</div>
-              {bets.length === 0 && <div className="text-xs text-muted-foreground">None.</div>}
-              {bets.map((b) => (
-                <div key={b.id} className="flex justify-between text-xs py-1 border-b border-border/50">
-                  <span>{b.tracking_id} · {b.status}</span>
-                  <span>{b.stake} → {b.potential_payout}</span>
+            </TabsList>
+
+            <TabsContent value="profile" className="space-y-4 mt-5">
+              <FieldLuxe label="Display Name">
+                <Input value={form.full_name ?? ""} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+              </FieldLuxe>
+              <FieldLuxe label="User ID">
+                <div className="flex gap-2">
+                  <Input readOnly value={userIdShort} className="font-mono" />
+                  <Button onClick={copyId} className="btn-luxury shrink-0"><Copy className="h-4 w-4 mr-1" />Copy</Button>
                 </div>
-              ))}
-            </div>
-            <div>
-              <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Token transactions</div>
-              {tx.length === 0 && <div className="text-xs text-muted-foreground">None.</div>}
-              {tx.map((t) => (
-                <div key={t.id} className="flex justify-between text-xs py-1 border-b border-border/50">
-                  <span>{t.kind} · {t.description}</span>
-                  <span className={t.amount > 0 ? "text-primary" : "text-destructive"}>{t.amount > 0 ? "+" : ""}{t.amount}</span>
+              </FieldLuxe>
+              <FieldLuxe label="Email / Login">
+                <Input value={form.email ?? ""} readOnly className="bg-muted/40" />
+              </FieldLuxe>
+              <FieldLuxe label="Phone">
+                <Input value={form.phone ?? ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              </FieldLuxe>
+              <FieldLuxe label="Discord">
+                <Input value={form.discord_username ?? ""} onChange={(e) => setForm({ ...form, discord_username: e.target.value })} />
+              </FieldLuxe>
+              <FieldLuxe label="Country">
+                <Input value={form.country ?? ""} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+              </FieldLuxe>
+              <FieldLuxe label="Gang Name">
+                <Input value={form.gang_name ?? ""} onChange={(e) => setForm({ ...form, gang_name: e.target.value })} />
+              </FieldLuxe>
+              <Button className="btn-luxury w-full h-12 text-base font-bold" onClick={saveProfile}>Save Profile</Button>
+            </TabsContent>
+
+            <TabsContent value="tokens" className="space-y-4 mt-5">
+              <Card className="glass p-4 text-center">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Current Balance</div>
+                <div className="text-3xl font-black gradient-gold-text mt-1">{(user.token_balance ?? 0).toLocaleString()}</div>
+              </Card>
+              <FieldLuxe label="Delta (negative to revoke)">
+                <Input type="number" value={tokenDelta || ""} onChange={(e) => setTokenDelta(Number(e.target.value))} />
+              </FieldLuxe>
+              <FieldLuxe label="Reason (required)">
+                <Input value={tokenReason} onChange={(e) => setTokenReason(e.target.value)} />
+              </FieldLuxe>
+              <Button className="btn-luxury w-full h-11" onClick={applyTokens}>Apply</Button>
+            </TabsContent>
+
+            <TabsContent value="roles" className="space-y-4 mt-5">
+              <div className="flex flex-wrap gap-2 min-h-[40px]">
+                {roles.length === 0 && <div className="text-xs text-muted-foreground">No roles assigned.</div>}
+                {roles.map((r) => (
+                  <Badge key={r} variant="outline" className="border-primary/40 text-primary bg-primary/10 px-3 py-1">
+                    {ROLE_LABELS[r as AppRole]}
+                    <button onClick={() => removeRole(r)} className="ml-2 text-destructive hover:scale-110">×</button>
+                  </Badge>
+                ))}
+              </div>
+              <FieldLuxe label="Add role">
+                <Select onValueChange={(v) => addRole(v as AppRole)}>
+                  <SelectTrigger><SelectValue placeholder="Add role…" /></SelectTrigger>
+                  <SelectContent>
+                    {(["viewer", "shooter", "gang_leader", "registered", "sponsor", "moderator", "admin"] as AppRole[]).map((r) => (
+                      <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FieldLuxe>
+            </TabsContent>
+
+            <TabsContent value="actions" className="space-y-4 mt-5">
+              <FieldLuxe label="Reason (required for restrictive actions)">
+                <Textarea value={actionReason} onChange={(e) => setActionReason(e.target.value)} rows={3} />
+              </FieldLuxe>
+              <div className="grid grid-cols-1 gap-2">
+                <Button variant={user.is_banned ? "outline" : "destructive"} className="h-11 justify-start" onClick={() => flagAction("is_banned", !user.is_banned, "ban_reason")}>
+                  <Lock className="h-4 w-4 mr-2" />{user.is_banned ? "Unban user" : "Ban user from platform"}
+                </Button>
+                <Button variant={user.is_muted ? "outline" : "destructive"} className="h-11 justify-start" onClick={() => flagAction("is_muted", !user.is_muted, "mute_reason")}>
+                  <MessageSquare className="h-4 w-4 mr-2" />{user.is_muted ? "Unmute chat" : "Mute in chat"}
+                </Button>
+                <Button variant={user.is_restricted ? "outline" : "destructive"} className="h-11 justify-start" onClick={() => flagAction("is_restricted", !user.is_restricted, "restrict_reason")}>
+                  <AlertTriangle className="h-4 w-4 mr-2" />{user.is_restricted ? "Allow betting" : "Restrict betting"}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="history" className="space-y-5 mt-5">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">Recent bets</div>
+                {bets.length === 0 && <div className="text-xs text-muted-foreground">None yet.</div>}
+                <div className="space-y-1">
+                  {bets.map((b) => (
+                    <div key={b.id} className="glass p-2 rounded-lg flex justify-between text-xs items-center">
+                      <span className="font-mono truncate">{b.tracking_id}</span>
+                      <span className="capitalize text-muted-foreground">{b.status}</span>
+                      <span className="font-bold">{Number(b.stake).toLocaleString()} → <span className="text-primary">{Number(b.potential_payout).toLocaleString()}</span></span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
-        <DialogFooter><Button variant="outline" onClick={onClose}>Close</Button></DialogFooter>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">Token transactions</div>
+                {tx.length === 0 && <div className="text-xs text-muted-foreground">None.</div>}
+                <div className="space-y-1">
+                  {tx.map((t) => (
+                    <div key={t.id} className="glass p-2 rounded-lg flex justify-between text-xs items-center">
+                      <span className="capitalize text-muted-foreground">{t.kind}</span>
+                      <span className="truncate flex-1 px-2">{t.description}</span>
+                      <span className={`font-bold ${t.amount > 0 ? "text-emerald-300" : "text-destructive"}`}>{t.amount > 0 ? "+" : ""}{Number(t.amount).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+        <DialogFooter className="px-6 pb-4">
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function FieldLuxe({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground mb-1">{label}</div>
+      {children}
+    </div>
+  );
+}
+
+function UserSilhouette() {
+  return (
+    <svg viewBox="0 0 64 64" className="h-12 w-12 text-muted-foreground/70" fill="currentColor" aria-hidden>
+      <circle cx="32" cy="22" r="11" />
+      <path d="M10 56c0-12 10-20 22-20s22 8 22 20v4H10z" />
+    </svg>
   );
 }
 
@@ -356,7 +598,7 @@ function MatchesPanel() {
   const [wizard, setWizard] = useState(false);
 
   async function load() {
-    const { data } = await supabase.from("matches").select("*, home_team:home_team_id(name,logo_url), away_team:away_team_id(name,logo_url)").order("start_time", { ascending: false });
+    const { data } = await supabase.from("matches").select("*, home_team:teams!home_team_id(name,logo_url), away_team:teams!away_team_id(name,logo_url)").order("start_time", { ascending: false });
     setMatches(data ?? []);
   }
   useEffect(() => { load(); }, []);
@@ -367,9 +609,9 @@ function MatchesPanel() {
     load();
   }
   async function settle(m: any) {
-    const home = prompt(`Final score for ${m.home_team?.name}?`); if (home === null) return;
-    const away = prompt(`Final score for ${m.away_team?.name}?`); if (away === null) return;
-    const hs = Number(home), as = Number(away);
+    const ok = await confirm({ title: "End match and settle bets?", description: `Final score will be ${m.home_team?.name} ${m.home_score}–${m.away_score} ${m.away_team?.name}. Suspended/refunded tickets will not be credited.`, confirmText: "Settle match" });
+    if (!ok) return;
+    const hs = Number(m.home_score ?? 0), as = Number(m.away_score ?? 0);
     let winnerId = null;
     if (hs > as) winnerId = m.home_team_id;
     else if (as > hs) winnerId = m.away_team_id;
@@ -425,10 +667,10 @@ function MatchesPanel() {
 
 async function settleBetsForMatch(matchId: string, winnerTeamId: string | null) {
   // Get all bet selections for this match
-  const { data: sels } = await supabase.from("bet_selections").select("*, markets:market_id(name), odds:odd_id(label)").eq("match_id", matchId);
+  const { data: sels } = await supabase.from("bet_selections").select("*, markets!market_id(name), odds!odd_id(label)").eq("match_id", matchId);
   if (!sels || sels.length === 0) return;
   // Get team names for label comparison
-  const { data: match } = await supabase.from("matches").select("home_team:home_team_id(name), away_team:away_team_id(name)").eq("id", matchId).single() as any;
+  const { data: match } = await supabase.from("matches").select("home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)").eq("id", matchId).single() as any;
   const winnerLabel = winnerTeamId === null ? "Draw" : (match?.home_team?.name && winnerTeamId === (await supabase.from("matches").select("home_team_id").eq("id", matchId).single()).data?.home_team_id ? match.home_team.name : match?.away_team?.name);
   for (const s of sels) {
     const result = (s as any).odds?.label === winnerLabel ? "won" : "lost";
@@ -442,6 +684,7 @@ async function settleBetsForMatch(matchId: string, winnerTeamId: string | null) 
     const allWon = betSels.every((s: any) => s.result === "won");
     const { data: bet } = await supabase.from("bets").select("*").eq("id", bid).single();
     if (!bet) continue;
+    if (["suspended", "refunded", "void", "cashed_out"].includes(bet.status)) continue;
     const status = allWon ? "won" : "lost";
     await supabase.from("bets").update({ status, settled_at: new Date().toISOString() }).eq("id", bid);
     if (allWon) {
@@ -681,6 +924,7 @@ function EventsPanel() {
 function TokensPanel() {
   const [reqs, setReqs] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
+  const confirm = useConfirm();
 
   async function load() {
     const { data } = await supabase.from("token_requests").select("*").order("created_at", { ascending: false }).limit(100);
@@ -704,7 +948,9 @@ function TokensPanel() {
     toast.success("Approved"); load();
   }
   async function reject(r: any) {
-    const reason = prompt("Reason for denial?"); if (reason === null) return;
+    const res = await confirm({ title: "Deny token request?", description: `Reject ${Number(r.amount).toLocaleString()} tokens for ${profiles[r.user_id]?.full_name ?? "this user"}.`, tone: "danger", confirmText: "Deny request", inputLabel: "Reason", inputPlaceholder: "Explain why this request is denied…" });
+    if (!res || typeof res !== "object") return;
+    const reason = res.value;
     await supabase.from("token_requests").update({ status: "denied", review_note: reason, reviewed_at: new Date().toISOString() }).eq("id", r.id);
     await supabase.from("notifications").insert({ user_id: r.user_id, title: "Token request denied", body: `Reason: ${reason || "—"}` });
     await logAudit("token_request_denied", "token_request", r.id, { reason });
@@ -955,9 +1201,10 @@ function CategoriesPanel() {
 /* ============================ TICKETS ============================ */
 function TicketsPanel() {
   const [tickets, setTickets] = useState<any[]>([]);
+  const [active, setActive] = useState<any | null>(null);
   const confirm = useConfirm();
   async function load() {
-    const { data } = await supabase.from("support_tickets").select("*, profiles:user_id(full_name,email)").order("created_at", { ascending: false }).limit(200);
+    const { data } = await supabase.from("support_tickets").select("*, profiles!user_id(full_name,email)").order("created_at", { ascending: false }).limit(200);
     setTickets(data ?? []);
   }
   useEffect(() => {
@@ -976,9 +1223,15 @@ function TicketsPanel() {
   }
   return (
     <div className="space-y-2">
+      <Card className="glass-strong p-4 flex items-center gap-3">
+        <Ticket className="h-5 w-5 text-primary" />
+        <div><div className="font-bold">Support Ticket Reports</div><div className="text-xs text-muted-foreground">Open, reply, attach images, close/reopen, or delete user reports directly.</div></div>
+        <div className="flex-1" />
+        <Button size="sm" variant="outline" onClick={load}><RotateCw className="h-3 w-3 mr-1" />Refresh</Button>
+      </Card>
       {tickets.length === 0 && <p className="text-muted-foreground text-sm">No tickets.</p>}
       {tickets.map((t) => (
-        <Card key={t.id} className="glass p-3 flex items-center gap-3 flex-wrap">
+        <Card key={t.id} className="glass p-3 flex items-center gap-3 flex-wrap hover:border-primary/50 transition">
           <div className="flex-1 min-w-0">
             <div className="font-bold truncate">{t.subject}</div>
             <div className="text-xs text-muted-foreground">{t.profiles?.full_name} · {new Date(t.created_at).toLocaleString()}</div>
@@ -988,11 +1241,82 @@ function TicketsPanel() {
             <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>{["open", "in_progress", "resolved", "closed"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
           </Select>
-          <Button size="sm" variant="outline" asChild><a href={`/ticket/${t.id}`}>Open</a></Button>
+          <Button size="sm" variant="outline" onClick={() => setActive(t)}><Eye className="h-3 w-3 mr-1" />Reply</Button>
           <Button size="sm" variant="destructive" onClick={() => del(t.id)}><Trash2 className="h-3 w-3" /></Button>
         </Card>
       ))}
+      {active && <AdminTicketDialog ticket={active} onClose={() => { setActive(null); load(); }} />}
     </div>
+  );
+}
+
+function AdminTicketDialog({ ticket, onClose }: { ticket: any; onClose: () => void }) {
+  const { user } = useAuth();
+  const [msgs, setMsgs] = useState<any[]>([]);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const confirm = useConfirm();
+  async function load() {
+    const { data } = await supabase.from("ticket_messages").select("*, profiles!user_id(full_name,email)").eq("ticket_id", ticket.id).order("created_at", { ascending: true });
+    setMsgs(data ?? []);
+  }
+  useEffect(() => {
+    load();
+    const ch = supabase.channel(`admin-ticket-${ticket.id}`).on("postgres_changes", { event: "*", schema: "public", table: "ticket_messages", filter: `ticket_id=eq.${ticket.id}` }, load).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [ticket.id]);
+  async function send(imageUrl?: string) {
+    if (!user || (!text.trim() && !imageUrl)) return;
+    setSending(true);
+    const content = text.trim(); setText("");
+    const { error } = await supabase.from("ticket_messages").insert({ ticket_id: ticket.id, user_id: user.id, content: content || null, image_url: imageUrl ?? null });
+    if (error) toast.error(error.message); else await supabase.from("support_tickets").update({ status: "in_progress" as any, updated_at: new Date().toISOString() }).eq("id", ticket.id);
+    setSending(false); load();
+  }
+  async function upload(file: File) {
+    const path = `${ticket.id}/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("ticket-uploads").upload(path, file);
+    if (error) { toast.error(error.message); return; }
+    await send(supabase.storage.from("ticket-uploads").getPublicUrl(path).data.publicUrl);
+  }
+  async function updateStatus(status: string) { await supabase.from("support_tickets").update({ status: status as any }).eq("id", ticket.id); toast.success("Ticket updated"); onClose(); }
+  async function deleteTicket() {
+    if (!await confirm({ title: "Delete this support ticket?", description: "All replies and uploaded references on this report will be removed.", tone: "danger", confirmText: "Delete forever" })) return;
+    await supabase.from("ticket_messages").delete().eq("ticket_id", ticket.id);
+    await supabase.from("support_tickets").delete().eq("id", ticket.id);
+    toast.success("Ticket deleted"); onClose();
+  }
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="glass-strong max-w-3xl max-h-[88vh] overflow-hidden border-primary/30 p-0">
+        <DialogHeader className="p-5 border-b border-border">
+          <DialogTitle className="flex items-center gap-2"><Ticket className="h-5 w-5 text-primary" />{ticket.subject}</DialogTitle>
+          <div className="text-xs text-muted-foreground">{ticket.profiles?.full_name} · {ticket.profiles?.email}</div>
+        </DialogHeader>
+        <div className="max-h-[52vh] overflow-y-auto p-5 space-y-3">
+          {msgs.map((m) => (
+            <div key={m.id} className={`flex ${m.user_id === user?.id ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[78%] rounded-xl p-3 text-sm border ${m.user_id === user?.id ? "bg-primary/15 border-primary/35" : "bg-secondary/60 border-border"}`}>
+                <div className="text-[10px] text-muted-foreground mb-1">{m.profiles?.full_name ?? (m.is_ai ? "AI Assistant" : "User")} · {new Date(m.created_at).toLocaleString()}</div>
+                {m.content && <div className="whitespace-pre-wrap">{m.content}</div>}
+                {m.image_url && <a href={m.image_url} target="_blank" rel="noreferrer"><img src={m.image_url} alt="Ticket upload" className="mt-2 max-h-52 rounded-lg border border-border" /></a>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="p-5 border-t border-border space-y-3">
+          <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Reply to this user report…" />
+          <div className="flex gap-2 flex-wrap">
+            <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+            <Button variant="outline" onClick={() => fileRef.current?.click()}><ImageIcon className="h-4 w-4 mr-1" />Image</Button>
+            <Button className="btn-luxury" disabled={sending || !text.trim()} onClick={() => send()}><Send className="h-4 w-4 mr-1" />Reply</Button>
+            <Button variant="outline" onClick={() => updateStatus(ticket.status === "closed" ? "open" : "closed")}>{ticket.status === "closed" ? "Reopen" : "Close"}</Button>
+            <Button variant="destructive" onClick={deleteTicket}><Trash2 className="h-4 w-4 mr-1" />Delete</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1000,6 +1324,7 @@ function TicketsPanel() {
 function AppealsPanel() {
   const [list, setList] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
+  const confirm = useConfirm();
   async function load() {
     const { data } = await supabase.from("ban_appeals").select("*").order("created_at", { ascending: false });
     setList(data ?? []);
@@ -1011,7 +1336,9 @@ function AppealsPanel() {
   }
   useEffect(() => { load(); }, []);
   async function respond(a: any, status: "approved" | "denied") {
-    const note = prompt("Response to user?") ?? "";
+    const res = await confirm({ title: status === "approved" ? "Approve appeal and unban?" : "Deny appeal?", description: "Write the response the user will see.", tone: status === "denied" ? "danger" : "default", confirmText: status === "approved" ? "Approve" : "Deny", inputLabel: "Admin response", inputPlaceholder: "Response to user…" });
+    if (!res || typeof res !== "object") return;
+    const note = res.value;
     await supabase.from("ban_appeals").update({ status, admin_response: note, reviewed_at: new Date().toISOString() }).eq("id", a.id);
     if (status === "approved") {
       await supabase.from("profiles").update({ is_banned: false, ban_reason: null }).eq("id", a.user_id);
@@ -1121,37 +1448,148 @@ function NotifyPanel() {
 /* ============================ AUDIT ============================ */
 function AuditPanel() {
   const [logs, setLogs] = useState<any[]>([]);
-  const [actors, setActors] = useState<Record<string, any>>({});
+  const [profiles, setProfiles] = useState<Record<string, any>>({});
+  const [q, setQ] = useState("");
+  const [actionFilter, setActionFilter] = useState<string>("all");
+
   useEffect(() => {
-    supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(200).then(async ({ data }) => {
+    supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(500).then(async ({ data }) => {
       setLogs(data ?? []);
-      const ids = Array.from(new Set((data ?? []).map((x: any) => x.actor_id).filter(Boolean)));
-      if (ids.length) {
-        const { data: p } = await supabase.from("profiles").select("id,full_name").in("id", ids);
-        const m: Record<string, any> = {}; (p ?? []).forEach((x: any) => { m[x.id] = x; }); setActors(m);
+      const ids = new Set<string>();
+      (data ?? []).forEach((x: any) => {
+        if (x.actor_id) ids.add(x.actor_id);
+        const tu = x.metadata?.target_user_id;
+        if (tu) ids.add(tu);
+        if (x.target_type === "user" && x.target_id) ids.add(x.target_id);
+      });
+      if (ids.size) {
+        const { data: p } = await supabase.from("profiles").select("id,full_name,email").in("id", Array.from(ids));
+        const m: Record<string, any> = {};
+        (p ?? []).forEach((x: any) => { m[x.id] = x; });
+        setProfiles(m);
       }
     });
   }, []);
+
+  const filtered = useMemo(() => {
+    return logs.filter((l) => {
+      if (actionFilter !== "all" && !l.action.startsWith(actionFilter)) return false;
+      if (!q) return true;
+      const actor = profiles[l.actor_id]?.full_name ?? "";
+      const targetUserId = l.metadata?.target_user_id ?? (l.target_type === "user" ? l.target_id : null);
+      const target = targetUserId ? (profiles[targetUserId]?.full_name ?? "") : "";
+      const hay = `${l.action} ${l.target_type} ${l.target_id ?? ""} ${actor} ${target} ${JSON.stringify(l.metadata ?? {})}`.toLowerCase();
+      return hay.includes(q.toLowerCase());
+    });
+  }, [logs, q, actionFilter, profiles]);
+
+  const actionPrefixes = useMemo(() => {
+    const set = new Set<string>();
+    logs.forEach((l) => set.add(l.action.split("_")[0]));
+    return Array.from(set).sort();
+  }, [logs]);
+
   return (
-    <div className="space-y-1">
-      {logs.length === 0 && <p className="text-sm text-muted-foreground">No audit entries.</p>}
-      {logs.map((l) => (
-        <Card key={l.id} className="glass p-3 text-sm flex items-start justify-between gap-2 flex-wrap">
-          <div className="min-w-0 flex-1">
-            <div className="font-bold">
-              <span className="text-primary">{actors[l.actor_id]?.full_name ?? "System"}</span>{" "}
-              <span className="text-muted-foreground">{humanize(l.action)}</span>{" "}
-              <span className="text-muted-foreground">on</span> <span>{l.target_type}</span>
-            </div>
-            {l.metadata && Object.keys(l.metadata).length > 0 && (
-              <div className="text-xs text-muted-foreground mt-1">
-                {Object.entries(l.metadata).map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`).join(" · ")}
+    <div className="space-y-3">
+      <Card className="glass-strong p-3 flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground"><Filter className="h-3 w-3" />Filter</div>
+        <Input placeholder="Search action, user, target, metadata…" value={q} onChange={(e) => setQ(e.target.value)} className="w-64 h-9" />
+        <Select value={actionFilter} onValueChange={setActionFilter}>
+          <SelectTrigger className="w-44 h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All actions</SelectItem>
+            {actionPrefixes.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Badge variant="outline" className="ml-auto">{filtered.length} of {logs.length}</Badge>
+      </Card>
+
+      {filtered.length === 0 && <p className="text-sm text-muted-foreground">No audit entries match.</p>}
+      <div className="space-y-2">
+        {filtered.map((l) => {
+          const actor = profiles[l.actor_id];
+          const meta = l.metadata ?? {};
+          const targetUserId = meta.target_user_id ?? (l.target_type === "user" ? l.target_id : null);
+          const targetUser = targetUserId ? profiles[targetUserId] : null;
+          const ts = new Date(l.created_at);
+          const action = humanize(l.action);
+          const tone = /(ban|revoke|deny|delete|wipe|restrict|mute)/i.test(l.action) ? "destructive"
+                     : /(grant|approve|credit|create|add|won)/i.test(l.action) ? "emerald"
+                     : "primary";
+          const toneCls = tone === "destructive" ? "border-destructive/40 bg-destructive/5"
+                        : tone === "emerald" ? "border-emerald-400/30 bg-emerald-500/5"
+                        : "border-primary/30 bg-primary/5";
+          const dotCls = tone === "destructive" ? "bg-destructive" : tone === "emerald" ? "bg-emerald-400" : "bg-primary";
+          // Strip enrichment keys from "extra" rendering
+          const standardKeys = new Set(["actor_email", "user_agent", "route", "origin", "locale", "timezone", "timestamp_iso", "target_user_id"]);
+          const extras = Object.entries(meta).filter(([k]) => !standardKeys.has(k));
+          return (
+            <Card key={l.id} className={`glass p-4 border ${toneCls}`}>
+              <div className="flex items-start gap-3">
+                <span className={`mt-1 h-2.5 w-2.5 rounded-full shrink-0 ${dotCls} shadow-[0_0_10px_currentColor]`} />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="font-bold text-primary">{actor?.full_name ?? "System"}</span>
+                    <span className="text-muted-foreground">{action}</span>
+                    <span className="text-muted-foreground">on</span>
+                    <Badge variant="outline" className="capitalize">{l.target_type ?? "—"}</Badge>
+                    {targetUser && (
+                      <>
+                        <span className="text-muted-foreground">→</span>
+                        <span className="font-bold text-emerald-300">{targetUser.full_name}</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    {actor?.email && <Detail icon={Users} label="By"><span className="font-mono">{actor.email}</span></Detail>}
+                    {targetUser?.email && <Detail icon={Users} label="To"><span className="font-mono">{targetUser.email}</span></Detail>}
+                    {l.target_id && l.target_type !== "user" && <Detail icon={Tag} label="Target ID"><span className="font-mono break-all">{l.target_id}</span></Detail>}
+                    {meta.route && <Detail icon={MapPin} label="From route"><span className="font-mono">{meta.route}</span></Detail>}
+                    {meta.origin && <Detail icon={Globe} label="Origin"><span className="font-mono">{meta.origin}</span></Detail>}
+                    {meta.user_agent && <Detail icon={Smartphone} label="Device"><span className="font-mono truncate inline-block max-w-[260px] align-bottom">{summariseUA(meta.user_agent)}</span></Detail>}
+                    <Detail icon={Clock} label="When"><span title={ts.toISOString()}>{ts.toLocaleString()} <span className="text-muted-foreground">({timeAgo(ts)})</span></span></Detail>
+                    {meta.timezone && <Detail icon={Globe} label="Timezone">{meta.timezone}</Detail>}
+                  </div>
+                  {extras.length > 0 && (
+                    <div className="rounded-md border border-border bg-muted/30 p-2 text-xs">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Action details</div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1">
+                        {extras.map(([k, v]) => (
+                          <div key={k}>
+                            <span className="text-muted-foreground">{humanize(k)}:</span>{" "}
+                            <span className="font-mono">{typeof v === "object" ? JSON.stringify(v) : String(v)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-          <div className="text-[10px] text-muted-foreground whitespace-nowrap">{new Date(l.created_at).toLocaleString()}</div>
-        </Card>
-      ))}
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+function summariseUA(ua: string) {
+  const m = ua.match(/(Chrome|Firefox|Safari|Edge|OPR|Edg)\/[\d.]+/);
+  const os = ua.match(/(Windows|Mac OS X|Android|iPhone|Linux|iPad)[^;)]*/);
+  return [m?.[0], os?.[0]].filter(Boolean).join(" · ") || ua.slice(0, 60);
+}
+function timeAgo(d: Date) {
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+  return `${Math.floor(s/86400)}d ago`;
+}
+function Detail({ icon: Icon, label, children }: { icon: any; label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-1.5 min-w-0">
+      <Icon className="h-3 w-3 text-muted-foreground shrink-0" />
+      <span className="text-muted-foreground">{label}:</span>
+      <span className="truncate">{children}</span>
     </div>
   );
 }
@@ -1295,55 +1733,81 @@ function SettingsPanel() {
     setS({ ...s, popup_ad_image: url });
   }
   return (
-    <Card className="glass-strong p-4 space-y-3 max-w-2xl">
-      <div className="flex items-center justify-between">
-        <div><div className="font-bold">Maintenance mode</div><div className="text-xs text-muted-foreground">Blocks all non-admin pages.</div></div>
-        <Switch checked={!!s.maintenance_mode} onCheckedChange={(v) => setS({ ...s, maintenance_mode: v })} />
-      </div>
-      <Textarea placeholder="Maintenance message" value={s.maintenance_message ?? ""} onChange={(e) => setS({ ...s, maintenance_message: e.target.value })} />
-      <div>
-        <label className="text-xs text-muted-foreground">Hero tagline (top of home page)</label>
-        <Input placeholder="Season 4 · Live" value={s.hero_tagline ?? ""} onChange={(e) => setS({ ...s, hero_tagline: e.target.value })} />
-      </div>
-      <div>
-        <label className="text-xs text-muted-foreground">Minimum bet stake</label>
-        <Input type="number" placeholder="2000000" value={s.min_stake ?? 2000000} onChange={(e) => setS({ ...s, min_stake: Number(e.target.value) })} />
-      </div>
-      <div>
-        <label className="text-xs text-muted-foreground">Maximum payout (cash-out cap)</label>
-        <Input type="number" placeholder="100000000" value={s.max_payout ?? 100000000} onChange={(e) => setS({ ...s, max_payout: Number(e.target.value) })} />
-        <p className="text-[10px] text-muted-foreground mt-1">Any bet whose potential payout exceeds this is automatically capped at this amount.</p>
-      </div>
-      <Input placeholder="Contact email" value={s.contact_email ?? ""} onChange={(e) => setS({ ...s, contact_email: e.target.value })} />
-      <Input placeholder="Contact phone" value={s.contact_phone ?? ""} onChange={(e) => setS({ ...s, contact_phone: e.target.value })} />
-      <Input placeholder="Contact WhatsApp" value={s.contact_whatsapp ?? ""} onChange={(e) => setS({ ...s, contact_whatsapp: e.target.value })} />
-      <Textarea placeholder="About us" rows={3} value={s.about_us ?? ""} onChange={(e) => setS({ ...s, about_us: e.target.value })} />
-      <Textarea placeholder="Why trust us" rows={3} value={s.why_trust_us ?? ""} onChange={(e) => setS({ ...s, why_trust_us: e.target.value })} />
-      <Textarea placeholder="Terms & Conditions" rows={5} value={s.terms_content ?? ""} onChange={(e) => setS({ ...s, terms_content: e.target.value })} />
-
-      <div className="border-t border-border pt-3 space-y-2">
+    <div className="grid lg:grid-cols-2 gap-4 max-w-5xl">
+      <SettingsSection icon={Pause} title="Maintenance" subtitle="Block non-admin access and post a notice.">
         <div className="flex items-center justify-between">
-          <div className="font-bold">Pop-up Ad</div>
-          <Switch checked={!!s.popup_ad_active} onCheckedChange={(v) => setS({ ...s, popup_ad_active: v })} />
+          <div className="text-sm">Maintenance mode</div>
+          <Switch checked={!!s.maintenance_mode} onCheckedChange={(v) => setS({ ...s, maintenance_mode: v })} />
         </div>
-        <Select value={s.popup_ad_size ?? "large"} onValueChange={(v) => setS({ ...s, popup_ad_size: v })}>
-          <SelectTrigger><SelectValue placeholder="Size" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="large">Large</SelectItem>
-            <SelectItem value="xl">Extra Large</SelectItem>
-          </SelectContent>
-        </Select>
-        <Input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadPopup(e.target.files[0])} />
-        {s.popup_ad_image && <img src={s.popup_ad_image} alt="" className="w-full max-h-48 object-contain rounded border border-border" />}
-        <Textarea placeholder="Popup text/HTML" rows={3} value={s.popup_ad_text ?? ""} onChange={(e) => setS({ ...s, popup_ad_text: e.target.value })} />
-        <Input placeholder="Popup link (optional)" value={s.popup_ad_link ?? ""} onChange={(e) => setS({ ...s, popup_ad_link: e.target.value })} />
-      </div>
+        <Textarea placeholder="Message shown to users" value={s.maintenance_message ?? ""} onChange={(e) => setS({ ...s, maintenance_message: e.target.value })} />
+      </SettingsSection>
 
-      <div className="flex gap-2 flex-wrap">
-        <Button className="btn-luxury" onClick={save}>Save settings</Button>
-        <Button variant="destructive" onClick={wipe}><AlertTriangle className="h-4 w-4 mr-1" />Emergency: wipe all tokens</Button>
+      <SettingsSection icon={Coins} title="Betting Limits" subtitle="Stake and payout guardrails.">
+        <FieldLuxe label="Minimum stake">
+          <Input type="number" value={s.min_stake ?? 2000000} onChange={(e) => setS({ ...s, min_stake: Number(e.target.value) })} />
+        </FieldLuxe>
+        <FieldLuxe label="Maximum payout cap">
+          <Input type="number" value={s.max_payout ?? 100000000} onChange={(e) => setS({ ...s, max_payout: Number(e.target.value) })} />
+        </FieldLuxe>
+        <p className="text-[10px] text-muted-foreground">Bets whose potential payout exceeds the cap are automatically clamped.</p>
+      </SettingsSection>
+
+      <SettingsSection icon={Sparkles} title="Brand" subtitle="Tagline shown across landing surfaces.">
+        <FieldLuxe label="Hero tagline"><Input value={s.hero_tagline ?? ""} onChange={(e) => setS({ ...s, hero_tagline: e.target.value })} placeholder="Season 4 · Live" /></FieldLuxe>
+      </SettingsSection>
+
+      <SettingsSection icon={MessageSquare} title="Contact" subtitle="Public-facing contact channels.">
+        <FieldLuxe label="Email"><Input value={s.contact_email ?? ""} onChange={(e) => setS({ ...s, contact_email: e.target.value })} /></FieldLuxe>
+        <FieldLuxe label="Phone"><Input value={s.contact_phone ?? ""} onChange={(e) => setS({ ...s, contact_phone: e.target.value })} /></FieldLuxe>
+        <FieldLuxe label="WhatsApp"><Input value={s.contact_whatsapp ?? ""} onChange={(e) => setS({ ...s, contact_whatsapp: e.target.value })} /></FieldLuxe>
+      </SettingsSection>
+
+      <SettingsSection icon={Megaphone} title="About & Trust" subtitle="Public-facing copy.">
+        <FieldLuxe label="About us"><Textarea rows={3} value={s.about_us ?? ""} onChange={(e) => setS({ ...s, about_us: e.target.value })} /></FieldLuxe>
+        <FieldLuxe label="Why trust us"><Textarea rows={3} value={s.why_trust_us ?? ""} onChange={(e) => setS({ ...s, why_trust_us: e.target.value })} /></FieldLuxe>
+        <FieldLuxe label="Terms & Conditions"><Textarea rows={6} value={s.terms_content ?? ""} onChange={(e) => setS({ ...s, terms_content: e.target.value })} /></FieldLuxe>
+      </SettingsSection>
+
+      <SettingsSection icon={ImageIcon} title="Pop-up Ad" subtitle="Promo modal across the platform." right={<Switch checked={!!s.popup_ad_active} onCheckedChange={(v) => setS({ ...s, popup_ad_active: v })} />}>
+        <FieldLuxe label="Size">
+          <Select value={s.popup_ad_size ?? "large"} onValueChange={(v) => setS({ ...s, popup_ad_size: v })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="large">Large</SelectItem>
+              <SelectItem value="xl">Extra Large</SelectItem>
+            </SelectContent>
+          </Select>
+        </FieldLuxe>
+        <FieldLuxe label="Image"><Input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadPopup(e.target.files[0])} /></FieldLuxe>
+        {s.popup_ad_image && <img src={s.popup_ad_image} alt="" className="w-full max-h-48 object-contain rounded border border-border" />}
+        <FieldLuxe label="Body text/HTML"><Textarea rows={3} value={s.popup_ad_text ?? ""} onChange={(e) => setS({ ...s, popup_ad_text: e.target.value })} /></FieldLuxe>
+        <FieldLuxe label="Link (optional)"><Input value={s.popup_ad_link ?? ""} onChange={(e) => setS({ ...s, popup_ad_link: e.target.value })} /></FieldLuxe>
+      </SettingsSection>
+
+      <Card className="glass-strong p-4 lg:col-span-2 flex flex-wrap items-center gap-2 justify-between">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground"><Lock className="h-4 w-4" />Saving writes an audit log entry.</div>
+        <div className="flex gap-2 flex-wrap">
+          <Button className="btn-luxury h-11 px-6" onClick={save}><Check className="h-4 w-4 mr-1" />Save settings</Button>
+          <Button variant="destructive" className="h-11" onClick={wipe}><AlertTriangle className="h-4 w-4 mr-1" />Emergency: wipe all tokens</Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function SettingsSection({ icon: Icon, title, subtitle, right, children }: { icon: any; title: string; subtitle?: string; right?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <Card className="glass-strong p-5 space-y-3">
+      <div className="flex items-start gap-3">
+        <span className="h-10 w-10 rounded-xl bg-gradient-gold text-primary-foreground grid place-items-center shrink-0 shadow-gold"><Icon className="h-5 w-5" /></span>
+        <div className="flex-1">
+          <div className="font-bold text-base">{title}</div>
+          {subtitle && <div className="text-xs text-muted-foreground">{subtitle}</div>}
+        </div>
+        {right}
       </div>
+      <div className="space-y-3">{children}</div>
     </Card>
   );
 }
@@ -1374,9 +1838,11 @@ function WithdrawalsPanel() {
       description: approve ? "Tokens stay deducted; user will be notified." : "Tokens will be refunded to the user.",
       tone: approve ? "default" : "danger",
       confirmText: approve ? "Approve" : "Decline & refund",
+      inputLabel: approve ? "Instructions for user" : "Reason for declining",
+      inputPlaceholder: approve ? "Optional payout instructions…" : "Optional decline reason…",
     });
-    if (!ok) return;
-    const note = window.prompt(approve ? "Instructions for user (optional)" : "Reason for declining (optional)") ?? "";
+    if (!ok || typeof ok !== "object") return;
+    const note = ok.value;
     const { error } = await supabase.rpc("review_withdrawal_request", { _id: r.id, _approve: approve, _note: note || undefined });
     if (error) toast.error(error.message); else { toast.success("Done"); logAudit(`withdrawal_${approve ? "approved" : "declined"}`, "withdrawal", r.id); load(); }
   }
@@ -1478,7 +1944,7 @@ function BetTrackerPanel() {
 
   async function load() {
     let qb = supabase.from("bets")
-      .select("*, profiles:user_id(full_name,email,ingame_name), bet_selections(*, matches:match_id(name))")
+      .select("*, profiles!user_id(full_name,email,ingame_name), bet_selections(*, matches!match_id(name))")
       .order("created_at", { ascending: false }).limit(200);
     if (filter !== "all") qb = qb.eq("status", filter as any);
     const { data } = await qb;
@@ -1486,15 +1952,17 @@ function BetTrackerPanel() {
   }
   useEffect(() => { load(); }, [filter]);
   useEffect(() => {
-    const ch = supabase.channel("admin-bettracker").on("postgres_changes", { event: "*", schema: "public", table: "bets" }, load).subscribe();
+    const ch = supabase.channel("admin-bettracker")
+      .on("postgres_changes", { event: "*", schema: "public", table: "bets" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bet_selections" }, load)
+      .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+  }, [filter]);
 
   async function suspend(b: any) {
-    const reason = window.prompt("Reason for suspending this ticket?") ?? undefined;
-    const ok = await confirm({ title: "Suspend ticket?", description: `Tracking ${b.tracking_id} will be suspended. User will be notified.`, tone: "danger", confirmText: "Suspend" });
-    if (!ok) return;
-    const { error } = await supabase.rpc("admin_suspend_bet", { _bet_id: b.id, _reason: reason });
+    const ok = await confirm({ title: "Suspend / flag ticket?", description: `Tracking ${b.tracking_id} will stop from crediting until admin unsuspends it.`, tone: "danger", confirmText: "Suspend ticket", inputLabel: "Reason", inputPlaceholder: "Why is this betslip being suspended?" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await supabase.rpc("admin_suspend_bet", { _bet_id: b.id, _reason: ok.value || undefined });
     if (error) toast.error(error.message); else { toast.success("Ticket suspended"); load(); }
   }
   async function unsuspend(b: any) {
@@ -1502,11 +1970,22 @@ function BetTrackerPanel() {
     if (error) toast.error(error.message); else { toast.success("Ticket reactivated"); load(); }
   }
   async function del(b: any) {
-    const ok = await confirm({ title: "Delete ticket?", description: `Tracking ${b.tracking_id}. Refund stake to user?`, tone: "danger", confirmText: "Delete (no refund)", cancelText: "Cancel" });
-    if (!ok) return;
-    const refund = window.confirm("Also REFUND the stake to the user?");
-    const { error } = await supabase.rpc("admin_delete_bet", { _bet_id: b.id, _refund: refund, _reason: undefined as any });
-    if (error) toast.error(error.message); else { toast.success(refund ? "Ticket deleted & refunded" : "Ticket deleted"); load(); }
+    const ok = await confirm({ title: "Delete ticket?", description: `Tracking ${b.tracking_id}. You can optionally refund the stake before removal.`, tone: "danger", confirmText: "Delete ticket", cancelText: "Cancel", checkboxLabel: "Refund stake to user", inputLabel: "Admin note", inputPlaceholder: "Optional reason shown in logs…" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await supabase.rpc("admin_delete_bet", { _bet_id: b.id, _refund: ok.checked, _reason: ok.value || undefined });
+    if (error) toast.error(error.message); else { toast.success(ok.checked ? "Ticket deleted & refunded" : "Ticket deleted"); load(); }
+  }
+  async function refund(b: any) {
+    const ok = await confirm({ title: "Mark ticket as refunded?", description: `Refunds ${Number(b.stake).toLocaleString()} tokens and closes ${b.tracking_id}.`, confirmText: "Refund stake", inputLabel: "Refund reason", inputPlaceholder: "Reason for refund…" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await supabase.rpc("admin_refund_bet", { _bet_id: b.id, _reason: ok.value || undefined });
+    if (error) toast.error(error.message); else { toast.success("Ticket refunded"); load(); }
+  }
+  async function voidBet(b: any) {
+    const ok = await confirm({ title: "Mark ticket as void?", description: `Void ${b.tracking_id}. You can return the stake while keeping the ticket record visible.`, confirmText: "Mark void", checkboxLabel: "Refund stake to user", inputLabel: "Void reason", inputPlaceholder: "Reason for voiding this ticket…" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await (supabase as any).rpc("admin_void_bet", { _bet_id: b.id, _refund: ok.checked, _reason: ok.value || undefined });
+    if (error) toast.error(error.message); else { toast.success(ok.checked ? "Ticket voided & refunded" : "Ticket voided"); load(); }
   }
 
   const filtered = bets.filter((b) => {
@@ -1521,11 +2000,12 @@ function BetTrackerPanel() {
         <ClipboardList className="h-4 w-4 text-primary" />
         <div className="font-bold text-sm">Bet Ticket Tracker</div>
         <div className="flex-1" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tracking, code, user…" className="max-w-xs" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tracking, code, user…" className="w-full md:max-w-xs" />
+        <Button size="sm" variant="outline" onClick={load}><RotateCw className="h-3 w-3 mr-1" />Refresh</Button>
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {["all","open","won","lost","suspended","cashed_out","void"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            {["all","open","won","lost","suspended","refunded","cashed_out","void"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
       </Card>
@@ -1552,19 +2032,84 @@ function BetTrackerPanel() {
                 <div className="text-xs text-muted-foreground mt-0.5">
                   Stake {Number(b.stake).toLocaleString()} · Odds {Number(b.total_odds).toFixed(2)} · Payout {Number(b.potential_payout).toLocaleString()} · {new Date(b.created_at).toLocaleString()}
                 </div>
-                <div className="text-[11px] text-muted-foreground mt-1 truncate">
-                  {(b.bet_selections ?? []).map((s: any) => `${s.matches?.name ?? "Match"}: ${s.selection_label} @${Number(s.locked_odds).toFixed(2)}`).join(" · ")}
+                <div className="mt-3 grid gap-1.5">
+                  {(b.bet_selections ?? []).map((s: any) => (
+                    <div key={s.id} className="rounded-lg border border-border/70 bg-background/30 px-2 py-1.5 text-[11px] text-muted-foreground">
+                      <span className="font-semibold text-foreground">{s.matches?.name ?? "Match"}</span> · {s.selection_label} <span className="font-mono text-primary">@{Number(s.locked_odds).toFixed(2)}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="flex gap-1 items-center">
+              <div className="flex gap-1 items-center flex-wrap justify-end">
                 <Button asChild size="sm" variant="outline"><a href={`/ticket/${b.id}`}>View</a></Button>
                 {b.status === "open" && <Button size="sm" variant="outline" onClick={() => suspend(b)}><Pause className="h-3 w-3" /></Button>}
                 {b.status === "suspended" && <Button size="sm" variant="outline" onClick={() => unsuspend(b)}><Play className="h-3 w-3" /></Button>}
+                {!["won", "cashed_out", "refunded", "void"].includes(b.status) && <Button size="sm" variant="outline" onClick={() => voidBet(b)}>Void</Button>}
+                {!["won", "cashed_out", "refunded"].includes(b.status) && <Button size="sm" variant="outline" onClick={() => refund(b)}><RotateCw className="h-3 w-3" /></Button>}
                 <Button size="sm" variant="destructive" onClick={() => del(b)}><Trash2 className="h-3 w-3" /></Button>
               </div>
             </div>
           </Card>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function TasksAchievementsPanel() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<any[]>([]);
+  const [draft, setDraft] = useState({ user_id: "", title: "", description: "", reward_tokens: 0 });
+  async function load() {
+    const [{ data: u }, { data: t }, { data: a }] = await Promise.all([
+      supabase.from("profiles").select("id,full_name,email").order("created_at", { ascending: false }).limit(500),
+      supabase.from("user_tasks").select("*, profiles!user_id(full_name,email)").order("created_at", { ascending: false }).limit(200),
+      supabase.from("user_achievements").select("*, profiles!user_id(full_name,email)").order("awarded_at", { ascending: false }).limit(200),
+    ]);
+    setUsers(u ?? []); setTasks(t ?? []); setAchievements(a ?? []);
+  }
+  useEffect(() => { load(); }, []);
+  async function createTask() {
+    if (!draft.user_id || !draft.title) { toast.error("Pick a user and enter a task title"); return; }
+    const { error } = await supabase.from("user_tasks").insert({ user_id: draft.user_id, title: draft.title, description: draft.description || null, reward_tokens: draft.reward_tokens || 0 });
+    if (error) toast.error(error.message); else { toast.success("Task assigned"); setDraft({ user_id: "", title: "", description: "", reward_tokens: 0 }); load(); }
+  }
+  async function markDone(task: any) {
+    await supabase.from("user_tasks").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", task.id);
+    if (task.reward_tokens > 0) {
+      const { data: p } = await supabase.from("profiles").select("token_balance").eq("id", task.user_id).single();
+      if (p) await supabase.from("profiles").update({ token_balance: (p.token_balance ?? 0) + task.reward_tokens }).eq("id", task.user_id);
+    }
+    await supabase.from("notifications").insert({ user_id: task.user_id, title: "Task completed", body: `${task.title}${task.reward_tokens ? ` · +${task.reward_tokens} tokens` : ""}` });
+    toast.success("Task completed"); load();
+  }
+  return (
+    <div className="space-y-4">
+      <Card className="glass-strong p-4 space-y-3">
+        <div className="flex items-center gap-2 font-bold"><ClipboardList className="h-4 w-4 text-primary" />User Tasks</div>
+        <div className="grid md:grid-cols-4 gap-2">
+          <Select value={draft.user_id} onValueChange={(v) => setDraft({ ...draft, user_id: v })}>
+            <SelectTrigger><SelectValue placeholder="Assign to user" /></SelectTrigger>
+            <SelectContent>{users.map((u) => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}</SelectContent>
+          </Select>
+          <Input placeholder="Task title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+          <Input placeholder="Description" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+          <Input type="number" placeholder="Reward tokens" value={draft.reward_tokens || ""} onChange={(e) => setDraft({ ...draft, reward_tokens: Number(e.target.value) })} />
+        </div>
+        <Button className="btn-luxury" onClick={createTask}><Plus className="h-4 w-4 mr-1" />Assign task</Button>
+      </Card>
+      <div className="grid lg:grid-cols-2 gap-4">
+        <Card className="glass p-4 space-y-2">
+          <div className="font-bold">Active platform tasks</div>
+          {tasks.length === 0 && <p className="text-sm text-muted-foreground">No tasks yet.</p>}
+          {tasks.map((t) => <div key={t.id} className="rounded-lg border border-border/70 p-3 text-sm"><div className="font-bold">{t.title}</div><div className="text-xs text-muted-foreground">{t.profiles?.full_name || t.profiles?.email} · {t.status} · reward {Number(t.reward_tokens).toLocaleString()}</div>{t.status !== "completed" && <Button size="sm" variant="outline" className="mt-2" onClick={() => markDone(t)}><Check className="h-3 w-3 mr-1" />Mark complete</Button>}</div>)}
+        </Card>
+        <Card className="glass p-4 space-y-2">
+          <div className="font-bold">Achievements <Badge variant="outline" className="ml-2 border-primary/40 text-primary">Coming soon</Badge></div>
+          {achievements.length === 0 && <p className="text-sm text-muted-foreground">No achievements awarded yet.</p>}
+          {achievements.map((a) => <div key={a.id} className="rounded-lg border border-border/70 p-3 text-sm"><div className="font-bold">{a.icon} {a.title}</div><div className="text-xs text-muted-foreground">{a.profiles?.full_name || a.profiles?.email} · {new Date(a.awarded_at).toLocaleString()}</div></div>)}
+        </Card>
       </div>
     </div>
   );
@@ -1577,7 +2122,7 @@ function PromoRequestsPanel() {
   const [filter, setFilter] = useState<string>("pending");
   async function load() {
     let qb = supabase.from("promo_code_requests")
-      .select("*, profiles:user_id(full_name,email)")
+      .select("*, profiles!user_id(full_name,email)")
       .order("created_at", { ascending: false });
     if (filter !== "all") qb = qb.eq("status", filter);
     const { data } = await qb;
@@ -1590,17 +2135,15 @@ function PromoRequestsPanel() {
   }, []);
 
   async function approve(r: any) {
-    const note = window.prompt("Optional note to sponsor?") ?? undefined;
-    const ok = await confirm({ title: "Approve & generate code?", description: `Will create a ${Number(r.amount).toLocaleString()}-token promo code with ${r.usage_limit} uses.`, confirmText: "Approve" });
-    if (!ok) return;
-    const { error } = await supabase.rpc("approve_promo_request", { _id: r.id, _note: note });
+    const ok = await confirm({ title: "Approve & generate code?", description: `Will create a ${Number(r.amount).toLocaleString()}-token promo code with ${r.usage_limit} uses.`, confirmText: "Approve", inputLabel: "Note to sponsor", inputPlaceholder: "Optional approval note…" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await supabase.rpc("approve_promo_request", { _id: r.id, _note: ok.value || undefined });
     if (error) toast.error(error.message); else { toast.success("Promo code approved & generated"); load(); }
   }
   async function decline(r: any) {
-    const note = window.prompt("Reason for decline?") ?? undefined;
-    const ok = await confirm({ title: "Decline request?", tone: "danger", confirmText: "Decline" });
-    if (!ok) return;
-    const { error } = await supabase.rpc("decline_promo_request", { _id: r.id, _note: note });
+    const ok = await confirm({ title: "Decline request?", tone: "danger", confirmText: "Decline", inputLabel: "Reason", inputPlaceholder: "Tell the sponsor why it was declined…" });
+    if (!ok || typeof ok !== "object") return;
+    const { error } = await supabase.rpc("decline_promo_request", { _id: r.id, _note: ok.value || undefined });
     if (error) toast.error(error.message); else { toast.success("Request declined"); load(); }
   }
 

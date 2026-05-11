@@ -26,7 +26,7 @@ function Dashboard() {
   useEffect(() => {
     if (!user) return;
     const load = () => supabase.from("bets")
-      .select("*, bet_selections(*, matches:match_id(name))")
+      .select("*, bet_selections(*, matches!match_id(name))")
       .eq("user_id", user.id).order("created_at", { ascending: false })
       .then(({ data }) => setBets(data ?? []));
     load();
