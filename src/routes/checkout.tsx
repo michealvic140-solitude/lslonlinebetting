@@ -132,19 +132,10 @@ function PromoRedeem() {
     setBusy(true);
     try {
       const c = code.trim().toUpperCase();
-      const { data: promo, error } = await supabase.from("promo_codes").select("*").eq("code", c).maybeSingle();
+      const { data, error } = await supabase.rpc("redeem_promo_code", { _code: c });
       if (error) throw error;
-      if (!promo || !promo.is_active) throw new Error("Invalid code");
-      if (promo.expires_at && new Date(promo.expires_at) < new Date()) throw new Error("Code expired");
-
-      const { count } = await supabase.from("promo_redemptions").select("*", { count: "exact", head: true }).eq("promo_id", promo.id).eq("user_id", user.id);
-      if ((count ?? 0) >= (promo.usage_limit ?? 1)) throw new Error("You have already used this code the maximum number of times");
-
-      await supabase.from("promo_redemptions").insert({ promo_id: promo.id, user_id: user.id, amount: promo.amount });
-      await supabase.from("profiles").update({ token_balance: (profile.token_balance ?? 0) + promo.amount }).eq("id", user.id);
-      await supabase.from("promo_codes").update({ used_count: (promo.used_count ?? 0) + 1 }).eq("id", promo.id);
-      await supabase.from("notifications").insert({ user_id: user.id, title: "Promo redeemed", body: `+${promo.amount} tokens from code ${c}` });
-      toast.success(`+${promo.amount} tokens credited!`);
+      const amount = (data as any)?.amount ?? 0;
+      toast.success(`+${amount.toLocaleString()} tokens credited!`);
       setCode(""); refresh();
     } catch (e: any) { toast.error(e.message); }
     finally { setBusy(false); }

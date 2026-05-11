@@ -1310,6 +1310,44 @@ export type Database = {
           },
         ]
       }
+      promo_code_usage_v2: {
+        Row: {
+          code: string | null
+          code_amount: number | null
+          email: string | null
+          full_name: string | null
+          gang_name: string | null
+          ingame_name: string | null
+          promo_id: string | null
+          redeemed_amount: number | null
+          redeemed_at: string | null
+          redemption_id: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_redemptions_promo_id_fkey"
+            columns: ["promo_id"]
+            isOneToOne: false
+            referencedRelation: "promo_code_usage_log"
+            referencedColumns: ["promo_id"]
+          },
+          {
+            foreignKeyName: "promo_redemptions_promo_id_fkey"
+            columns: ["promo_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_redemptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       admin_delete_bet: {
@@ -1356,6 +1394,7 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_mod_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      redeem_promo_code: { Args: { _code: string }; Returns: Json }
       review_withdrawal_request: {
         Args: { _approve: boolean; _id: string; _note?: string }
         Returns: undefined
