@@ -984,7 +984,11 @@ function TokensPanel() {
 /* ============================ PROMO CODES ============================ */
 function PromoPanel() {
   const [codes, setCodes] = useState<any[]>([]);
-  const [draft, setDraft] = useState({ code: "", amount: 100, usage_limit: 1, expires_at: "" });
+  const [draft, setDraft] = useState<{ code: string; amount: number; usage_limit: number; expires_at: string; max_uses: string; target_mode: "all" | "specific"; target_user_ids: string[] }>({ code: "", amount: 100, usage_limit: 1, expires_at: "", max_uses: "", target_mode: "all", target_user_ids: [] });
+  const [userQuery, setUserQuery] = useState("");
+  const [userResults, setUserResults] = useState<any[]>([]);
+  const [usageOpen, setUsageOpen] = useState<string | null>(null);
+  const [usage, setUsage] = useState<Record<string, any[]>>({});
 
   async function load() {
     const { data } = await supabase.from("promo_codes").select("*").order("created_at", { ascending: false });
@@ -992,16 +996,43 @@ function PromoPanel() {
   }
   useEffect(() => { load(); }, []);
 
+  useEffect(() => {
+    if (!userQuery.trim()) { setUserResults([]); return; }
+    const t = setTimeout(async () => {
+      const q = userQuery.trim();
+      const { data } = await supabase.from("profiles").select("id,full_name,ingame_name,email")
+        .or(`full_name.ilike.%${q}%,ingame_name.ilike.%${q}%,email.ilike.%${q}%`).limit(8);
+      setUserResults(data ?? []);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [userQuery]);
+
+  async function loadUsage(promoId: string) {
+    const { data } = await supabase.from("promo_code_usage_v2" as any).select("*").eq("promo_id", promoId).order("redeemed_at", { ascending: false });
+    setUsage((u) => ({ ...u, [promoId]: data ?? [] }));
+  }
+
   async function create() {
     if (!draft.code || !draft.amount) { toast.error("Code and amount required"); return; }
-    const { error } = await supabase.from("promo_codes").insert({
-      code: draft.code.toUpperCase(), amount: draft.amount, usage_limit: draft.usage_limit,
+    const payload: any = {
+      code: draft.code.toUpperCase(),
+      amount: draft.amount,
+      usage_limit: draft.usage_limit,
       expires_at: draft.expires_at ? new Date(draft.expires_at).toISOString() : null,
-    });
+      max_uses: draft.max_uses ? Number(draft.max_uses) : null,
+      target_user_ids: draft.target_mode === "specific" && draft.target_user_ids.length > 0 ? draft.target_user_ids : null,
+    };
+    const { error } = await supabase.from("promo_codes").insert(payload);
     if (error) toast.error(error.message);
-    else { setDraft({ code: "", amount: 100, usage_limit: 1, expires_at: "" }); load(); toast.success("Promo created"); logAudit("promo_created", "promo"); }
+    else {
+      setDraft({ code: "", amount: 100, usage_limit: 1, expires_at: "", max_uses: "", target_mode: "all", target_user_ids: [] });
+      setUserQuery(""); setUserResults([]);
+      load(); toast.success("Promo created"); logAudit("promo_created", "promo");
+    }
   }
   async function toggle(id: string, val: boolean) { await supabase.from("promo_codes").update({ is_active: val }).eq("id", id); load(); }
+
+  const targetCount = draft.target_mode === "all" ? "All users" : `${draft.target_user_ids.length} user(s)`;
 
   return (
     <div className="space-y-3">
@@ -1013,21 +1044,112 @@ function PromoPanel() {
           <Input type="number" placeholder="Per-user usage limit" value={draft.usage_limit} onChange={(e) => setDraft({ ...draft, usage_limit: Number(e.target.value) })} />
           <Input type="datetime-local" value={draft.expires_at} onChange={(e) => setDraft({ ...draft, expires_at: e.target.value })} />
         </div>
+        <div className="grid md:grid-cols-2 gap-2">
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Total max redemptions (blank = unlimited)</div>
+            <Input type="number" placeholder="e.g. 100" value={draft.max_uses} onChange={(e) => setDraft({ ...draft, max_uses: e.target.value })} />
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Audience: {targetCount}</div>
+            <div className="flex gap-2">
+              <Button size="sm" variant={draft.target_mode === "all" ? "default" : "outline"} onClick={() => setDraft({ ...draft, target_mode: "all", target_user_ids: [] })}>All users</Button>
+              <Button size="sm" variant={draft.target_mode === "specific" ? "default" : "outline"} onClick={() => setDraft({ ...draft, target_mode: "specific" })}>Specific user(s)</Button>
+            </div>
+          </div>
+        </div>
+        {draft.target_mode === "specific" && (
+          <div className="space-y-2 rounded-lg border border-border p-2">
+            <Input placeholder="Search users by name, in-game name, or email" value={userQuery} onChange={(e) => setUserQuery(e.target.value)} />
+            {userResults.length > 0 && (
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {userResults.map((u) => {
+                  const picked = draft.target_user_ids.includes(u.id);
+                  return (
+                    <button key={u.id} type="button" onClick={() => setDraft({ ...draft, target_user_ids: picked ? draft.target_user_ids.filter((x) => x !== u.id) : [...draft.target_user_ids, u.id] })}
+                      className={`w-full text-left text-xs px-2 py-1 rounded border ${picked ? "border-primary bg-primary/10" : "border-border"}`}>
+                      {u.full_name} <span className="text-muted-foreground">· {u.ingame_name ?? "—"} · {u.email}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {draft.target_user_ids.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {draft.target_user_ids.map((id) => (
+                  <Badge key={id} variant="outline" className="cursor-pointer" onClick={() => setDraft({ ...draft, target_user_ids: draft.target_user_ids.filter((x) => x !== id) })}>{id.slice(0, 6)} ×</Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <Button className="btn-luxury" onClick={create}>Create</Button>
       </Card>
       <div className="space-y-2">
-        {codes.map((c) => (
-          <Card key={c.id} className="glass p-3 flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <div className="font-mono font-bold">{c.code}</div>
-              <div className="text-xs text-muted-foreground">{c.amount} tokens · used {c.used_count}/{c.usage_limit ?? "∞"} · {c.expires_at ? `expires ${new Date(c.expires_at).toLocaleDateString()}` : "no expiry"}</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={c.is_active} onCheckedChange={(v) => toggle(c.id, v)} />
-              <Badge variant="outline">{c.is_active ? "Active" : "Off"}</Badge>
-            </div>
-          </Card>
-        ))}
+        {codes.map((c) => {
+          const isOpen = usageOpen === c.id;
+          const audienceLabel = c.target_user_ids && c.target_user_ids.length > 0 ? `${c.target_user_ids.length} targeted user(s)` : "All users";
+          return (
+            <Card key={c.id} className="glass p-3 space-y-2">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <div className="font-mono font-bold">{c.code}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {c.amount} tokens · {c.used_count}/{c.max_uses ?? "∞"} total redemptions · {c.usage_limit ?? 1}/user · {audienceLabel} · {c.expires_at ? `expires ${new Date(c.expires_at).toLocaleString()}` : "no expiry"}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => { const next = isOpen ? null : c.id; setUsageOpen(next); if (next) loadUsage(c.id); }}>
+                    {isOpen ? "Hide usage" : "View usage"}
+                  </Button>
+                  <Switch checked={c.is_active} onCheckedChange={(v) => toggle(c.id, v)} />
+                  <Badge variant="outline">{c.is_active ? "Active" : "Off"}</Badge>
+                </div>
+              </div>
+              {isOpen && (
+                <div className="rounded-lg border border-border bg-background/40 p-2">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Redemptions ({usage[c.id]?.length ?? 0})</div>
+                  {!usage[c.id] && <div className="text-xs text-muted-foreground">Loading…</div>}
+                  {usage[c.id]?.length === 0 && <div className="text-xs text-muted-foreground">No redemptions yet.</div>}
+                  {(() => {
+                    const rows = usage[c.id] ?? [];
+                    const byUser: Record<string, { name: string; ingame: string; email: string; count: number; last: string; first: string; total: number }> = {};
+                    rows.forEach((r: any) => {
+                      const k = r.user_id;
+                      if (!byUser[k]) byUser[k] = { name: r.full_name ?? "Unknown", ingame: r.ingame_name ?? "—", email: r.email ?? "", count: 0, last: r.redeemed_at, first: r.redeemed_at, total: 0 };
+                      byUser[k].count++;
+                      byUser[k].total += Number(r.redeemed_amount) || 0;
+                      if (r.redeemed_at > byUser[k].last) byUser[k].last = r.redeemed_at;
+                      if (r.redeemed_at < byUser[k].first) byUser[k].first = r.redeemed_at;
+                    });
+                    const list = Object.values(byUser);
+                    return (
+                      <div className="space-y-2">
+                        <div className="text-[11px] text-muted-foreground">{list.length} unique member(s) · {rows.length} total redemptions</div>
+                        {list.map((u, i) => (
+                          <div key={i} className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border/50 pb-1 last:border-0">
+                            <span className="font-bold">{u.name}</span>
+                            <span className="text-muted-foreground">In-game: <span className="text-foreground">{u.ingame}</span></span>
+                            <span className="text-muted-foreground">Used: <span className="text-primary font-bold">{u.count}×</span></span>
+                            <span className="text-muted-foreground">+{u.total.toLocaleString()} tokens</span>
+                            <span className="text-muted-foreground">Last: {new Date(u.last).toLocaleString()}</span>
+                          </div>
+                        ))}
+                        <details className="text-[10px] text-muted-foreground">
+                          <summary className="cursor-pointer">All timestamps</summary>
+                          <div className="mt-1 space-y-0.5 max-h-40 overflow-y-auto">
+                            {rows.map((r: any) => (
+                              <div key={r.redemption_id}>{new Date(r.redeemed_at).toLocaleString()} — {r.full_name ?? r.user_id} ({r.ingame_name ?? "—"})</div>
+                            ))}
+                          </div>
+                        </details>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
