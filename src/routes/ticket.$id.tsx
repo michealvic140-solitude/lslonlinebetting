@@ -135,7 +135,7 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
         {/* Circuit pattern */}
         <div className="absolute inset-0 voucher-circuit pointer-events-none" />
 
-        <div className="relative px-5 sm:px-7 pt-8 pb-6 space-y-5">
+        <div className="relative px-3 sm:px-5 pt-6 pb-5 space-y-4">
           {/* HEADER */}
           <div className="text-center space-y-2">
             <div className="flex items-center justify-center gap-2">
