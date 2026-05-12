@@ -63,30 +63,42 @@ function Page() {
         <h2 className="text-xl font-bold mt-8 mb-3 flex items-center gap-2"><Trophy className="h-5 w-5 text-primary" />Markets</h2>
         {m.markets.length === 0 && <p className="text-muted-foreground text-sm">No markets yet.</p>}
         <div className="space-y-3">
-          {m.markets.map((mk) => (
-            <Card key={mk.id} className="glass p-4">
-              <div className="flex items-center justify-between">
-                <div className="font-bold">{mk.name}</div>
-                <Badge variant="outline" className={mk.is_open ? "border-accent/40 text-accent" : "border-muted text-muted-foreground"}>
-                  {mk.is_open ? "Open" : "Closed"}
-                </Badge>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
-                {mk.odds.map((o) => {
-                  const sel = selectedOdd === o.id;
-                  const locked = !mk.is_open || m.status !== "scheduled";
-                  return (
-                    <Button key={o.id} variant={sel ? "default" : "outline"} disabled={locked}
-                      onClick={() => sel ? remove(o.id) : add({ match_id: m.id, match_name: `${home} vs ${away}`, market_id: mk.id, market_name: mk.name, odd_id: o.id, selection_label: o.label, odds: Number(o.value) })}>
-                      <span className="text-xs">{o.label}</span>
-                      <span className="ml-2 font-mono">{Number(o.value).toFixed(2)}</span>
-                      {o.is_winner && <Badge className="ml-2 bg-accent text-accent-foreground">W</Badge>}
-                    </Button>
-                  );
-                })}
-              </div>
-            </Card>
-          ))}
+          {[...m.markets]
+            .sort((a, b) => Number(/correct\s*score/i.test(b.name)) - Number(/correct\s*score/i.test(a.name)))
+            .map((mk) => {
+            const isCS = /correct\s*score/i.test(mk.name);
+            return (
+              <Card key={mk.id} id={isCS ? "correct-score" : undefined} className={`glass p-4 ${isCS ? "border-primary/40 ring-1 ring-primary/30" : ""}`}>
+                <div className="flex items-center justify-between">
+                  <div className="font-bold flex items-center gap-2">
+                    {mk.name}
+                    {isCS && <Badge className="bg-primary/20 text-primary border-primary/40" variant="outline">{mk.odds.length} scores</Badge>}
+                  </div>
+                  <Badge variant="outline" className={mk.is_open ? "border-accent/40 text-accent" : "border-muted text-muted-foreground"}>
+                    {mk.is_open ? "Open" : "Closed"}
+                  </Badge>
+                </div>
+                {isCS ? (
+                  <CorrectScoreGrid market={mk} matchLocked={!mk.is_open || m.status !== "scheduled"} matchId={m.id} matchName={`${home} vs ${away}`} selectedOdd={selectedOdd} add={add} remove={remove} homeName={home} awayName={away} />
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
+                    {mk.odds.map((o) => {
+                      const sel = selectedOdd === o.id;
+                      const locked = !mk.is_open || m.status !== "scheduled";
+                      return (
+                        <Button key={o.id} variant={sel ? "default" : "outline"} disabled={locked}
+                          onClick={() => sel ? remove(o.id) : add({ match_id: m.id, match_name: `${home} vs ${away}`, market_id: mk.id, market_name: mk.name, odd_id: o.id, selection_label: o.label, odds: Number(o.value) })}>
+                          <span className="text-xs">{o.label}</span>
+                          <span className="ml-2 font-mono">{Number(o.value).toFixed(2)}</span>
+                          {o.is_winner && <Badge className="ml-2 bg-accent text-accent-foreground">W</Badge>}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
         </div>
       </div>
     </Layout>
@@ -103,4 +115,102 @@ function Side({ name, score, status, logo, align = "left" }: { name: string; sco
       </div>
     </div>
   );
+}
+
+import { Input } from "@/components/ui/input";
+import { Search, Plus as PlusIcon } from "lucide-react";
+
+function CorrectScoreGrid({ market, matchLocked, matchId, matchName, selectedOdd, add, remove, homeName, awayName }: {
+  market: any; matchLocked: boolean; matchId: string; matchName: string;
+  selectedOdd: string | undefined;
+  add: (s: any) => void; remove: (id: string) => void;
+  homeName: string; awayName: string;
+}) {
+  const [search, setSearch] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const [tab, setTab] = useState<"all" | "home" | "draw" | "away">("all");
+
+  // Sort: by lowest total goals then home goals
+  const sorted = [...(market.odds ?? [])].sort((a: any, b: any) => {
+    const pa = parseScore(a.label); const pb = parseScore(b.label);
+    return (pa.h + pa.a) - (pb.h + pb.a) || pa.h - pb.h || pa.a - pb.a;
+  });
+
+  const filteredByTab = sorted.filter((o: any) => {
+    const p = parseScore(o.label);
+    if (tab === "home") return p.h > p.a;
+    if (tab === "away") return p.a > p.h;
+    if (tab === "draw") return p.h === p.a;
+    return true;
+  });
+  const filtered = filteredByTab.filter((o: any) => {
+    if (!search.trim()) return true;
+    const q = search.replace(/[-:\s]/g, "");
+    return o.label.replace(/[-:]/g, "").includes(q);
+  });
+
+  const visible = showAll || search.trim() ? filtered : filtered.slice(0, 12);
+
+  if (sorted.length === 0) {
+    return <div className="mt-3 text-sm text-muted-foreground">No correct-score odds posted yet.</div>;
+  }
+
+  return (
+    <div className="mt-3 space-y-3">
+      <div className="grid grid-cols-4 gap-1 rounded-lg border border-border bg-background/40 p-1 text-xs">
+        {([
+          { k: "all", label: "All" },
+          { k: "home", label: `${homeName} wins` },
+          { k: "draw", label: "Draw" },
+          { k: "away", label: `${awayName} wins` },
+        ] as const).map((t) => (
+          <button
+            key={t.k}
+            onClick={() => setTab(t.k)}
+            className={`rounded-md px-2 py-1.5 font-bold transition truncate ${tab === t.k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div className="relative">
+        <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search score (e.g. 2-1, 21, 1:3)" className="pl-9" />
+      </div>
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+        {visible.map((o: any) => {
+          const sel = selectedOdd === o.id;
+          return (
+            <button
+              key={o.id}
+              disabled={matchLocked}
+              onClick={() => sel
+                ? remove(o.id)
+                : add({ match_id: matchId, match_name: matchName, market_id: market.id, market_name: market.name, odd_id: o.id, selection_label: `Correct Score [${o.label}]`, odds: Number(o.value) })}
+              className={`relative rounded-xl border p-2 text-center transition ${
+                sel ? "border-primary bg-primary/15 shadow-gold" : "border-border bg-background/40 hover:border-primary/50"
+              } ${matchLocked ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Score</div>
+              <div className="font-mono font-black text-lg">{o.label}</div>
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">Odds</div>
+              <div className="font-mono font-bold text-primary">{Number(o.value).toFixed(2)}</div>
+              {o.is_winner && <Badge className="absolute top-1 right-1 bg-accent text-accent-foreground text-[9px] px-1">W</Badge>}
+              {sel && <div className="absolute top-1 left-1 h-2 w-2 rounded-full bg-primary animate-pulse" />}
+            </button>
+          );
+        })}
+      </div>
+      {!search.trim() && filtered.length > 12 && (
+        <Button variant="outline" size="sm" className="w-full" onClick={() => setShowAll((v) => !v)}>
+          <PlusIcon className="h-3 w-3 mr-1" />{showAll ? "Show less" : `Show more (${filtered.length - 12})`}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function parseScore(label: string): { h: number; a: number } {
+  const parts = label.split(/[-:]/).map((s) => Number(s.trim()));
+  return { h: isNaN(parts[0]) ? 99 : parts[0], a: isNaN(parts[1]) ? 99 : parts[1] };
 }

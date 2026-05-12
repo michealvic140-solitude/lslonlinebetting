@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TeamLogo } from "@/components/TeamLogo";
 import { useConfirm } from "@/components/ConfirmDialog";
-import { Sparkles, Send, ArrowLeft, Ticket as TicketIcon, Copy, Check, X, Image as ImageIcon, Share2, Trash2, Lock as LockIcon, Clock as ClockIcon, ShieldCheck, Trophy } from "lucide-react";
+import { Sparkles, Send, ArrowLeft, Ticket as TicketIcon, Copy, Check, X, Image as ImageIcon, Share2, Trash2, Lock as LockIcon, Clock as ClockIcon, ShieldCheck, Trophy, Coins, TrendingUp, Gem, Calendar, CalendarCheck, ShieldAlert } from "lucide-react";
 import { GangLogo } from "@/components/GangLogo";
 import { toast } from "sonner";
 
@@ -90,162 +90,272 @@ function BetTicket({ bet, viewerId }: { bet: any; viewerId: string }) {
   );
 }
 
-/* ====== Premium Glassmorphism Bet Voucher ====== */
+/* ====== Premium Glassmorphism Bet Voucher (matches reference) ====== */
 export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: {
   bet: any; sels: any[]; statusBadge: { label: string; cls: string; Icon: any }; allWon: boolean;
   copy: (t: string) => void; shareCode: () => void;
 }) {
-  const StatusIcon = statusBadge.Icon;
+  const status = bet.status as string;
+  const statusBarCls =
+    status === "won" || status === "cashed_out" ? "voucher-status-bar-won"
+    : status === "lost" ? "voucher-status-bar-lost"
+    : "voucher-status-bar-pending";
+  const statusBarIcon =
+    status === "won" || status === "cashed_out" ? <Trophy className="h-4 w-4" />
+    : status === "lost" ? <X className="h-4 w-4" />
+    : <ClockIcon className="h-4 w-4" />;
+  const statusBarText =
+    status === "won" ? "BET STATUS: CONGRATULATIONS, YOU WON!"
+    : status === "cashed_out" ? "BET STATUS: CASHED OUT SUCCESSFULLY"
+    : status === "lost" ? "BET STATUS: BETTER LUCK NEXT ROUND"
+    : status === "void" ? "BET STATUS: TICKET VOIDED"
+    : status === "refunded" ? "BET STATUS: REFUNDED"
+    : status === "suspended" ? "BET STATUS: SUSPENDED BY ADMIN"
+    : "BET STATUS: PENDING SETTLEMENT";
+
   return (
-    <div className="relative px-1 py-6">
+    <div className="relative px-1 py-6 animate-fade-in">
       {/* Outer ambient glow */}
       <div className="absolute -inset-6 rounded-[40px] bg-[radial-gradient(circle_at_30%_20%,oklch(0.85_0.22_152/0.30),transparent_60%),radial-gradient(circle_at_80%_80%,oklch(0.82_0.17_90/0.22),transparent_60%)] blur-3xl pointer-events-none" />
 
-      <div className="relative mx-auto rounded-[28px] voucher-frame voucher-bg overflow-hidden">
-        {/* Holographic top tab */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-7 rounded-b-2xl overflow-hidden">
+      <div className="relative mx-auto rounded-[28px] voucher-frame voucher-bg overflow-hidden transition-transform hover:-translate-y-0.5">
+        {/* Holographic corner patches (4 corners like reference) */}
+        <div className="absolute left-0 top-0 w-16 h-16 rounded-br-2xl overflow-hidden pointer-events-none">
           <div className="absolute inset-0 voucher-holo" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30" />
         </div>
-        {/* Holographic bottom tab */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 h-7 rounded-t-2xl overflow-hidden">
+        <div className="absolute right-0 top-0 w-16 h-16 rounded-bl-2xl overflow-hidden pointer-events-none">
           <div className="absolute inset-0 voucher-holo" />
-          <div className="absolute inset-0 bg-gradient-to-t from-transparent to-black/30" />
         </div>
-        {/* Holographic side patches (corners only, like reference) */}
-        <div className="absolute left-2 top-3 w-4 h-10 rounded voucher-holo opacity-80" />
-        <div className="absolute right-2 top-3 w-4 h-10 rounded voucher-holo opacity-80" />
-        <div className="absolute left-2 bottom-3 w-4 h-10 rounded voucher-holo opacity-80" />
-        <div className="absolute right-2 bottom-3 w-4 h-10 rounded voucher-holo opacity-80" />
+        <div className="absolute left-0 bottom-0 w-16 h-16 rounded-tr-2xl overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 voucher-holo" />
+        </div>
+        <div className="absolute right-0 bottom-0 w-16 h-16 rounded-tl-2xl overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 voucher-holo" />
+        </div>
         {/* Circuit pattern */}
         <div className="absolute inset-0 voucher-circuit pointer-events-none" />
 
-        <div className="relative px-7 pt-12 pb-8 space-y-6">
+        <div className="relative px-5 sm:px-7 pt-8 pb-6 space-y-5">
           {/* HEADER */}
-          <div className="text-center space-y-1">
+          <div className="text-center space-y-2">
             <div className="flex items-center justify-center gap-2">
-              <GangLogo size={26} withGlow={false} />
-              <span className="text-[11px] tracking-[0.35em] text-muted-foreground font-bold">LOMITA SHOOTERS LEAGUE</span>
+              <GangLogo size={22} withGlow={false} />
+              <span className="text-[10px] sm:text-[11px] tracking-[0.32em] text-muted-foreground font-bold">LOMITA SHOOTERS LEAGUE</span>
             </div>
-            <h2 className="font-display text-4xl font-black tracking-[0.08em] gold-foil neon-green inline-block">
+            <h2 className="font-display text-3xl sm:text-5xl font-black tracking-[0.08em] leading-none">
+              <Sparkles className="inline h-4 w-4 text-primary mr-2 -mt-2" />
               <span className="gold-foil">BET</span> <span className="neon-green">VOUCHER</span>
+              <Sparkles className="inline h-4 w-4 text-primary ml-2 -mt-2" />
             </h2>
-            <div className="mx-auto h-px w-2/3 bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
           </div>
 
           {/* CODES */}
-          <div className="rounded-2xl voucher-inner p-4 grid grid-cols-2 gap-3">
+          <div className="rounded-2xl voucher-row p-4 flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Booking Code</div>
-              <button onClick={() => copy(bet.booking_code)} className="mt-1 inline-flex items-center gap-2 font-mono font-black text-2xl gold-foil hover:opacity-80 truncate max-w-full">
+              <button onClick={() => copy(bet.booking_code)} className="mt-1 inline-flex items-center gap-2 font-mono font-black text-xl sm:text-2xl gold-foil hover:opacity-80 truncate max-w-full">
                 {bet.booking_code} <Copy className="h-4 w-4 text-primary shrink-0" />
               </button>
-              <button onClick={shareCode} className="mt-1 text-xs neon-green inline-flex items-center gap-1 hover:underline">
+              <button onClick={shareCode} className="mt-1 flex items-center gap-1 text-xs neon-green hover:underline">
                 <Share2 className="h-3 w-3" />Share booking
               </button>
             </div>
             <div className="text-right min-w-0">
               <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Tracking ID</div>
-              <button onClick={() => copy(bet.tracking_id)} className="mt-1 inline-flex items-center gap-1 ml-auto font-mono font-black text-lg gold-foil hover:opacity-80 max-w-full truncate">
+              <button onClick={() => copy(bet.tracking_id)} className="mt-1 inline-flex items-center gap-1 ml-auto font-mono font-black text-base sm:text-lg gold-foil hover:opacity-80 max-w-full truncate">
                 {bet.tracking_id} <Copy className="h-3 w-3 text-primary shrink-0" />
               </button>
-              {bet.profiles?.full_name && <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">By {bet.profiles.full_name}</div>}
+              {bet.profiles?.full_name && (
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">By {bet.profiles.full_name}</div>
+              )}
             </div>
           </div>
 
-          {/* SELECTIONS */}
+          {/* SELECTIONS HEADER */}
+          <div className="flex items-center gap-3 justify-center">
+            <span className="flex-1 h-px bg-gradient-to-r from-transparent to-emerald-400/50" />
+            <span className="text-[11px] tracking-[0.4em] text-muted-foreground font-bold inline-flex items-center gap-2">
+              <Sparkles className="h-3 w-3 text-primary" />
+              SELECTIONS ({sels.length})
+              <Sparkles className="h-3 w-3 text-primary" />
+            </span>
+            <span className="flex-1 h-px bg-gradient-to-l from-transparent to-emerald-400/50" />
+          </div>
+
+          {/* SELECTIONS LIST */}
           <div className="space-y-3">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">Selections ({sels.length})</div>
-            {sels.map((s: any) => {
+            {sels.map((s: any, i: number) => {
               const m = s.matches;
               const live = m?.status === "live";
               const ended = m?.status === "ended";
               const won = s.result === "won";
               const lost = s.result === "lost";
-              const sBadge = won ? "neon-green-border text-emerald-300 bg-emerald-500/15"
-                : lost ? "border border-destructive/40 text-destructive bg-destructive/10"
-                : "neon-green-border text-emerald-300 bg-emerald-500/10";
-              const sLabel = won ? "WON" : lost ? "LOST" : live ? "LIVE" : ended ? "—" : "PENDING";
-              const SIcon = won ? Trophy : lost ? X : live ? ClockIcon : ClockIcon;
+              const badgeCls = won ? "badge-won" : lost ? "badge-lost" : "badge-pending";
+              const badgeLabel = won ? "WON" : lost ? "LOST" : live ? "LIVE" : "PENDING";
+              const BadgeIcon = won ? Trophy : lost ? X : ClockIcon;
+              const scoreLabel = ended ? "FINAL" : live ? "LIVE" : "SCORE";
               return (
-                <div key={s.id} className="relative rounded-2xl voucher-inner p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="text-xs text-muted-foreground">{s.markets?.name}</div>
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${sBadge}`}>
-                      {sLabel} <SIcon className="h-3 w-3" />
-                    </span>
-                  </div>
-                  <div className="mt-2 font-extrabold text-lg flex items-center gap-2">
-                    <TeamLogo name={m?.home_team?.name} url={m?.home_team?.logo_url} size={22} rounded="full" />
-                    <span className="truncate">{m?.home_team?.name} <span className="text-muted-foreground font-normal">vs</span> {m?.away_team?.name}</span>
-                    <TeamLogo name={m?.away_team?.name} url={m?.away_team?.logo_url} size={22} rounded="full" />
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 mt-3 items-end">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Pick</div>
-                      <div className="font-extrabold text-base">{s.selection_label}</div>
+                <div key={s.id} className="voucher-row p-3 sm:p-4 transition-all hover:scale-[1.01]">
+                  <div className="flex items-center gap-3">
+                    {/* Number */}
+                    <div className="font-display font-black text-2xl sm:text-3xl neon-green w-8 text-center shrink-0">
+                      {String(i + 1).padStart(2, "0")}
                     </div>
-                    <div className="text-center">
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{ended ? "Final" : live ? "Live" : "Score"}</div>
-                      <div className={`font-mono font-extrabold text-base ${live ? "neon-green animate-pulse" : ""}`}>{m ? `${m.home_score}-${m.away_score}` : "—"}</div>
+                    {/* Logo */}
+                    <div className="shrink-0">
+                      <TeamLogo name={m?.home_team?.name} url={m?.home_team?.logo_url} size={36} rounded="full" />
                     </div>
-                    <div className="text-right relative">
-                      <span className="absolute -top-7 right-0 h-9 w-9 rounded-full bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold border-2 border-background">
-                        <SIcon className="h-4 w-4" />
-                      </span>
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Odds</div>
-                      <div className="font-mono font-black text-2xl gold-foil">{Number(s.locked_odds).toFixed(2)}</div>
+                    {/* Match + pick */}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs sm:text-sm font-extrabold tracking-wide truncate uppercase">
+                        {m?.home_team?.name} <span className="text-muted-foreground font-normal lowercase">vs</span> {m?.away_team?.name}
+                      </div>
+                      <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-muted-foreground mt-0.5 truncate">
+                        Pick: <span className="text-foreground font-bold">{s.selection_label}</span>
+                      </div>
+                    </div>
+                    {/* Score */}
+                    <div className="text-center shrink-0 hidden sm:block">
+                      <div className="text-[9px] uppercase tracking-widest text-muted-foreground">{scoreLabel}</div>
+                      <div className={`font-mono font-black text-base ${live ? "neon-green animate-pulse" : "text-foreground"}`}>
+                        {m ? `${m.home_score}-${m.away_score}` : "—"}
+                      </div>
+                    </div>
+                    {/* Status badge */}
+                    <div className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black tracking-widest ${badgeCls}`}>
+                      {badgeLabel} <BadgeIcon className="h-3 w-3" />
+                    </div>
+                    {/* Odds */}
+                    <div className="text-right shrink-0 w-12 sm:w-14">
+                      <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Odds</div>
+                      <div className="font-mono font-black text-base sm:text-lg gold-foil">{Number(s.locked_odds).toFixed(2)}</div>
                     </div>
                   </div>
-                  {/* Status orb */}
-                  <span className="absolute top-3 right-3 hidden">{statusBadge.label}</span>
+                  {/* mobile score row */}
+                  <div className="sm:hidden mt-2 pt-2 border-t border-emerald-500/15 flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
+                    <span>{scoreLabel}</span>
+                    <span className={`font-mono font-black ${live ? "neon-green animate-pulse" : "text-foreground"}`}>{m ? `${m.home_score}-${m.away_score}` : "—"}</span>
+                  </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Status pill */}
-          <div className="flex justify-center">
-            <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black tracking-[0.25em] ${statusBadge.cls}`}>
-              {statusBadge.label} <StatusIcon className="h-3.5 w-3.5" />
-            </span>
+          {/* PERFORATION */}
+          <div className="relative py-3">
+            <div className="absolute -left-7 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background" />
+            <div className="absolute -right-7 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background" />
+            <div className="voucher-dashed" />
           </div>
 
           {/* TOTALS */}
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="rounded-xl voucher-inner p-3">
-              <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Stake</div>
-              <div className="font-display font-black text-2xl mt-1">{Number(bet.stake).toLocaleString()}</div>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="voucher-row p-3 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <Coins className="h-4 w-4 text-amber-400" />
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-bold">Stake</div>
+              </div>
+              <div className="font-display font-black text-lg sm:text-2xl gold-foil">{Number(bet.stake).toLocaleString()}</div>
             </div>
-            <div className="rounded-xl voucher-inner p-3" style={{ boxShadow: "inset 0 0 18px oklch(0.85 0.22 152 / 0.20), 0 0 0 1px oklch(0.85 0.22 152 / 0.6)" }}>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Total Odds</div>
-              <div className="font-display font-black text-2xl mt-1 neon-green">{Number(bet.total_odds).toFixed(2)}</div>
+            <div className="voucher-row p-3 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <TrendingUp className="h-4 w-4 text-emerald-400" />
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-bold">Total Odds</div>
+              </div>
+              <div className="font-display font-black text-lg sm:text-2xl neon-green">{Number(bet.total_odds).toFixed(2)}</div>
             </div>
-            <div className="rounded-xl voucher-inner p-3" style={{ boxShadow: "inset 0 0 18px oklch(0.82 0.17 90 / 0.20), 0 0 0 1px oklch(0.82 0.17 90 / 0.6)" }}>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Potential</div>
-              <div className="font-display font-black text-2xl mt-1 gold-foil">{Number(bet.potential_payout).toLocaleString()}</div>
+            <div className="voucher-row p-3 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <Gem className="h-4 w-4 text-amber-400" />
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-bold">{status === "cashed_out" ? "Cashed Out" : "Potential Cash Out"}</div>
+              </div>
+              <div className="font-display font-black text-lg sm:text-2xl gold-foil">
+                {Number(status === "cashed_out" ? (bet.cashout_amount ?? bet.potential_payout) : bet.potential_payout).toLocaleString()}
+              </div>
             </div>
           </div>
 
-          <div className="text-[10px] text-muted-foreground flex items-center justify-between">
-            <span>Booked {new Date(bet.created_at).toLocaleString()}</span>
-            {bet.settled_at && <span>Settled {new Date(bet.settled_at).toLocaleString()}</span>}
+          {/* DATES */}
+          <div className="voucher-row p-3 grid grid-cols-2 gap-3">
+            <div className="flex items-start gap-2">
+              <Calendar className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground font-bold">Date Booked</div>
+                <div className="text-[11px] sm:text-xs font-mono text-foreground truncate">{new Date(bet.created_at).toLocaleString()}</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <CalendarCheck className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground font-bold">Date Settled</div>
+                <div className="text-[11px] sm:text-xs font-mono text-foreground truncate">{bet.settled_at ? new Date(bet.settled_at).toLocaleString() : "— pending —"}</div>
+              </div>
+            </div>
           </div>
 
-          {bet.status === "won" && allWon && (
-            <div className="rounded-xl py-3 neon-green-border bg-emerald-500/10 text-center font-extrabold text-emerald-300 flex items-center justify-center gap-2"><Check className="h-5 w-5" />Tokens credited to your wallet</div>
+          {/* STATUS BAR */}
+          <div className={`rounded-xl px-4 py-3 flex items-center justify-center gap-2 font-black tracking-[0.18em] text-xs sm:text-sm ${statusBarCls}`}>
+            {statusBarIcon}
+            <span className="text-center">{statusBarText}</span>
+          </div>
+
+          {/* CASHOUT (only if open + all selections won) */}
+          {status === "open" && allWon && (
+            <CashoutButton betId={bet.id} amount={Number(bet.potential_payout)} />
           )}
-          {bet.status === "lost" && (
-            <div className="rounded-xl py-3 border border-destructive/40 bg-destructive/10 text-center font-extrabold text-destructive flex items-center justify-center gap-2"><X className="h-5 w-5" />Better luck next round</div>
-          )}
-          {bet.status === "open" && (
+          {status === "open" && !allWon && (
             <div className="text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1">
-              <LockIcon className="h-3 w-3" />Cash-out is disabled. Bets ride to settlement.
+              <LockIcon className="h-3 w-3" />Awaiting match settlement. Cash-out unlocks when every selection wins.
             </div>
           )}
+
+          {/* BARCODE */}
+          <div className="space-y-2 pt-1">
+            <div className="voucher-barcode h-14 w-full" />
+            <div className="text-center font-mono text-[10px] tracking-[0.4em] text-muted-foreground">
+              {bet.tracking_id}
+            </div>
+          </div>
+
+          {/* FOOTER */}
+          <div className="text-center space-y-1 pt-1">
+            <div className="text-[10px] sm:text-[11px] tracking-[0.35em] neon-green font-bold inline-flex items-center gap-2">
+              <Sparkles className="h-3 w-3" />
+              DIGITAL BETTING RECEIPT
+              <Sparkles className="h-3 w-3" />
+            </div>
+            <div className="text-[10px] tracking-[0.25em] text-muted-foreground inline-flex items-center justify-center gap-1.5">
+              <ShieldCheck className="h-3 w-3 text-emerald-400" />
+              VERIFIED BY LSL SYSTEM
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function CashoutButton({ betId, amount }: { betId: string; amount: number }) {
+  const confirm = useConfirm();
+  const [busy, setBusy] = useState(false);
+  async function go() {
+    const ok = await confirm({
+      title: "Cash out this winning ticket?",
+      description: `All selections won. ${amount.toLocaleString()} tokens will be credited to your wallet immediately.`,
+      confirmText: "Cash out now",
+    });
+    if (!ok) return;
+    setBusy(true);
+    const { data, error } = await (supabase as any).rpc("user_cashout_bet", { _bet_id: betId });
+    setBusy(false);
+    if (error) toast.error("Cash-out failed", { description: error.message });
+    else toast.success("Cashed out!", { description: `+${Number(data?.credited ?? amount).toLocaleString()} tokens credited. New balance: ${Number(data?.balance ?? 0).toLocaleString()}.` });
+  }
+  return (
+    <button onClick={go} disabled={busy}
+      className="w-full rounded-xl py-3 btn-luxury font-black tracking-widest text-base flex items-center justify-center gap-2 disabled:opacity-60">
+      <Trophy className="h-5 w-5" />{busy ? "Processing…" : `Cash out ${amount.toLocaleString()} tokens`}
+    </button>
   );
 }
 
