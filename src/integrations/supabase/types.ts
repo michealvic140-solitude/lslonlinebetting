@@ -436,6 +436,72 @@ export type Database = {
         }
         Relationships: []
       }
+      house_transactions: {
+        Row: {
+          actor_id: string | null
+          amount: number
+          balance_after: number
+          bet_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          reason: string | null
+          user_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          amount: number
+          balance_after: number
+          bet_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          reason?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          amount?: number
+          balance_after?: number
+          bet_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          reason?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      house_wallet: {
+        Row: {
+          balance: number
+          id: number
+          pause_reason: string | null
+          payouts_paused: boolean
+          total_in: number
+          total_out: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          id?: number
+          pause_reason?: string | null
+          payouts_paused?: boolean
+          total_in?: number
+          total_out?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          id?: number
+          pause_reason?: string | null
+          payouts_paused?: boolean
+          total_in?: number
+          total_out?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leaderboard_overrides: {
         Row: {
           draws: number
@@ -1392,6 +1458,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      house_manual_adjust: {
+        Args: { _amount: number; _reason: string }
+        Returns: Json
+      }
+      house_set_paused: {
+        Args: { _paused: boolean; _reason?: string }
+        Returns: undefined
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_mod_or_admin: { Args: { _user_id: string }; Returns: boolean }
       redeem_promo_code: { Args: { _code: string }; Returns: Json }
@@ -1399,6 +1473,8 @@ export type Database = {
         Args: { _approve: boolean; _id: string; _note?: string }
         Returns: undefined
       }
+      settle_pay_winning_bet: { Args: { _bet_id: string }; Returns: Json }
+      user_cashout_bet: { Args: { _bet_id: string }; Returns: Json }
       wipe_all_tokens: { Args: never; Returns: undefined }
     }
     Enums: {

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { MatchCardLive } from "@/components/MatchCardLive";
 import { EventBanner } from "@/components/EventBanner";
 import { AnnouncementSlider, HighlightsRow, AdsRow } from "@/components/HomeContent";
+import { GrandPrizeWinners } from "@/components/GrandPrizeWinners";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { Crosshair, Flame, Trophy, ChevronRight, Skull, Coins, Ticket as TicketIcon, ClipboardPaste, X } from "lucide-react";
@@ -96,7 +97,18 @@ function Index() {
 
       <BookingCodeFab />
 
-      <section className="container mt-10 grid lg:grid-cols-[1fr_280px] gap-6">
+      <section className="container mt-10 grid lg:grid-cols-[300px_1fr] gap-6">
+        <aside className="lg:sticky lg:top-20 self-start space-y-4 lg:order-first">
+          <GrandPrizeWinners />
+          <Card className="glass p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Skull className="h-4 w-4 text-primary" />
+              <div className="font-bold tracking-widest text-sm">LEAGUE STATS</div>
+            </div>
+            <Stat label="Active matches" value={matches.filter((m) => m.status !== "ended").length.toString()} />
+            <Stat label="Live now" value={live.length.toString()} />
+          </Card>
+        </aside>
         <div className="space-y-10">
           {loading && <p className="text-muted-foreground">Loading league…</p>}
           {!loading && featuredFallback.length > 0 && (
@@ -143,18 +155,8 @@ function Index() {
             </div>
           ))}
         </div>
-
-        <aside className="lg:sticky lg:top-20 self-start">
-          <Card className="glass p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Skull className="h-4 w-4 text-primary" />
-              <div className="font-bold tracking-widest text-sm">LEAGUE STATS</div>
-            </div>
-            <Stat label="Active matches" value={matches.filter((m) => m.status !== "ended").length.toString()} />
-            <Stat label="Live now" value={live.length.toString()} />
-          </Card>
-        </aside>
       </section>
+
     </Layout>
   );
 }
@@ -200,10 +202,18 @@ function BookingCodeFab() {
       .select("id, booking_code, bet_selections(*, matches!match_id(name, status), markets!market_id(name))")
       .eq("booking_code", code.trim().toUpperCase()).maybeSingle();
     setLoading(false);
-    if (!bet) { toast.error("Booking code not found"); return; }
+    if (!bet) { toast.error("Booking code not found", { description: `We couldn't locate any ticket with the code "${code.trim().toUpperCase()}". Double-check spelling or ask the owner to re-share.` }); return; }
+    const sels = bet.bet_selections ?? [];
+    const expired = sels.filter((s: any) => s.matches?.status && s.matches.status !== "scheduled");
+    if (expired.length === sels.length && sels.length > 0) {
+      toast.error("Booking code expired", {
+        description: `All ${sels.length} match(es) in this booking are already live or finished. New bets can only be placed before kick-off.`,
+      });
+      return;
+    }
     clear();
     let added = 0;
-    (bet.bet_selections ?? []).forEach((s: any) => {
+    sels.forEach((s: any) => {
       if (s.matches?.status !== "scheduled") return;
       add({
         match_id: s.match_id, match_name: s.matches?.name ?? "Match",
@@ -212,8 +222,19 @@ function BookingCodeFab() {
       });
       added++;
     });
-    if (added === 0) { toast.error("All matches in that booking have already started"); return; }
-    toast.success(`Loaded ${added} pick(s) — set your stake and place the bet`);
+    if (added === 0) {
+      toast.error("Booking code expired", {
+        description: "Every match on this slip has already started — picks can no longer be copied.",
+      });
+      return;
+    }
+    if (expired.length > 0) {
+      toast.warning(`Loaded ${added} pick(s) — ${expired.length} expired`, {
+        description: "Some matches on this booking are already live and were skipped.",
+      });
+    } else {
+      toast.success(`Loaded ${added} pick(s)`, { description: "Set your stake and place the bet to lock in." });
+    }
     setOpen(false);
     nav({ to: "/matches" });
   }

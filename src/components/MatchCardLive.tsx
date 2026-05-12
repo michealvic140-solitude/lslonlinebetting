@@ -2,14 +2,17 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@tanstack/react-router";
 import { Countdown } from "./Countdown";
-import { Crosshair, Lock, MapPin } from "lucide-react";
+import { Crosshair, Lock, MapPin, Target } from "lucide-react";
 import type { MatchRow } from "@/lib/queries";
 import { TeamLogo } from "@/components/TeamLogo";
 import { useBetSlip } from "@/contexts/BetSlipContext";
 
 export function MatchCardLive({ match }: { match: MatchRow }) {
   const { selections, add, remove } = useBetSlip();
-  const market = match.markets?.[0];
+  // Prefer the Match Winner / 1X2 market for inline odds, but surface the Correct Score market as its own CTA.
+  const csMarket = match.markets?.find((m) => /correct\s*score/i.test(m.name));
+  const mainMarket = match.markets?.find((m) => !/correct\s*score/i.test(m.name)) ?? match.markets?.[0];
+  const market = mainMarket;
   const locked = match.status !== "scheduled" || !market?.is_open;
   const selectedOdd = selections.find((s) => s.match_id === match.id)?.odd_id;
   const homeName = match.home_team?.name ?? "Home";
@@ -79,6 +82,22 @@ export function MatchCardLive({ match }: { match: MatchRow }) {
           })}
         </div>
       )}
+
+      {csMarket && csMarket.odds.length > 0 && (
+        <Link
+          to="/matches/$matchId"
+          params={{ matchId: match.id }}
+          hash="correct-score"
+          className="mt-2 flex items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
+        >
+          <span className="flex items-center gap-2">
+            <Target className="h-3.5 w-3.5" />
+            Correct Score · {csMarket.odds.length} options
+          </span>
+          <span className="text-[10px] uppercase tracking-widest opacity-80">Tap to pick →</span>
+        </Link>
+      )}
+
       <div className="mt-2 flex items-center justify-between">
         <Badge variant="outline" className="text-[10px]">{market?.name ?? "TBA"}</Badge>
         {match.is_featured && <Badge className="text-[10px] bg-primary/20 text-primary border-primary/40" variant="outline">Featured</Badge>}

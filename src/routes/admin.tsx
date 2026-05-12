@@ -93,6 +93,7 @@ function AdminPage() {
             <TabsTrigger value="events"><Calendar className="h-3 w-3 mr-1" />Events</TabsTrigger>
             <TabsTrigger value="tokens"><AdminTab icon={Coins} label="Tokens" count={alerts.tokens} /></TabsTrigger>
             <TabsTrigger value="withdrawals"><AdminTab icon={Wallet} label="Withdrawals" count={alerts.withdrawals} /></TabsTrigger>
+            <TabsTrigger value="housewallet"><Wallet className="h-3 w-3 mr-1" />House Wallet</TabsTrigger>
             <TabsTrigger value="leaderboard"><ListOrdered className="h-3 w-3 mr-1" />Leaderboard</TabsTrigger>
             <TabsTrigger value="promos"><Tag className="h-3 w-3 mr-1" />Promo Codes</TabsTrigger>
             <TabsTrigger value="content"><Megaphone className="h-3 w-3 mr-1" />Content</TabsTrigger>
@@ -112,6 +113,7 @@ function AdminPage() {
           <TabsContent value="events" className="mt-4"><EventsPanel /></TabsContent>
           <TabsContent value="tokens" className="mt-4"><TokensPanel /></TabsContent>
           <TabsContent value="withdrawals" className="mt-4"><WithdrawalsPanel /></TabsContent>
+          <TabsContent value="housewallet" className="mt-4"><HouseWalletPanel /></TabsContent>
           <TabsContent value="leaderboard" className="mt-4"><LeaderboardAdminPanel /></TabsContent>
           <TabsContent value="promos" className="mt-4"><PromoPanel /></TabsContent>
           <TabsContent value="content" className="mt-4"><ContentPanel /></TabsContent>
@@ -360,10 +362,37 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
   const [actionReason, setActionReason] = useState("");
   const [bets, setBets] = useState<any[]>([]);
   const [tx, setTx] = useState<any[]>([]);
+  const [audits, setAudits] = useState<any[]>([]);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [redemptions, setRedemptions] = useState<any[]>([]);
+  const [actorMap, setActorMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    supabase.from("bets").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20).then(({ data }) => setBets(data ?? []));
-    supabase.from("token_transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20).then(({ data }) => setTx(data ?? []));
+    (async () => {
+      const [bRes, tRes, aRes, wRes, rRes] = await Promise.all([
+        supabase.from("bets").select("*, bet_selections(id, selection_label, locked_odds, result, matches!match_id(name, status, home_score, away_score), markets!market_id(name))").eq("user_id", user.id).order("created_at", { ascending: false }).limit(40),
+        supabase.from("token_transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(60),
+        supabase.from("audit_logs").select("*").eq("target_type", "user").eq("target_id", user.id).order("created_at", { ascending: false }).limit(60),
+        supabase.from("withdrawal_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
+        supabase.from("promo_redemptions").select("*, promo_codes:promo_id(code)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
+      ]);
+      setBets(bRes.data ?? []);
+      setTx(tRes.data ?? []);
+      setAudits(aRes.data ?? []);
+      setWithdrawals(wRes.data ?? []);
+      setRedemptions(rRes.data ?? []);
+
+      const actorIds = Array.from(new Set([
+        ...(aRes.data ?? []).map((a: any) => a.actor_id).filter(Boolean),
+        ...(wRes.data ?? []).map((w: any) => w.reviewed_by).filter(Boolean),
+      ]));
+      if (actorIds.length) {
+        const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", actorIds);
+        const map: Record<string, string> = {};
+        (profs ?? []).forEach((p: any) => { map[p.id] = p.full_name ?? p.id; });
+        setActorMap(map);
+      }
+    })();
   }, [user.id]);
 
   async function saveProfile() {
@@ -535,33 +564,140 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
               </div>
             </TabsContent>
 
-            <TabsContent value="history" className="space-y-5 mt-5">
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">Recent bets</div>
-                {bets.length === 0 && <div className="text-xs text-muted-foreground">None yet.</div>}
-                <div className="space-y-1">
-                  {bets.map((b) => (
-                    <div key={b.id} className="glass p-2 rounded-lg flex justify-between text-xs items-center">
-                      <span className="font-mono truncate">{b.tracking_id}</span>
-                      <span className="capitalize text-muted-foreground">{b.status}</span>
-                      <span className="font-bold">{Number(b.stake).toLocaleString()} → <span className="text-primary">{Number(b.potential_payout).toLocaleString()}</span></span>
-                    </div>
-                  ))}
+            <TabsContent value="history" className="space-y-6 mt-5">
+              {/* BETS */}
+              <section>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Bet history ({bets.length})</div>
+                  <div className="text-[10px] text-muted-foreground">Stake → Potential</div>
                 </div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">Token transactions</div>
+                {bets.length === 0 && <div className="text-xs text-muted-foreground">No bets placed.</div>}
+                <div className="space-y-2">
+                  {bets.map((b: any) => {
+                    const sels = b.bet_selections ?? [];
+                    const statusCls = b.status === "won" ? "text-emerald-300 border-emerald-400/40 bg-emerald-500/10"
+                      : b.status === "lost" ? "text-destructive border-destructive/40 bg-destructive/10"
+                      : b.status === "cashed_out" ? "text-amber-300 border-amber-400/40 bg-amber-400/10"
+                      : b.status === "refunded" ? "text-amber-300 border-amber-400/40 bg-amber-400/10"
+                      : b.status === "void" ? "text-muted-foreground border-muted-foreground/40 bg-muted/30"
+                      : "text-muted-foreground border-border bg-muted/20";
+                    return (
+                      <div key={b.id} className="glass rounded-lg p-3 text-xs space-y-2">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-mono font-bold truncate">{b.tracking_id}</span>
+                            <span className="text-muted-foreground">·</span>
+                            <span className="font-mono text-muted-foreground truncate">{b.booking_code}</span>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider ${statusCls}`}>{b.status}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 text-muted-foreground">
+                          <span><Clock className="h-3 w-3 inline mr-1" />{new Date(b.created_at).toLocaleString()}</span>
+                          <span className="font-bold text-foreground">{Number(b.stake).toLocaleString()} → <span className="text-primary">{Number(b.potential_payout).toLocaleString()}</span> @ {Number(b.total_odds).toFixed(2)}</span>
+                        </div>
+                        {b.settled_at && <div className="text-[10px] text-muted-foreground">Settled {new Date(b.settled_at).toLocaleString()}</div>}
+                        {b.cashed_out_at && <div className="text-[10px] text-amber-300">Cashed out {new Date(b.cashed_out_at).toLocaleString()} · {Number(b.cashout_amount ?? 0).toLocaleString()}</div>}
+                        {sels.length > 0 && (
+                          <div className="border-t border-border/50 pt-2 space-y-1">
+                            {sels.map((s: any) => (
+                              <div key={s.id} className="flex items-center justify-between gap-2 text-[11px]">
+                                <span className="truncate"><span className="text-muted-foreground">{s.markets?.name}:</span> <span className="font-bold">{s.selection_label}</span> <span className="text-muted-foreground">on</span> {s.matches?.name}</span>
+                                <span className={`shrink-0 font-mono ${s.result === "won" ? "text-emerald-300" : s.result === "lost" ? "text-destructive" : "text-muted-foreground"}`}>{Number(s.locked_odds).toFixed(2)} · {s.result ?? "pending"}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+
+              {/* TOKEN TRANSACTIONS */}
+              <section>
+                <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">Token transactions ({tx.length})</div>
                 {tx.length === 0 && <div className="text-xs text-muted-foreground">None.</div>}
                 <div className="space-y-1">
-                  {tx.map((t) => (
-                    <div key={t.id} className="glass p-2 rounded-lg flex justify-between text-xs items-center">
-                      <span className="capitalize text-muted-foreground">{t.kind}</span>
-                      <span className="truncate flex-1 px-2">{t.description}</span>
-                      <span className={`font-bold ${t.amount > 0 ? "text-emerald-300" : "text-destructive"}`}>{t.amount > 0 ? "+" : ""}{Number(t.amount).toLocaleString()}</span>
+                  {tx.map((t: any) => (
+                    <div key={t.id} className="glass rounded-lg p-2 text-[11px] flex items-center gap-2 flex-wrap">
+                      <span className="capitalize text-muted-foreground w-20 shrink-0">{t.kind}</span>
+                      <span className="flex-1 min-w-[120px] truncate">{t.description ?? "—"}</span>
+                      <span className="text-muted-foreground shrink-0">{new Date(t.created_at).toLocaleString()}</span>
+                      <span className={`font-bold w-24 text-right shrink-0 ${t.amount > 0 ? "text-emerald-300" : "text-destructive"}`}>{t.amount > 0 ? "+" : ""}{Number(t.amount).toLocaleString()}</span>
+                      <span className="text-muted-foreground w-28 text-right shrink-0">bal {Number(t.balance_after).toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
-              </div>
+              </section>
+
+              {/* WITHDRAWALS */}
+              <section>
+                <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">Withdrawal requests ({withdrawals.length})</div>
+                {withdrawals.length === 0 && <div className="text-xs text-muted-foreground">None.</div>}
+                <div className="space-y-1">
+                  {withdrawals.map((w: any) => (
+                    <div key={w.id} className="glass rounded-lg p-2 text-[11px] space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold">{Number(w.amount).toLocaleString()} tokens</span>
+                        <span className={`px-2 py-0.5 rounded-full border text-[10px] uppercase ${w.status === "approved" ? "text-emerald-300 border-emerald-400/40 bg-emerald-500/10" : w.status === "rejected" ? "text-destructive border-destructive/40 bg-destructive/10" : "text-muted-foreground border-border"}`}>{w.status}</span>
+                      </div>
+                      <div className="text-muted-foreground">To <span className="font-bold text-foreground">{w.ingame_name}</span> ({w.gang_name}){w.ticket_ref && <> · ref <span className="font-mono">{w.ticket_ref}</span></>}</div>
+                      <div className="text-muted-foreground flex items-center justify-between flex-wrap gap-1">
+                        <span>Requested {new Date(w.created_at).toLocaleString()}</span>
+                        {w.reviewed_at && <span>Reviewed {new Date(w.reviewed_at).toLocaleString()} by {actorMap[w.reviewed_by] ?? "—"}</span>}
+                      </div>
+                      {w.admin_note && <div className="text-muted-foreground italic">"{w.admin_note}"</div>}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* PROMO REDEMPTIONS */}
+              <section>
+                <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">Promo redemptions ({redemptions.length})</div>
+                {redemptions.length === 0 && <div className="text-xs text-muted-foreground">None.</div>}
+                <div className="space-y-1">
+                  {redemptions.map((r: any) => (
+                    <div key={r.id} className="glass rounded-lg p-2 text-[11px] flex items-center gap-2">
+                      <span className="font-mono font-bold flex-1 truncate">{r.promo_codes?.code ?? "—"}</span>
+                      <span className="text-muted-foreground">{new Date(r.created_at).toLocaleString()}</span>
+                      <span className="font-bold text-emerald-300 w-24 text-right">+{Number(r.amount).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* ADMIN AUDIT TIMELINE */}
+              <section>
+                <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">Admin actions on this user ({audits.length})</div>
+                {audits.length === 0 && <div className="text-xs text-muted-foreground">No admin actions recorded.</div>}
+                <div className="relative pl-4 space-y-3 border-l border-border/60">
+                  {audits.map((a: any) => {
+                    const meta = a.metadata ?? {};
+                    return (
+                      <div key={a.id} className="relative">
+                        <span className="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-gradient-gold border-2 border-background" />
+                        <div className="text-[11px]">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <span className="font-bold capitalize">{String(a.action).replace(/_/g, " ")}</span>
+                            <span className="text-muted-foreground"><Clock className="h-3 w-3 inline mr-1" />{new Date(a.created_at).toLocaleString()}</span>
+                          </div>
+                          <div className="text-muted-foreground">By <span className="font-bold text-foreground">{actorMap[a.actor_id] ?? a.actor_id?.slice(0, 8) ?? "system"}</span></div>
+                          {Object.keys(meta).length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {Object.entries(meta).map(([k, v]) => (
+                                <span key={k} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/40 border border-border/60">
+                                  <span className="text-muted-foreground">{k}:</span> <span className="font-mono">{typeof v === "object" ? JSON.stringify(v) : String(v)}</span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
             </TabsContent>
           </Tabs>
         </div>
@@ -617,7 +753,7 @@ function MatchesPanel() {
     else if (as > hs) winnerId = m.away_team_id;
     await supabase.from("matches").update({ home_score: hs, away_score: as, status: "ended", winner_team_id: winnerId }).eq("id", m.id);
     await supabase.from("markets").update({ is_open: false }).eq("match_id", m.id);
-    await settleBetsForMatch(m.id, winnerId);
+    await settleBetsForMatch(m.id, winnerId, hs, as);
     await logAudit("match_settled", "match", m.id, { home_score: hs, away_score: as, winner_team_id: winnerId });
     toast.success("Match settled — bets paid out"); load();
   }
@@ -655,6 +791,7 @@ function MatchesPanel() {
               )}
               {m.status === "scheduled" && <Button size="sm" onClick={() => setStatus(m.id, "live")}>Start Live</Button>}
               {m.status === "live" && <Button size="sm" onClick={() => settle(m)}>End Match</Button>}
+              <CorrectScoreManagerButton match={m} onSaved={load} />
               {m.status !== "cancelled" && m.status !== "ended" && <Button size="sm" variant="outline" onClick={() => setStatus(m.id, "cancelled")}>Cancel</Button>}
               <Button size="sm" variant="destructive" onClick={() => deleteMatch(m.id)} title="Delete match"><Trash2 className="h-3 w-3" /></Button>
             </div>
@@ -665,15 +802,27 @@ function MatchesPanel() {
   );
 }
 
-async function settleBetsForMatch(matchId: string, winnerTeamId: string | null) {
+async function settleBetsForMatch(matchId: string, winnerTeamId: string | null, homeScore?: number, awayScore?: number) {
   // Get all bet selections for this match
   const { data: sels } = await supabase.from("bet_selections").select("*, markets!market_id(name), odds!odd_id(label)").eq("match_id", matchId);
   if (!sels || sels.length === 0) return;
   // Get team names for label comparison
-  const { data: match } = await supabase.from("matches").select("home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)").eq("id", matchId).single() as any;
-  const winnerLabel = winnerTeamId === null ? "Draw" : (match?.home_team?.name && winnerTeamId === (await supabase.from("matches").select("home_team_id").eq("id", matchId).single()).data?.home_team_id ? match.home_team.name : match?.away_team?.name);
+  const { data: match } = await supabase.from("matches").select("home_team_id, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name), home_score, away_score").eq("id", matchId).single() as any;
+  const hs = homeScore ?? Number(match?.home_score ?? 0);
+  const as_ = awayScore ?? Number(match?.away_score ?? 0);
+  const scoreLabel = `${hs}-${as_}`;
+  const winnerLabel = winnerTeamId === null ? "Draw" : (winnerTeamId === match?.home_team_id ? match?.home_team?.name : match?.away_team?.name);
   for (const s of sels) {
-    const result = (s as any).odds?.label === winnerLabel ? "won" : "lost";
+    const marketName = (s as any).markets?.name ?? "";
+    const oddLabel = (s as any).odds?.label ?? "";
+    let result: "won" | "lost";
+    if (/correct\s*score/i.test(marketName)) {
+      // Normalize: accept "2-1", "2:1", "2 - 1"
+      const norm = (v: string) => v.replace(/[^0-9]/g, "-").replace(/-+/g, "-");
+      result = norm(oddLabel) === norm(scoreLabel) ? "won" : "lost";
+    } else {
+      result = oddLabel === winnerLabel ? "won" : "lost";
+    }
     await supabase.from("bet_selections").update({ result }).eq("id", s.id);
   }
   // Settle bets that have all selections resolved
@@ -685,13 +834,13 @@ async function settleBetsForMatch(matchId: string, winnerTeamId: string | null) 
     const { data: bet } = await supabase.from("bets").select("*").eq("id", bid).single();
     if (!bet) continue;
     if (["suspended", "refunded", "void", "cashed_out"].includes(bet.status)) continue;
-    const status = allWon ? "won" : "lost";
-    await supabase.from("bets").update({ status, settled_at: new Date().toISOString() }).eq("id", bid);
     if (allWon) {
-      const { data: prof } = await supabase.from("profiles").select("token_balance").eq("id", bet.user_id).single();
-      if (prof) await supabase.from("profiles").update({ token_balance: (prof.token_balance ?? 0) + bet.potential_payout }).eq("id", bet.user_id);
-      await supabase.from("notifications").insert({ user_id: bet.user_id, title: "Bet won! 🎉", body: `+${bet.potential_payout} tokens credited.`, link: `/ticket/${bid}` });
+      const { error: payErr } = await supabase.rpc("settle_pay_winning_bet", { _bet_id: bid });
+      if (payErr) {
+        toast.error(`Could not credit winnings for ${bet.tracking_id}: ${payErr.message}`);
+      }
     } else {
+      await supabase.from("bets").update({ status: "lost", settled_at: new Date().toISOString() }).eq("id", bid);
       await supabase.from("notifications").insert({ user_id: bet.user_id, title: "Bet lost", body: `Your ticket ${bet.tracking_id} did not win.`, link: `/ticket/${bid}` });
     }
   }
@@ -704,6 +853,16 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
   const [teamA, setTeamA] = useState({ id: "", name: "", logoFile: null as File | null, mainPlayers: "", subPlayers: "" });
   const [teamB, setTeamB] = useState({ id: "", name: "", logoFile: null as File | null, mainPlayers: "", subPlayers: "" });
   const [details, setDetails] = useState({ homeIs: "A" as "A" | "B", oddsA: 2.0, draw: 3.5, oddsB: 2.0, name: "", start_time: "", location: "", category_id: "", featured: false });
+  const [csEnabled, setCsEnabled] = useState(true);
+  const [csRows, setCsRows] = useState<Array<{ label: string; value: number }>>(
+    POPULAR_SCORES.map(([h, a]) => {
+      const label = `${h}-${a}`;
+      return { label, value: DEFAULT_ODDS_BY_SCORE[label] ?? 15 };
+    })
+  );
+  const [csCustomH, setCsCustomH] = useState(0);
+  const [csCustomA, setCsCustomA] = useState(0);
+  const [csCustomOdds, setCsCustomOdds] = useState(10);
 
   useEffect(() => {
     fetchTeams().then(setTeams);
@@ -758,6 +917,12 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
         { market_id: market.id, label: awayName, value: awayOdds },
       ]);
     }
+    if (csEnabled && csRows.length > 0) {
+      const { data: csMarket } = await supabase.from("markets").insert({ match_id: m.id, name: "Correct Score", is_open: true }).select().single();
+      if (csMarket) {
+        await supabase.from("odds").insert(csRows.map((r) => ({ market_id: csMarket.id, label: r.label, value: r.value })));
+      }
+    }
     await supabase.from("notifications").insert({ user_id: null as any, title: "New match scheduled", body: `${homeName} vs ${awayName} — get your picks ready.`, link: `/matches/${m.id}` }).then(() => {});
     await logAudit("match_created", "match", m.id);
     toast.success("Match created!");
@@ -768,7 +933,7 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Match Wizard — Step {step} of 4</DialogTitle>
+          <DialogTitle>Match Wizard — Step {step} of 5</DialogTitle>
         </DialogHeader>
 
         {step === 1 && <TeamStep label="Team A" team={teamA} setTeam={setTeamA} teams={teams} />}
@@ -802,6 +967,45 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
         )}
         {step === 4 && (
           <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-bold flex items-center gap-2"><Trophy className="h-4 w-4 text-primary" />Correct Score Market</div>
+              <label className="flex items-center gap-2 text-xs"><Switch checked={csEnabled} onCheckedChange={setCsEnabled} /> Enable</label>
+            </div>
+            {csEnabled && (
+              <>
+                <div className="text-[11px] text-muted-foreground">Pre-filled with popular scorelines. Edit odds, remove, or add custom scores. Users can pick exactly one scoreline per match.</div>
+                <Card className="glass p-3 space-y-2">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Add custom score</div>
+                  <div className="flex items-end gap-2 flex-wrap">
+                    <div><label className="text-[10px] text-muted-foreground">Home</label><Input type="number" min={0} value={csCustomH} onChange={(e) => setCsCustomH(Number(e.target.value))} className="w-16" /></div>
+                    <span className="pb-2">-</span>
+                    <div><label className="text-[10px] text-muted-foreground">Away</label><Input type="number" min={0} value={csCustomA} onChange={(e) => setCsCustomA(Number(e.target.value))} className="w-16" /></div>
+                    <div><label className="text-[10px] text-muted-foreground">Odds</label><Input type="number" step="0.01" min={1.01} value={csCustomOdds} onChange={(e) => setCsCustomOdds(Number(e.target.value))} className="w-20" /></div>
+                    <Button size="sm" onClick={() => {
+                      const label = `${csCustomH}-${csCustomA}`;
+                      if (csRows.some((r) => r.label === label)) { toast.info(`${label} already added`); return; }
+                      setCsRows([...csRows, { label, value: csCustomOdds }]);
+                    }}><Plus className="h-3 w-3 mr-1" />Add</Button>
+                  </div>
+                </Card>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
+                  {csRows.map((r, i) => (
+                    <div key={r.label} className="rounded-lg border border-border bg-background/40 p-2 flex items-center gap-2">
+                      <div className="font-mono font-bold text-sm shrink-0 w-12">{r.label}</div>
+                      <Input type="number" step="0.01" min={1.01} value={r.value} onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setCsRows(csRows.map((row, idx) => idx === i ? { ...row, value: v } : row));
+                      }} className="h-8 text-xs" />
+                      <button className="text-destructive shrink-0" onClick={() => setCsRows(csRows.filter((_, idx) => idx !== i))} title="Remove"><X className="h-4 w-4" /></button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+        {step === 5 && (
+          <div className="space-y-3">
             <div className="text-sm font-bold">Final Settings</div>
             <Input placeholder="Match name (e.g. Round 14 · Night Hunt)" value={details.name} onChange={(e) => setDetails({ ...details, name: e.target.value })} />
             <div>
@@ -815,7 +1019,7 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
 
         <DialogFooter className="flex justify-between">
           <Button variant="outline" disabled={step === 1} onClick={() => setStep(step - 1)}><ChevronLeft className="h-4 w-4" />Back</Button>
-          {step < 4 ? (
+          {step < 5 ? (
             <Button onClick={() => setStep(step + 1)}>Next<ChevronRight className="h-4 w-4" /></Button>
           ) : (
             <Button className="btn-luxury" onClick={finalCreate}>Create Match</Button>
@@ -2331,5 +2535,357 @@ function AdminAIPanel() {
         <Badge variant="outline" className="border-primary/50 text-primary"><Lock className="h-3 w-3 mr-1" />Coming Soon</Badge>
       </div>
     </Card>
+  );
+}
+
+// ============= Correct Score Market Manager =============
+const POPULAR_SCORES: Array<[number, number]> = [
+  [0,0],[1,0],[0,1],[1,1],[2,0],[0,2],[2,1],[1,2],[2,2],
+  [3,0],[0,3],[3,1],[1,3],[3,2],[2,3],[3,3],[4,0],[0,4],
+  [4,1],[1,4],[4,2],[2,4],[5,0],[0,5],
+];
+const DEFAULT_ODDS_BY_SCORE: Record<string, number> = {
+  "0-0": 9, "1-0": 6.5, "0-1": 8, "1-1": 5.5, "2-0": 8, "0-2": 12,
+  "2-1": 8.5, "1-2": 11, "2-2": 13, "3-0": 14, "0-3": 26, "3-1": 12,
+  "1-3": 21, "3-2": 21, "2-3": 26, "3-3": 41, "4-0": 26, "0-4": 51,
+  "4-1": 21, "1-4": 41, "4-2": 41, "2-4": 67, "5-0": 67, "0-5": 101,
+};
+
+function CorrectScoreManagerButton({ match, onSaved }: { match: any; onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)} title="Correct Score market">
+        <Trophy className="h-3 w-3 mr-1" />CS
+      </Button>
+      {open && <CorrectScoreEditor match={match} onClose={() => { setOpen(false); onSaved(); }} />}
+    </>
+  );
+}
+
+function CorrectScoreEditor({ match, onClose }: { match: any; onClose: () => void }) {
+  const [marketId, setMarketId] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(true);
+  const [rows, setRows] = useState<Array<{ id?: string; label: string; value: number; _delete?: boolean; _new?: boolean }>>([]);
+  const [customH, setCustomH] = useState<number>(0);
+  const [customA, setCustomA] = useState<number>(0);
+  const [customOdds, setCustomOdds] = useState<number>(10);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const homeName = match?.home_team?.name ?? "Home";
+  const awayName = match?.away_team?.name ?? "Away";
+
+  useEffect(() => {
+    (async () => {
+      const { data: markets } = await supabase
+        .from("markets")
+        .select("id,name,is_open,odds(id,label,value)")
+        .eq("match_id", match.id);
+      const m = (markets ?? []).find((x: any) => /correct\s*score/i.test(x.name));
+      if (m) {
+        setMarketId(m.id);
+        setIsOpen(!!m.is_open);
+        setRows(((m as any).odds ?? []).map((o: any) => ({ id: o.id, label: o.label, value: Number(o.value) })));
+      }
+      setLoading(false);
+    })();
+  }, [match.id]);
+
+  function addScore(h: number, a: number, odds?: number) {
+    const label = `${h}-${a}`;
+    if (rows.some((r) => r.label === label && !r._delete)) { toast.info(`${label} already added`); return; }
+    setRows([...rows, { label, value: odds ?? DEFAULT_ODDS_BY_SCORE[label] ?? 15, _new: true }]);
+  }
+
+  function generatePopular() {
+    const existing = new Set(rows.filter((r) => !r._delete).map((r) => r.label));
+    const adds = POPULAR_SCORES
+      .map(([h, a]) => `${h}-${a}`)
+      .filter((l) => !existing.has(l))
+      .map((label) => ({ label, value: DEFAULT_ODDS_BY_SCORE[label] ?? 15, _new: true }));
+    if (adds.length === 0) { toast.info("All popular scores already added"); return; }
+    setRows([...rows, ...adds]);
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      let mId = marketId;
+      if (!mId) {
+        const { data, error } = await supabase.from("markets").insert({ match_id: match.id, name: "Correct Score", is_open: isOpen }).select().single();
+        if (error) throw error;
+        mId = data.id;
+        setMarketId(mId);
+      } else {
+        await supabase.from("markets").update({ is_open: isOpen }).eq("id", mId);
+      }
+      // deletes
+      const toDelete = rows.filter((r) => r._delete && r.id).map((r) => r.id!);
+      if (toDelete.length) await supabase.from("odds").delete().in("id", toDelete);
+      // updates
+      for (const r of rows.filter((r) => r.id && !r._delete && !r._new)) {
+        await supabase.from("odds").update({ value: r.value, label: r.label }).eq("id", r.id!);
+      }
+      // inserts
+      const toInsert = rows.filter((r) => r._new && !r._delete).map((r) => ({ market_id: mId!, label: r.label, value: r.value }));
+      if (toInsert.length) await supabase.from("odds").insert(toInsert);
+      toast.success("Correct Score market saved");
+      onClose();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save");
+    } finally { setSaving(false); }
+  }
+
+  const visible = rows
+    .map((r, i) => ({ ...r, _i: i }))
+    .filter((r) => !r._delete)
+    .filter((r) => !search.trim() || r.label.replace(/[-:]/g, "").includes(search.replace(/[-:\s]/g, "")));
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl max-h-[88vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Trophy className="h-4 w-4 text-primary" />Correct Score · {homeName} vs {awayName}</DialogTitle>
+        </DialogHeader>
+
+        {loading ? <div className="p-6 text-sm text-muted-foreground">Loading…</div> : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <label className="flex items-center gap-2 text-sm"><Switch checked={isOpen} onCheckedChange={setIsOpen} /> Market is open</label>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={generatePopular}><Sparkles className="h-3 w-3 mr-1" />Generate popular scores</Button>
+                <Button size="sm" variant="outline" onClick={() => setRows(rows.map((r) => r.id ? { ...r, _delete: true } : { ...r, _delete: true }))}><Trash2 className="h-3 w-3 mr-1" />Clear all</Button>
+              </div>
+            </div>
+
+            <Card className="glass p-3 space-y-2">
+              <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Add custom scoreline</div>
+              <div className="flex items-end gap-2 flex-wrap">
+                <div><label className="text-[10px] text-muted-foreground">{homeName}</label><Input type="number" min={0} value={customH} onChange={(e) => setCustomH(Number(e.target.value))} className="w-20" /></div>
+                <span className="pb-2 text-muted-foreground">-</span>
+                <div><label className="text-[10px] text-muted-foreground">{awayName}</label><Input type="number" min={0} value={customA} onChange={(e) => setCustomA(Number(e.target.value))} className="w-20" /></div>
+                <div><label className="text-[10px] text-muted-foreground">Odds</label><Input type="number" step="0.01" min={1.01} value={customOdds} onChange={(e) => setCustomOdds(Number(e.target.value))} className="w-24" /></div>
+                <Button size="sm" onClick={() => addScore(customH, customA, customOdds)}><Plus className="h-3 w-3 mr-1" />Add</Button>
+              </div>
+            </Card>
+
+            <Input placeholder="Search scoreline (e.g. 2-1 or 21)" value={search} onChange={(e) => setSearch(e.target.value)} />
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {visible.length === 0 && <div className="col-span-full text-center text-sm text-muted-foreground py-6">No scorelines yet. Use “Generate popular scores” or add custom.</div>}
+              {visible.map((r) => (
+                <div key={r._i} className="rounded-lg border border-border bg-background/40 p-2 flex items-center gap-2">
+                  <div className="font-mono font-bold text-sm shrink-0">{r.label}</div>
+                  <Input type="number" step="0.01" min={1.01} value={r.value} onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setRows(rows.map((row, i) => i === r._i ? { ...row, value: v } : row));
+                  }} className="h-8 text-xs" />
+                  <button className="text-destructive shrink-0" onClick={() => setRows(rows.map((row, i) => i === r._i ? { ...row, _delete: true } : row))} title="Remove"><X className="h-4 w-4" /></button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button className="btn-luxury" disabled={saving} onClick={save}>{saving ? "Saving…" : "Save Market"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ============================ HOUSE WALLET ============================ */
+function HouseWalletPanel() {
+  const confirm = useConfirm();
+  const [wallet, setWallet] = useState<any>(null);
+  const [txs, setTxs] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>("all");
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [adjAmt, setAdjAmt] = useState<number>(0);
+  const [adjReason, setAdjReason] = useState<string>("");
+  const [pauseReason, setPauseReason] = useState("");
+
+  async function load() {
+    setLoading(true);
+    const [{ data: w }, { data: t }] = await Promise.all([
+      supabase.from("house_wallet").select("*").eq("id", 1).maybeSingle(),
+      supabase.from("house_transactions").select("*").order("created_at", { ascending: false }).limit(200),
+    ]);
+    setWallet(w);
+    setTxs(t ?? []);
+    const ids = Array.from(new Set((t ?? []).map((x: any) => x.user_id).filter(Boolean)));
+    if (ids.length) {
+      const { data: p } = await supabase.from("profiles").select("id,full_name,ingame_name,gang_name").in("id", ids);
+      const map: Record<string, any> = {}; (p ?? []).forEach((x: any) => { map[x.id] = x; }); setProfiles(map);
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+    const ch = supabase.channel("house-wallet-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "house_wallet" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "house_transactions" }, load)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  async function togglePause(next: boolean) {
+    const ok = await confirm({
+      title: next ? "Pause all payouts?" : "Resume payouts?",
+      description: next
+        ? "Cashouts and admin-paid winnings will be blocked until you resume. Users will see a clear message."
+        : "Payouts will start processing again, including any winnings that admins try to credit.",
+      confirmText: next ? "Pause Wallet" : "Resume Wallet",
+    });
+    if (!ok) return;
+    const { error } = await supabase.rpc("house_set_paused", { _paused: next, _reason: next ? (pauseReason || undefined) : undefined });
+    if (error) toast.error(error.message);
+    else { toast.success(next ? "Payouts paused" : "Payouts resumed"); setPauseReason(""); }
+  }
+
+  async function adjust() {
+    if (!adjAmt || !adjReason.trim()) { toast.error("Amount and reason required"); return; }
+    const { error } = await supabase.rpc("house_manual_adjust", { _amount: adjAmt, _reason: adjReason.trim() });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Wallet adjusted");
+    setAdjustOpen(false); setAdjAmt(0); setAdjReason("");
+  }
+
+  if (loading || !wallet) return <Card className="glass-strong p-6">Loading wallet…</Card>;
+
+  const balance = Number(wallet.balance ?? 0);
+  const totalIn = Number(wallet.total_in ?? 0);
+  const totalOut = Number(wallet.total_out ?? 0);
+  const net = totalIn - totalOut;
+  const filtered = filter === "all" ? txs : txs.filter((t) => t.kind === filter);
+
+  return (
+    <div className="space-y-4">
+      {/* Status banner */}
+      <Card className={`relative overflow-hidden p-5 border-2 ${wallet.payouts_paused ? "border-destructive/60 bg-destructive/10" : "border-primary/30 glass-strong"}`}>
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-2">
+              <Wallet className="h-3 w-3" /> House Bankroll
+              {wallet.payouts_paused && <Badge variant="destructive" className="ml-2">PAYOUTS PAUSED</Badge>}
+            </div>
+            <div className={`text-4xl font-black mt-1 ${balance < 0 ? "text-destructive" : "gradient-gold-text"}`}>
+              {balance.toLocaleString()} <span className="text-base text-muted-foreground font-normal">tokens</span>
+            </div>
+            {wallet.payouts_paused && wallet.pause_reason && (
+              <div className="text-xs text-destructive mt-1">Reason: {wallet.pause_reason}</div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {!wallet.payouts_paused && (
+              <Input placeholder="Pause reason (optional)" value={pauseReason} onChange={(e) => setPauseReason(e.target.value)} className="w-56" />
+            )}
+            <Button variant={wallet.payouts_paused ? "default" : "destructive"} onClick={() => togglePause(!wallet.payouts_paused)}>
+              {wallet.payouts_paused ? <><Play className="h-4 w-4 mr-1" />Resume Payouts</> : <><Pause className="h-4 w-4 mr-1" />Pause Payouts</>}
+            </Button>
+            <Button className="btn-luxury" onClick={() => setAdjustOpen(true)}><Plus className="h-4 w-4 mr-1" />Manual Adjust</Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="glass p-4">
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Total In (Stakes)</div>
+          <div className="text-2xl font-bold text-emerald-400 mt-1">+{totalIn.toLocaleString()}</div>
+        </Card>
+        <Card className="glass p-4">
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Total Out (Payouts)</div>
+          <div className="text-2xl font-bold text-amber-400 mt-1">-{totalOut.toLocaleString()}</div>
+        </Card>
+        <Card className="glass p-4">
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Net P/L</div>
+          <div className={`text-2xl font-bold mt-1 ${net >= 0 ? "text-emerald-400" : "text-destructive"}`}>{net >= 0 ? "+" : ""}{net.toLocaleString()}</div>
+        </Card>
+        <Card className="glass p-4">
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Transactions</div>
+          <div className="text-2xl font-bold text-primary mt-1">{txs.length}</div>
+        </Card>
+      </div>
+
+      {/* History */}
+      <Card className="glass-strong p-4">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div className="font-bold flex items-center gap-2"><History className="h-4 w-4 text-primary" />Transaction history</div>
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All transactions</SelectItem>
+              <SelectItem value="bet_inflow">Bet inflows</SelectItem>
+              <SelectItem value="payout">Winnings paid</SelectItem>
+              <SelectItem value="cashout">Cashouts</SelectItem>
+              <SelectItem value="refund_inflow">Refunds back</SelectItem>
+              <SelectItem value="manual_credit">Manual credits</SelectItem>
+              <SelectItem value="manual_debit">Manual debits</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              <tr className="text-left border-b border-border">
+                <th className="py-2 pr-2">When</th>
+                <th className="pr-2">Kind</th>
+                <th className="pr-2">Amount</th>
+                <th className="pr-2">Balance after</th>
+                <th className="pr-2">User</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No transactions.</td></tr>}
+              {filtered.map((t) => {
+                const p = t.user_id ? profiles[t.user_id] : null;
+                const amt = Number(t.amount);
+                const bal = Number(t.balance_after);
+                return (
+                  <tr key={t.id} className="border-b border-border/40 hover:bg-muted/20">
+                    <td className="py-2 pr-2 whitespace-nowrap">{new Date(t.created_at).toLocaleString()}</td>
+                    <td className="pr-2"><Badge variant="outline" className="text-[10px]">{t.kind}</Badge></td>
+                    <td className={`pr-2 font-mono font-bold ${amt > 0 ? "text-emerald-400" : "text-destructive"}`}>{amt > 0 ? "+" : ""}{amt.toLocaleString()}</td>
+                    <td className={`pr-2 font-mono ${bal < 0 ? "text-destructive" : ""}`}>{bal.toLocaleString()}</td>
+                    <td className="pr-2">{p ? <span title={p.full_name}>{p.ingame_name || p.full_name}{p.gang_name && <span className="text-muted-foreground ml-1">[{p.gang_name}]</span>}</span> : <span className="text-muted-foreground">—</span>}</td>
+                    <td className="text-muted-foreground">{t.reason}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Adjust Dialog */}
+      <Dialog open={adjustOpen} onOpenChange={setAdjustOpen}>
+        <DialogContent className="glass-strong">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" />Manual Wallet Adjustment</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-muted-foreground">Amount (positive = credit house, negative = debit)</label>
+              <Input type="number" value={adjAmt} onChange={(e) => setAdjAmt(Number(e.target.value))} placeholder="e.g. 5000000 or -2000000" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Reason (required)</label>
+              <Textarea value={adjReason} onChange={(e) => setAdjReason(e.target.value)} placeholder="Why is this adjustment being made?" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdjustOpen(false)}>Cancel</Button>
+            <Button className="btn-luxury" onClick={adjust}>Confirm Adjustment</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
