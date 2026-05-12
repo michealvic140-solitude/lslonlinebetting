@@ -76,7 +76,7 @@ function BetTicket({ bet, viewerId }: { bet: any; viewerId: string }) {
 
   return (
     <Layout>
-      <div className="container py-10 max-w-xl">
+      <div className="container py-6 max-w-md px-3">
         <Link to="/dashboard" className="text-muted-foreground text-sm flex items-center gap-1 hover:text-primary mb-3"><ArrowLeft className="h-4 w-4" />My bets</Link>
         <BetVoucher bet={bet} sels={sels} statusBadge={statusBadge} allWon={allWon} copy={copy} shareCode={shareCode} />
 
@@ -114,7 +114,7 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
     : "BET STATUS: PENDING SETTLEMENT";
 
   return (
-    <div className="relative px-1 py-6 animate-fade-in">
+    <div className="relative px-0 py-4 animate-fade-in">
       {/* Outer ambient glow */}
       <div className="absolute -inset-6 rounded-[40px] bg-[radial-gradient(circle_at_30%_20%,oklch(0.85_0.22_152/0.30),transparent_60%),radial-gradient(circle_at_80%_80%,oklch(0.82_0.17_90/0.22),transparent_60%)] blur-3xl pointer-events-none" />
 
@@ -135,7 +135,7 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
         {/* Circuit pattern */}
         <div className="absolute inset-0 voucher-circuit pointer-events-none" />
 
-        <div className="relative px-5 sm:px-7 pt-8 pb-6 space-y-5">
+        <div className="relative px-3 sm:px-5 pt-6 pb-5 space-y-4">
           {/* HEADER */}
           <div className="text-center space-y-2">
             <div className="flex items-center justify-center gap-2">
