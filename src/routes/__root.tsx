@@ -87,8 +87,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "LOMITA SHOOTERS LEAGUE LSL" },
       { name: "twitter:description", content: "Register and start betting for your favorite gang" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/BYQo4V4f1lQqjhKCpZPzcRqu1AS2/social-images/social-1778121108538-357075.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/BYQo4V4f1lQqjhKCpZPzcRqu1AS2/social-images/social-1778121108538-357075.webp" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/HuUiciajAWaV0GW0X0tOTWI0HJb2/social-images/social-1778551416365-357075.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/HuUiciajAWaV0GW0X0tOTWI0HJb2/social-images/social-1778551416365-357075.webp" },
     ],
     links: [
       {
