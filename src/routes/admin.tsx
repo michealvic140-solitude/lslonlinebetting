@@ -99,6 +99,8 @@ function AdminPage() {
             <TabsTrigger value="content"><Megaphone className="h-3 w-3 mr-1" />Content</TabsTrigger>
             <TabsTrigger value="tickets"><AdminTab icon={Ticket} label="Tickets" count={alerts.tickets} /></TabsTrigger>
             <TabsTrigger value="tasks"><ClipboardList className="h-3 w-3 mr-1" />Tasks & Achievements</TabsTrigger>
+            <TabsTrigger value="challenges"><Sparkles className="h-3 w-3 mr-1" />Challenges</TabsTrigger>
+            <TabsTrigger value="seasons"><Trophy className="h-3 w-3 mr-1" />Seasons</TabsTrigger>
             <TabsTrigger value="bettracker"><AdminTab icon={ClipboardList} label="Bet Tracker" count={alerts.bettracker} /></TabsTrigger>
             <TabsTrigger value="promoreqs"><AdminTab icon={Tag} label="Promo Requests" count={alerts.promoreqs} /></TabsTrigger>
             <TabsTrigger value="appeals"><AdminTab icon={AlertTriangle} label="Appeals" count={alerts.appeals} /></TabsTrigger>
@@ -119,6 +121,8 @@ function AdminPage() {
           <TabsContent value="content" className="mt-4"><ContentPanel /></TabsContent>
           <TabsContent value="tickets" className="mt-4"><TicketsPanel /></TabsContent>
           <TabsContent value="tasks" className="mt-4"><TasksAchievementsPanel /></TabsContent>
+          <TabsContent value="challenges" className="mt-4"><ChallengesAdminPanel /></TabsContent>
+          <TabsContent value="seasons" className="mt-4"><SeasonsAdminPanel /></TabsContent>
           <TabsContent value="bettracker" className="mt-4"><BetTrackerPanel /></TabsContent>
           <TabsContent value="promoreqs" className="mt-4"><PromoRequestsPanel /></TabsContent>
           <TabsContent value="appeals" className="mt-4"><AppealsPanel /></TabsContent>
@@ -2886,6 +2890,120 @@ function HouseWalletPanel() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function ChallengesAdminPanel() {
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({ kind: "daily", title: "", description: "", reward_tokens: 100000, target_count: 1, action_key: "manual", is_active: true });
+  const load = async () => {
+    const { data } = await supabase.from("challenges").select("*").order("created_at", { ascending: false });
+    setList(data ?? []);
+  };
+  useEffect(() => { load(); }, []);
+  async function save() {
+    if (!form.title) return toast.error("Title required");
+    const { error } = await supabase.from("challenges").insert(form);
+    if (error) return toast.error(error.message);
+    toast.success("Challenge created");
+    setForm({ ...form, title: "", description: "" });
+    load();
+  }
+  async function toggle(c: any) {
+    await supabase.from("challenges").update({ is_active: !c.is_active }).eq("id", c.id);
+    load();
+  }
+  async function remove(id: string) {
+    if (!confirm("Delete challenge?")) return;
+    await supabase.from("challenges").delete().eq("id", id);
+    load();
+  }
+  return (
+    <div className="space-y-4">
+      <Card className="p-4 space-y-2">
+        <div className="font-bold">Create Challenge</div>
+        <div className="grid md:grid-cols-3 gap-2">
+          <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value })} className="rounded-md border bg-background px-2 py-2 text-sm">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
+          <Input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <Input placeholder="Action key (e.g. place_bet)" value={form.action_key} onChange={(e) => setForm({ ...form, action_key: e.target.value })} />
+          <Input type="number" placeholder="Reward tokens" value={form.reward_tokens} onChange={(e) => setForm({ ...form, reward_tokens: Number(e.target.value) })} />
+          <Input type="number" placeholder="Target count" value={form.target_count} onChange={(e) => setForm({ ...form, target_count: Number(e.target.value) })} />
+          <Button onClick={save} className="btn-luxury">Create</Button>
+        </div>
+        <Textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+      </Card>
+      <div className="space-y-2">
+        {list.map((c) => (
+          <Card key={c.id} className="p-3 flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2"><Badge variant="outline">{c.kind}</Badge><span className="font-bold">{c.title}</span></div>
+              <div className="text-xs text-muted-foreground">{c.description} · {c.reward_tokens.toLocaleString()} tokens · target {c.target_count}</div>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => toggle(c)}>{c.is_active ? "Disable" : "Enable"}</Button>
+            <Button size="sm" variant="destructive" onClick={() => remove(c.id)}>Delete</Button>
+          </Card>
+        ))}
+        {list.length === 0 && <p className="text-muted-foreground text-sm">No challenges yet.</p>}
+      </div>
+    </div>
+  );
+}
+
+function SeasonsAdminPanel() {
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({ name: "", description: "", banner_url: "", starts_at: new Date().toISOString().slice(0, 16), ends_at: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 16), is_active: true });
+  const load = async () => {
+    const { data } = await supabase.from("seasons").select("*").order("starts_at", { ascending: false });
+    setList(data ?? []);
+  };
+  useEffect(() => { load(); }, []);
+  async function save() {
+    if (!form.name) return toast.error("Name required");
+    const { error } = await supabase.from("seasons").insert({ ...form, starts_at: new Date(form.starts_at).toISOString(), ends_at: new Date(form.ends_at).toISOString() });
+    if (error) return toast.error(error.message);
+    toast.success("Season created");
+    setForm({ ...form, name: "", description: "" });
+    load();
+  }
+  async function toggle(s: any) {
+    await supabase.from("seasons").update({ is_active: !s.is_active }).eq("id", s.id);
+    load();
+  }
+  async function remove(id: string) {
+    if (!confirm("Delete season?")) return;
+    await supabase.from("seasons").delete().eq("id", id);
+    load();
+  }
+  return (
+    <div className="space-y-4">
+      <Card className="p-4 space-y-2">
+        <div className="font-bold">Create Season</div>
+        <div className="grid md:grid-cols-2 gap-2">
+          <Input placeholder="Season name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input placeholder="Banner URL (optional)" value={form.banner_url} onChange={(e) => setForm({ ...form, banner_url: e.target.value })} />
+          <Input type="datetime-local" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} />
+          <Input type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} />
+        </div>
+        <Textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+        <Button onClick={save} className="btn-luxury">Create Season</Button>
+      </Card>
+      <div className="space-y-2">
+        {list.map((s) => (
+          <Card key={s.id} className="p-3 flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2"><Badge variant="outline" className={s.is_active ? "border-emerald-500/50 text-emerald-300" : ""}>{s.is_active ? "ACTIVE" : "INACTIVE"}</Badge><span className="font-bold">{s.name}</span></div>
+              <div className="text-xs text-muted-foreground">{new Date(s.starts_at).toLocaleDateString()} → {new Date(s.ends_at).toLocaleDateString()}</div>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => toggle(s)}>{s.is_active ? "Deactivate" : "Activate"}</Button>
+            <Button size="sm" variant="destructive" onClick={() => remove(s.id)}>Delete</Button>
+          </Card>
+        ))}
+        {list.length === 0 && <p className="text-muted-foreground text-sm">No seasons yet.</p>}
+      </div>
     </div>
   );
 }

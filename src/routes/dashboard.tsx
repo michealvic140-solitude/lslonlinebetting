@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Ticket as TicketIcon, ChevronRight, Wallet, UserCog, CreditCard, Coins, Tag, Trophy, ListChecks, Sparkles, Lock } from "lucide-react";
+import { ChallengesPanel } from "@/components/ChallengesPanel";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — LSL" }] }),
@@ -79,6 +80,10 @@ function Dashboard() {
           )}
           <PanelCard icon={ListChecks} title="Tasks" subtitle="Coming soon" comingSoon />
           <PanelCard icon={Trophy} title="Achievements" subtitle="Coming soon" comingSoon />
+        </div>
+
+        <div className="mb-10">
+          <ChallengesPanel />
         </div>
 
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><TicketIcon className="h-5 w-5 text-primary" />My Bet Tickets</h2>

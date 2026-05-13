@@ -338,6 +338,51 @@ export type Database = {
         }
         Relationships: []
       }
+      challenges: {
+        Row: {
+          action_key: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          kind: string
+          reward_tokens: number
+          starts_at: string | null
+          target_count: number
+          title: string
+        }
+        Insert: {
+          action_key?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          kind: string
+          reward_tokens?: number
+          starts_at?: string | null
+          target_count?: number
+          title: string
+        }
+        Update: {
+          action_key?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          reward_tokens?: number
+          starts_at?: string | null
+          target_count?: number
+          title?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string | null
@@ -788,10 +833,13 @@ export type Database = {
           is_banned: boolean
           is_muted: boolean
           is_restricted: boolean
+          last_login_date: string | null
+          longest_streak: number
           mute_reason: string | null
           phone: string | null
           restrict_reason: string | null
           server: string | null
+          streak_days: number
           token_balance: number
           updated_at: string
         }
@@ -812,10 +860,13 @@ export type Database = {
           is_banned?: boolean
           is_muted?: boolean
           is_restricted?: boolean
+          last_login_date?: string | null
+          longest_streak?: number
           mute_reason?: string | null
           phone?: string | null
           restrict_reason?: string | null
           server?: string | null
+          streak_days?: number
           token_balance?: number
           updated_at?: string
         }
@@ -836,10 +887,13 @@ export type Database = {
           is_banned?: boolean
           is_muted?: boolean
           is_restricted?: boolean
+          last_login_date?: string | null
+          longest_streak?: number
           mute_reason?: string | null
           phone?: string | null
           restrict_reason?: string | null
           server?: string | null
+          streak_days?: number
           token_balance?: number
           updated_at?: string
         }
@@ -985,6 +1039,80 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      season_points: {
+        Row: {
+          correct_scores: number
+          id: string
+          points: number
+          season_id: string
+          updated_at: string
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          correct_scores?: number
+          id?: string
+          points?: number
+          season_id: string
+          updated_at?: string
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          correct_scores?: number
+          id?: string
+          points?: number
+          season_id?: string
+          updated_at?: string
+          user_id?: string
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_points_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seasons: {
+        Row: {
+          banner_url: string | null
+          created_at: string
+          description: string | null
+          ends_at: string
+          id: string
+          is_active: boolean
+          name: string
+          reward_structure: Json | null
+          starts_at: string
+        }
+        Insert: {
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          name: string
+          reward_structure?: Json | null
+          starts_at?: string
+        }
+        Update: {
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          reward_structure?: Json | null
+          starts_at?: string
+        }
+        Relationships: []
       }
       support_tickets: {
         Row: {
@@ -1219,6 +1347,47 @@ export type Database = {
           },
         ]
       }
+      user_challenge_progress: {
+        Row: {
+          challenge_id: string
+          claimed_at: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          period_key: string
+          progress: number
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          claimed_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          period_key?: string
+          progress?: number
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          claimed_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          period_key?: string
+          progress?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_challenge_progress_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           assigned_by: string | null
@@ -1344,6 +1513,28 @@ export type Database = {
       }
     }
     Views: {
+      hot_bets_v1: {
+        Row: {
+          avg_odds: number | null
+          bets_count: number | null
+          last_bet_at: string | null
+          market_name: string | null
+          match_id: string | null
+          match_name: string | null
+          selection_label: string | null
+          total_stake: number | null
+          users_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bet_selections_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promo_code_usage_log: {
         Row: {
           amount: number | null
@@ -1438,6 +1629,8 @@ export type Database = {
         Returns: string
       }
       can_use_gang_chat: { Args: { _user_id: string }; Returns: boolean }
+      claim_challenge: { Args: { _progress_id: string }; Returns: Json }
+      claim_daily_login: { Args: never; Returns: Json }
       create_withdrawal_request: {
         Args: {
           _amount: number
