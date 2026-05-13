@@ -23,6 +23,9 @@ export interface Profile {
   is_restricted: boolean;
   restrict_reason: string | null;
   accepted_terms: boolean;
+  streak_days?: number;
+  longest_streak?: number;
+  last_login_date?: string | null;
 }
 
 interface AuthCtx {
