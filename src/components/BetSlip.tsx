@@ -69,8 +69,8 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
   async function place() {
     if (!user || !profile) { nav({ to: "/login" }); return; }
     if (selections.length === 0) return;
-    if (selections.length < 3) {
-      toast.error(`Add at least 3 selections to place a bet (you have ${selections.length}).`);
+    if (selections.length < 2) {
+      toast.error(`Add at least 2 selections to place a bet (you have ${selections.length}).`);
       return;
     }
     if (profile.is_restricted) { toast.error("Your account is restricted from betting."); return; }
