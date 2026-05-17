@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, User as UserIcon, Shield, MessageSquare, Home, Trophy, Ticket, LifeBuoy, Wallet, Crosshair as MatchIcon, Settings as SettingsIcon } from "lucide-react";
+import { LogOut, User as UserIcon, Shield, MessageSquare, Home, Trophy, Ticket, LifeBuoy, Wallet, Crosshair as MatchIcon, Settings as SettingsIcon, Coins, LayoutDashboard } from "lucide-react";
 import { GangLogo } from "@/components/GangLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,48 +55,48 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-primary/10 blur-3xl animate-pulse-glow" />
         <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-accent/10 blur-3xl animate-pulse-glow" />
       </div>
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-card/60 border-b border-border">
-        <div className="container mx-auto px-4 flex h-16 items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2 group">
-            <GangLogo size={36} className="transition-transform group-hover:scale-105" />
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-gradient-to-b from-card/80 to-card/50 border-b border-primary/20 shadow-[0_2px_30px_-12px_rgba(0,0,0,0.6)]">
+        <div className="container mx-auto px-4 flex h-16 items-center gap-3 lg:gap-4">
+          <Link to="/" className="flex items-center gap-2 group shrink-0">
+            <GangLogo size={38} className="transition-transform group-hover:scale-105 group-hover:rotate-3 duration-300" />
             <div className="leading-tight">
-              <div className="text-sm font-extrabold tracking-widest gradient-gold-text">LOMITA</div>
-              <div className="text-[10px] text-muted-foreground tracking-[0.3em]">SHOOTERS LEAGUE</div>
+              <div className="text-sm font-extrabold tracking-[0.25em] gradient-gold-text">LOMITA</div>
+              <div className="text-[9px] text-muted-foreground tracking-[0.35em]">SHOOTERS LEAGUE</div>
             </div>
           </Link>
-          <nav className="hidden lg:flex items-center gap-0.5 flex-nowrap">
-            <Link to="/matches"><Button variant="ghost" size="sm">Matches</Button></Link>
-            <Link to="/leaderboard"><Button variant="ghost" size="sm">Leaderboard</Button></Link>
-            {user && <Link to="/chat"><Button variant="ghost" size="sm" className="relative"><MessageSquare className="h-4 w-4" />Chat{chatUnread > 0 && <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-black grid place-items-center animate-pulse">{chatUnread > 9 ? "9+" : chatUnread}</span>}</Button></Link>}
-            {user && <Link to="/dashboard"><Button variant="ghost" size="sm">Dashboard</Button></Link>}
-            {user && <Link to="/checkout"><Button variant="ghost" size="sm">Buy</Button></Link>}
-            {user && <Link to="/withdraw"><Button variant="ghost" size="sm"><Wallet className="h-4 w-4" />Withdraw</Button></Link>}
-            {user && <Link to="/support"><Button variant="ghost" size="sm">Support</Button></Link>}
-            {user && <Link to="/settings"><Button variant="ghost" size="sm"><SettingsIcon className="h-4 w-4" />Settings</Button></Link>}
-            {isAdmin && <Link to="/admin"><Button variant="ghost" size="sm" className="text-destructive"><Shield className="h-4 w-4" />Admin</Button></Link>}
+          <nav className="hidden lg:flex flex-1 items-center justify-center gap-1 flex-nowrap">
+            <NavLink to="/matches" icon={MatchIcon} label="Matches" />
+            <NavLink to="/leaderboard" icon={Trophy} label="Leaderboard" />
+            {user && <NavLink to="/chat" icon={MessageSquare} label="Chat" badge={chatUnread} />}
+            {user && <NavLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" />}
+            {user && <NavLink to="/checkout" icon={Coins} label="Buy" />}
+            {user && <NavLink to="/withdraw" icon={Wallet} label="Withdraw" />}
+            {user && <NavLink to="/support" icon={LifeBuoy} label="Support" />}
+            {user && <NavLink to="/settings" icon={SettingsIcon} label="Settings" />}
+            {isAdmin && <NavLink to="/admin" icon={Shield} label="Admin" danger />}
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
             {user && profile ? (
               <>
-                <div className="hidden sm:flex flex-col items-end leading-tight">
-                  <span className="text-xs text-muted-foreground">Tokens</span>
-                  <span className="text-sm font-bold text-primary">{profile.token_balance.toLocaleString()}</span>
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/30 bg-gradient-to-r from-primary/10 to-accent/5 shadow-[0_0_15px_-5px_rgba(212,175,55,0.4)]">
+                  <Coins className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-sm font-black text-primary leading-none tabular-nums">{profile.token_balance.toLocaleString()}</span>
                 </div>
                 <NotificationBell />
                 <Link to="/profile">
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <UserIcon className="h-4 w-4" />
-                    <span className="hidden sm:inline text-xs">{profile.full_name}</span>
+                  <Button variant="ghost" size="sm" className="gap-2 rounded-full border border-transparent hover:border-primary/30">
+                    <span className="h-6 w-6 rounded-full bg-gradient-to-br from-primary/40 to-accent/30 grid place-items-center"><UserIcon className="h-3.5 w-3.5" /></span>
+                    <span className="hidden xl:inline text-xs font-semibold max-w-[100px] truncate">{profile.full_name}</span>
                   </Button>
                 </Link>
-                <Button variant="ghost" size="icon" onClick={async () => { await signOut(); nav({ to: "/" }); }}>
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-destructive/10 hover:text-destructive" onClick={async () => { await signOut(); nav({ to: "/" }); }} title="Sign out">
                   <LogOut className="h-4 w-4" />
                 </Button>
               </>
             ) : (
               <>
                 <Link to="/login"><Button variant="ghost" size="sm">Sign in</Button></Link>
-                <Link to="/register"><Button size="sm">Join League</Button></Link>
+                <Link to="/register"><Button size="sm" className="btn-luxury">Join League</Button></Link>
               </>
             )}
           </div>
