@@ -185,3 +185,25 @@ function MobLink({ to, icon: Icon, label, badge }: { to: string; icon: any; labe
     </Link>
   );
 }
+
+function NavLink({ to, icon: Icon, label, badge, danger }: { to: string; icon: any; label: string; badge?: number; danger?: boolean }) {
+  return (
+    <Link
+      to={to}
+      activeProps={{ className: "active" }}
+      className={`group relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all
+        text-muted-foreground hover:text-foreground hover:bg-primary/5
+        [&.active]:text-primary [&.active]:bg-gradient-to-b [&.active]:from-primary/15 [&.active]:to-primary/5
+        ${danger ? "hover:text-destructive [&.active]:!text-destructive [&.active]:!from-destructive/15 [&.active]:!to-destructive/5" : ""}`}
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0" />
+      <span>{label}</span>
+      {badge && badge > 0 ? (
+        <span className="ml-0.5 h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-black grid place-items-center animate-pulse">
+          {badge > 9 ? "9+" : badge}
+        </span>
+      ) : null}
+      <span className="pointer-events-none absolute inset-x-2 -bottom-px h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-[.active]:opacity-100 transition-opacity" />
+    </Link>
+  );
+}
