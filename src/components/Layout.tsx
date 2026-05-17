@@ -11,6 +11,14 @@ import { useLocation } from "@tanstack/react-router";
 
 const CHAT_SEEN_KEY = "lsl-chat-last-seen";
 
+function useRegisterServiceWorker() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }, []);
+}
+
 function useChatUnread() {
   const { user } = useAuth();
   const loc = useLocation();
