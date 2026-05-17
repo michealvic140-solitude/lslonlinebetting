@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, User as UserIcon, Shield, MessageSquare, Home, Trophy, Ticket, LifeBuoy, Wallet, Crosshair as MatchIcon } from "lucide-react";
+import { LogOut, User as UserIcon, Shield, MessageSquare, Home, Trophy, Ticket, LifeBuoy, Wallet, Crosshair as MatchIcon, Star, Settings as SettingsIcon } from "lucide-react";
 import { GangLogo } from "@/components/GangLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +63,8 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             {user && <Link to="/checkout"><Button variant="ghost" size="sm">Buy</Button></Link>}
             {user && <Link to="/withdraw"><Button variant="ghost" size="sm"><Wallet className="h-4 w-4" />Withdraw</Button></Link>}
             {user && <Link to="/support"><Button variant="ghost" size="sm">Support</Button></Link>}
+            {user && <Link to="/watchlist"><Button variant="ghost" size="sm"><Star className="h-4 w-4" />Watchlist</Button></Link>}
+            {user && <Link to="/settings"><Button variant="ghost" size="sm"><SettingsIcon className="h-4 w-4" />Settings</Button></Link>}
             {isAdmin && <Link to="/admin"><Button variant="ghost" size="sm" className="text-destructive"><Shield className="h-4 w-4" />Admin</Button></Link>}
           </nav>
           <div className="flex items-center gap-2">
@@ -108,6 +110,8 @@ export const Layout = ({ children }: { children: ReactNode }) => {
               <MobLink to="/dashboard" icon={Ticket} label="Bets" />
               <MobLink to="/chat" icon={MessageSquare} label="Chat" badge={chatUnread} />
               <MobLink to="/profile" icon={UserIcon} label="Profile" />
+              <MobLink to="/watchlist" icon={Star} label="Watch" />
+              <MobLink to="/settings" icon={SettingsIcon} label="Settings" />
               <MobLink to="/support" icon={LifeBuoy} label="Help" />
             </>}
             {isAdmin && <MobLink to="/admin" icon={Shield} label="Admin" />}
