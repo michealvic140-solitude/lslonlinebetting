@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, User as UserIcon, Shield, MessageSquare, Home, Trophy, Ticket, LifeBuoy, Wallet, Crosshair as MatchIcon, Star, Settings as SettingsIcon } from "lucide-react";
+import { LogOut, User as UserIcon, Shield, MessageSquare, Home, Trophy, Ticket, LifeBuoy, Wallet, Crosshair as MatchIcon, Settings as SettingsIcon } from "lucide-react";
 import { GangLogo } from "@/components/GangLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,7 +64,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
               <div className="text-[10px] text-muted-foreground tracking-[0.3em]">SHOOTERS LEAGUE</div>
             </div>
           </Link>
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-0.5 flex-nowrap">
             <Link to="/matches"><Button variant="ghost" size="sm">Matches</Button></Link>
             <Link to="/leaderboard"><Button variant="ghost" size="sm">Leaderboard</Button></Link>
             {user && <Link to="/chat"><Button variant="ghost" size="sm" className="relative"><MessageSquare className="h-4 w-4" />Chat{chatUnread > 0 && <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-black grid place-items-center animate-pulse">{chatUnread > 9 ? "9+" : chatUnread}</span>}</Button></Link>}
@@ -72,7 +72,6 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             {user && <Link to="/checkout"><Button variant="ghost" size="sm">Buy</Button></Link>}
             {user && <Link to="/withdraw"><Button variant="ghost" size="sm"><Wallet className="h-4 w-4" />Withdraw</Button></Link>}
             {user && <Link to="/support"><Button variant="ghost" size="sm">Support</Button></Link>}
-            {user && <Link to="/watchlist"><Button variant="ghost" size="sm"><Star className="h-4 w-4" />Watchlist</Button></Link>}
             {user && <Link to="/settings"><Button variant="ghost" size="sm"><SettingsIcon className="h-4 w-4" />Settings</Button></Link>}
             {isAdmin && <Link to="/admin"><Button variant="ghost" size="sm" className="text-destructive"><Shield className="h-4 w-4" />Admin</Button></Link>}
           </nav>
@@ -109,7 +108,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         )}
       </header>
       <main className="relative">{children}</main>
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl bg-card/80 border-t border-border safe-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl bg-card/80 border-t border-border safe-bottom">
         <div className="overflow-x-auto">
           <div className="flex items-center gap-1 px-2 py-2 min-w-max">
             <MobLink to="/" icon={Home} label="Home" />
@@ -119,7 +118,6 @@ export const Layout = ({ children }: { children: ReactNode }) => {
               <MobLink to="/dashboard" icon={Ticket} label="Bets" />
               <MobLink to="/chat" icon={MessageSquare} label="Chat" badge={chatUnread} />
               <MobLink to="/profile" icon={UserIcon} label="Profile" />
-              <MobLink to="/watchlist" icon={Star} label="Watch" />
               <MobLink to="/settings" icon={SettingsIcon} label="Settings" />
               <MobLink to="/support" icon={LifeBuoy} label="Help" />
             </>}
@@ -127,7 +125,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           </div>
         </div>
       </nav>
-      <div className="md:hidden h-20" />
+      <div className="lg:hidden h-20" />
       <SiteFooter />
     </div>
   );
