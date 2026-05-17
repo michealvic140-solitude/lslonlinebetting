@@ -33,10 +33,11 @@ export function HotBets() {
       setRows((data ?? []) as any);
     };
     load();
+    const interval = setInterval(load, 60_000);
     const ch = supabase.channel("hot-bets")
       .on("postgres_changes", { event: "*", schema: "public", table: "bets" }, load)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { clearInterval(interval); supabase.removeChannel(ch); };
   }, []);
 
   async function copyToSlip(h: Hot) {
@@ -64,7 +65,7 @@ export function HotBets() {
         <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground">7d trending</span>
       </div>
       {rows.length === 0 && <p className="text-xs text-muted-foreground">No trending bets yet.</p>}
-      <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+      <div className="space-y-2 max-h-[440px] overflow-y-auto pr-1">
         {rows.map((h, i) => (
           <div key={i} className="rounded-lg border border-border/60 bg-background/40 p-2.5 hover:border-primary/40 transition">
             <div className="flex items-start justify-between gap-2">
