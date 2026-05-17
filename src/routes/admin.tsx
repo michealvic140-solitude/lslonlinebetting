@@ -191,14 +191,16 @@ function AdminTab({ icon: Icon, label, count = 0 }: { icon: any; label: string; 
 }
 
 function AdminSectionRail({ alerts, onOpen }: { alerts: Record<string, number>; onOpen: (tab: string) => void }) {
-  const items = [
-    { tab: "tickets", icon: Ticket, label: "Open reports", count: alerts.tickets ?? 0 },
-    { tab: "bettracker", icon: ClipboardList, label: "Booked tickets", count: alerts.bettracker ?? 0 },
-    { tab: "tokens", icon: Coins, label: "Token requests", count: alerts.tokens ?? 0 },
-    { tab: "withdrawals", icon: Wallet, label: "Withdrawals", count: alerts.withdrawals ?? 0 },
-    { tab: "promoreqs", icon: Tag, label: "Promo requests", count: alerts.promoreqs ?? 0 },
-    { tab: "appeals", icon: AlertTriangle, label: "Ban appeals", count: alerts.appeals ?? 0 },
+  const { isAdmin } = useAuth();
+  const all = [
+    { tab: "tickets", icon: Ticket, label: "Open reports", count: alerts.tickets ?? 0, mod: true },
+    { tab: "bettracker", icon: ClipboardList, label: "Booked tickets", count: alerts.bettracker ?? 0, mod: false },
+    { tab: "tokens", icon: Coins, label: "Token requests", count: alerts.tokens ?? 0, mod: false },
+    { tab: "withdrawals", icon: Wallet, label: "Withdrawals", count: alerts.withdrawals ?? 0, mod: false },
+    { tab: "promoreqs", icon: Tag, label: "Promo requests", count: alerts.promoreqs ?? 0, mod: false },
+    { tab: "appeals", icon: AlertTriangle, label: "Ban appeals", count: alerts.appeals ?? 0, mod: true },
   ];
+  const items = isAdmin ? all : all.filter((i) => i.mod);
   return (
     <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
       {items.map((item) => (
