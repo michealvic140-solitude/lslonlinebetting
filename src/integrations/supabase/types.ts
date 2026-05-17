@@ -71,63 +71,162 @@ export type Database = {
       app_settings: {
         Row: {
           about_us: string | null
+          admin_ai_enabled: boolean
+          admin_ai_model: string
+          challenge_reward_multiplier: number
           contact_email: string | null
           contact_phone: string | null
           contact_whatsapp: string | null
+          daily_login_base_reward: number
+          daily_login_bonus_per_day: number
+          daily_login_enabled: boolean
+          daily_login_max_streak: number
+          emblem_auto_approve: boolean
+          exposure_warn_pct: number
+          friends_enabled: boolean
+          gift_daily_limit: number
+          gift_enabled: boolean
+          gift_fee_pct: number
+          gift_max_per_tx: number
+          gift_min_amount: number
           hero_tagline: string | null
+          house_low_balance: number
           id: number
           maintenance_message: string | null
           maintenance_mode: boolean
           max_payout: number
+          max_selections_per_ticket: number
+          min_selections_per_ticket: number
           min_stake: number
           popup_ad_active: boolean
           popup_ad_image: string | null
           popup_ad_link: string | null
           popup_ad_size: string
           popup_ad_text: string | null
+          push_endpoint_url: string | null
+          referral_bonus_referee: number
+          referral_bonus_referrer: number
+          spin_cooldown_hours: number
+          spin_enabled: boolean
+          spin_max_reward: number
+          spin_min_reward: number
           terms_content: string | null
           updated_at: string
+          vapid_public_key: string | null
+          vapid_subject: string | null
+          vip_enabled: boolean
+          vip_token_multipliers: Json
           why_trust_us: string | null
+          xp_per_bet: number
+          xp_per_login: number
+          xp_per_referral: number
+          xp_per_win: number
         }
         Insert: {
           about_us?: string | null
+          admin_ai_enabled?: boolean
+          admin_ai_model?: string
+          challenge_reward_multiplier?: number
           contact_email?: string | null
           contact_phone?: string | null
           contact_whatsapp?: string | null
+          daily_login_base_reward?: number
+          daily_login_bonus_per_day?: number
+          daily_login_enabled?: boolean
+          daily_login_max_streak?: number
+          emblem_auto_approve?: boolean
+          exposure_warn_pct?: number
+          friends_enabled?: boolean
+          gift_daily_limit?: number
+          gift_enabled?: boolean
+          gift_fee_pct?: number
+          gift_max_per_tx?: number
+          gift_min_amount?: number
           hero_tagline?: string | null
+          house_low_balance?: number
           id?: number
           maintenance_message?: string | null
           maintenance_mode?: boolean
           max_payout?: number
+          max_selections_per_ticket?: number
+          min_selections_per_ticket?: number
           min_stake?: number
           popup_ad_active?: boolean
           popup_ad_image?: string | null
           popup_ad_link?: string | null
           popup_ad_size?: string
           popup_ad_text?: string | null
+          push_endpoint_url?: string | null
+          referral_bonus_referee?: number
+          referral_bonus_referrer?: number
+          spin_cooldown_hours?: number
+          spin_enabled?: boolean
+          spin_max_reward?: number
+          spin_min_reward?: number
           terms_content?: string | null
           updated_at?: string
+          vapid_public_key?: string | null
+          vapid_subject?: string | null
+          vip_enabled?: boolean
+          vip_token_multipliers?: Json
           why_trust_us?: string | null
+          xp_per_bet?: number
+          xp_per_login?: number
+          xp_per_referral?: number
+          xp_per_win?: number
         }
         Update: {
           about_us?: string | null
+          admin_ai_enabled?: boolean
+          admin_ai_model?: string
+          challenge_reward_multiplier?: number
           contact_email?: string | null
           contact_phone?: string | null
           contact_whatsapp?: string | null
+          daily_login_base_reward?: number
+          daily_login_bonus_per_day?: number
+          daily_login_enabled?: boolean
+          daily_login_max_streak?: number
+          emblem_auto_approve?: boolean
+          exposure_warn_pct?: number
+          friends_enabled?: boolean
+          gift_daily_limit?: number
+          gift_enabled?: boolean
+          gift_fee_pct?: number
+          gift_max_per_tx?: number
+          gift_min_amount?: number
           hero_tagline?: string | null
+          house_low_balance?: number
           id?: number
           maintenance_message?: string | null
           maintenance_mode?: boolean
           max_payout?: number
+          max_selections_per_ticket?: number
+          min_selections_per_ticket?: number
           min_stake?: number
           popup_ad_active?: boolean
           popup_ad_image?: string | null
           popup_ad_link?: string | null
           popup_ad_size?: string
           popup_ad_text?: string | null
+          push_endpoint_url?: string | null
+          referral_bonus_referee?: number
+          referral_bonus_referrer?: number
+          spin_cooldown_hours?: number
+          spin_enabled?: boolean
+          spin_max_reward?: number
+          spin_min_reward?: number
           terms_content?: string | null
           updated_at?: string
+          vapid_public_key?: string | null
+          vapid_subject?: string | null
+          vip_enabled?: boolean
+          vip_token_multipliers?: Json
           why_trust_us?: string | null
+          xp_per_bet?: number
+          xp_per_login?: number
+          xp_per_referral?: number
+          xp_per_win?: number
         }
         Relationships: []
       }
@@ -317,6 +416,39 @@ export type Database = {
           },
         ]
       }
+      broadcasts: {
+        Row: {
+          body: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          link: string | null
+          segment: string
+          sent_count: number
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          link?: string | null
+          segment?: string
+          sent_count?: number
+          title: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          link?: string | null
+          segment?: string
+          sent_count?: number
+          title?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -451,6 +583,84 @@ export type Database = {
           is_active?: boolean
           starts_at?: string | null
           title?: string
+        }
+        Relationships: []
+      }
+      friends: {
+        Row: {
+          created_at: string
+          followee_id: string
+          follower_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          followee_id: string
+          follower_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          followee_id?: string
+          follower_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      gang_emblems: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gifts: {
+        Row: {
+          amount: number
+          created_at: string
+          fee: number
+          id: string
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          fee?: number
+          id?: string
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          fee?: number
+          id?: string
+          recipient_id?: string
+          sender_id?: string
         }
         Relationships: []
       }
@@ -704,6 +914,54 @@ export type Database = {
           },
         ]
       }
+      notification_prefs: {
+        Row: {
+          bet_results: boolean
+          chat_mentions: boolean
+          daily_streak: boolean
+          match_starting: boolean
+          promotions: boolean
+          push_enabled: boolean
+          referrals: boolean
+          rewards: boolean
+          ticket_replies: boolean
+          updated_at: string
+          user_id: string
+          vip_tier_up: boolean
+          withdrawals: boolean
+        }
+        Insert: {
+          bet_results?: boolean
+          chat_mentions?: boolean
+          daily_streak?: boolean
+          match_starting?: boolean
+          promotions?: boolean
+          push_enabled?: boolean
+          referrals?: boolean
+          rewards?: boolean
+          ticket_replies?: boolean
+          updated_at?: string
+          user_id: string
+          vip_tier_up?: boolean
+          withdrawals?: boolean
+        }
+        Update: {
+          bet_results?: boolean
+          chat_mentions?: boolean
+          daily_streak?: boolean
+          match_starting?: boolean
+          promotions?: boolean
+          push_enabled?: boolean
+          referrals?: boolean
+          rewards?: boolean
+          ticket_replies?: boolean
+          updated_at?: string
+          user_id?: string
+          vip_tier_up?: boolean
+          withdrawals?: boolean
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -820,12 +1078,15 @@ export type Database = {
           accepted_terms: boolean
           avatar_url: string | null
           ban_reason: string | null
+          chat_color: string | null
           country: string | null
           created_at: string
           discord_full_name: string | null
           discord_username: string | null
           email: string
+          emblem_status: string | null
           full_name: string
+          gang_emblem_url: string | null
           gang_name: string | null
           gang_type: Database["public"]["Enums"]["gang_type"] | null
           id: string
@@ -837,22 +1098,32 @@ export type Database = {
           longest_streak: number
           mute_reason: string | null
           phone: string | null
+          profile_banner_url: string | null
+          profile_title: string | null
+          referral_code: string | null
+          referred_by: string | null
           restrict_reason: string | null
           server: string | null
+          showcase_achievement_ids: string[]
           streak_days: number
           token_balance: number
           updated_at: string
+          vip_tier: string
+          xp: number
         }
         Insert: {
           accepted_terms?: boolean
           avatar_url?: string | null
           ban_reason?: string | null
+          chat_color?: string | null
           country?: string | null
           created_at?: string
           discord_full_name?: string | null
           discord_username?: string | null
           email: string
+          emblem_status?: string | null
           full_name: string
+          gang_emblem_url?: string | null
           gang_name?: string | null
           gang_type?: Database["public"]["Enums"]["gang_type"] | null
           id: string
@@ -864,22 +1135,32 @@ export type Database = {
           longest_streak?: number
           mute_reason?: string | null
           phone?: string | null
+          profile_banner_url?: string | null
+          profile_title?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
           restrict_reason?: string | null
           server?: string | null
+          showcase_achievement_ids?: string[]
           streak_days?: number
           token_balance?: number
           updated_at?: string
+          vip_tier?: string
+          xp?: number
         }
         Update: {
           accepted_terms?: boolean
           avatar_url?: string | null
           ban_reason?: string | null
+          chat_color?: string | null
           country?: string | null
           created_at?: string
           discord_full_name?: string | null
           discord_username?: string | null
           email?: string
+          emblem_status?: string | null
           full_name?: string
+          gang_emblem_url?: string | null
           gang_name?: string | null
           gang_type?: Database["public"]["Enums"]["gang_type"] | null
           id?: string
@@ -891,11 +1172,18 @@ export type Database = {
           longest_streak?: number
           mute_reason?: string | null
           phone?: string | null
+          profile_banner_url?: string | null
+          profile_title?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
           restrict_reason?: string | null
           server?: string | null
+          showcase_achievement_ids?: string[]
           streak_days?: number
           token_balance?: number
           updated_at?: string
+          vip_tier?: string
+          xp?: number
         }
         Relationships: []
       }
@@ -1040,6 +1328,66 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          enabled: boolean
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          enabled?: boolean
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          enabled?: boolean
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referee_bonus: number
+          referee_id: string
+          referrer_bonus: number
+          referrer_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referee_bonus?: number
+          referee_id: string
+          referrer_bonus?: number
+          referrer_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referee_bonus?: number
+          referee_id?: string
+          referrer_bonus?: number
+          referrer_id?: string
+        }
+        Relationships: []
+      }
       season_points: {
         Row: {
           correct_scores: number
@@ -1111,6 +1459,27 @@ export type Database = {
           name?: string
           reward_structure?: Json | null
           starts_at?: string
+        }
+        Relationships: []
+      }
+      spins: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1420,6 +1789,27 @@ export type Database = {
           },
         ]
       }
+      user_sessions: {
+        Row: {
+          last_seen: string
+          route: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          last_seen?: string
+          route?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          last_seen?: string
+          route?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_tasks: {
         Row: {
           completed_at: string | null
@@ -1460,6 +1850,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      watchlist: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       withdrawal_requests: {
         Row: {
@@ -1607,14 +2021,33 @@ export type Database = {
       }
     }
     Functions: {
+      admin_adjust_xp: {
+        Args: { _delta: number; _reason?: string; _user_id: string }
+        Returns: Json
+      }
+      admin_broadcast: {
+        Args: { _body: string; _link: string; _segment: string; _title: string }
+        Returns: Json
+      }
       admin_delete_bet: {
         Args: { _bet_id: string; _reason?: string; _refund?: boolean }
         Returns: undefined
       }
+      admin_exposure_per_match: {
+        Args: never
+        Returns: {
+          bet_count: number
+          exposure: number
+          match_id: string
+          match_name: string
+        }[]
+      }
+      admin_pnl_summary: { Args: { _days?: number }; Returns: Json }
       admin_refund_bet: {
         Args: { _bet_id: string; _reason?: string }
         Returns: undefined
       }
+      admin_risk_summary: { Args: never; Returns: Json }
       admin_suspend_bet: {
         Args: { _bet_id: string; _reason?: string }
         Returns: undefined
@@ -1624,6 +2057,7 @@ export type Database = {
         Args: { _bet_id: string; _reason?: string; _refund?: boolean }
         Returns: undefined
       }
+      apply_referral_code: { Args: { _code: string }; Returns: Json }
       approve_promo_request: {
         Args: { _id: string; _note?: string }
         Returns: string
@@ -1662,12 +2096,17 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_mod_or_admin: { Args: { _user_id: string }; Returns: boolean }
       redeem_promo_code: { Args: { _code: string }; Returns: Json }
+      review_gang_emblem: {
+        Args: { _approve: boolean; _id: string; _note?: string }
+        Returns: undefined
+      }
       review_withdrawal_request: {
         Args: { _approve: boolean; _id: string; _note?: string }
         Returns: undefined
       }
       settle_pay_winning_bet: { Args: { _bet_id: string }; Returns: Json }
       user_cashout_bet: { Args: { _bet_id: string }; Returns: Json }
+      verify_xp_consistency: { Args: { _user_id?: string }; Returns: Json }
       wipe_all_tokens: { Args: never; Returns: undefined }
     }
     Enums: {

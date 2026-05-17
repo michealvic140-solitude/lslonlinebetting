@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { RiskPanel, PnLPanel, ReferralsAdminPanel, EmblemModerationPanel, VipAdminPanel, StreakAndPushPanel, TokenRulesPanel, BroadcastPanel, ActivityPanel, ReportsPanel, AdminAILivePanel } from "@/components/admin/AdminExtensions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
@@ -109,6 +110,16 @@ function AdminPage() {
             <TabsTrigger value="audit"><History className="h-3 w-3 mr-1" />Audit</TabsTrigger>
             <TabsTrigger value="settings"><SettingsIcon className="h-3 w-3 mr-1" />Settings</TabsTrigger>
             <TabsTrigger value="adminai"><Sparkles className="h-3 w-3 mr-1" />Admin AI</TabsTrigger>
+            <TabsTrigger value="risk"><AlertTriangle className="h-3 w-3 mr-1" />Risk</TabsTrigger>
+            <TabsTrigger value="pnl"><BarChart3 className="h-3 w-3 mr-1" />P&L</TabsTrigger>
+            <TabsTrigger value="reports"><BarChart3 className="h-3 w-3 mr-1" />Reports</TabsTrigger>
+            <TabsTrigger value="tokenrules"><Coins className="h-3 w-3 mr-1" />Token Rules</TabsTrigger>
+            <TabsTrigger value="broadcast"><Send className="h-3 w-3 mr-1" />Broadcast</TabsTrigger>
+            <TabsTrigger value="activity"><Users className="h-3 w-3 mr-1" />Activity</TabsTrigger>
+            <TabsTrigger value="streakpush"><Sparkles className="h-3 w-3 mr-1" />Streak & Push</TabsTrigger>
+            <TabsTrigger value="referrals"><Users className="h-3 w-3 mr-1" />Referrals</TabsTrigger>
+            <TabsTrigger value="emblems"><Trophy className="h-3 w-3 mr-1" />Emblems</TabsTrigger>
+            <TabsTrigger value="vip"><Trophy className="h-3 w-3 mr-1" />VIP</TabsTrigger>
           </TabsList>
           <TabsContent value="users" className="mt-4"><UsersPanel /></TabsContent>
           <TabsContent value="matches" className="mt-4"><MatchesPanel /></TabsContent>
@@ -132,6 +143,16 @@ function AdminPage() {
           <TabsContent value="analytics" className="mt-4"><AnalyticsPanel /></TabsContent>
           <TabsContent value="settings" className="mt-4"><SettingsPanel /></TabsContent>
           <TabsContent value="adminai" className="mt-4"><AdminAIPanel /></TabsContent>
+          <TabsContent value="risk" className="mt-4"><RiskPanel /></TabsContent>
+          <TabsContent value="pnl" className="mt-4"><PnLPanel /></TabsContent>
+          <TabsContent value="reports" className="mt-4"><ReportsPanel /></TabsContent>
+          <TabsContent value="tokenrules" className="mt-4"><TokenRulesPanel /></TabsContent>
+          <TabsContent value="broadcast" className="mt-4"><BroadcastPanel /></TabsContent>
+          <TabsContent value="activity" className="mt-4"><ActivityPanel /></TabsContent>
+          <TabsContent value="streakpush" className="mt-4"><StreakAndPushPanel /></TabsContent>
+          <TabsContent value="referrals" className="mt-4"><ReferralsAdminPanel /></TabsContent>
+          <TabsContent value="emblems" className="mt-4"><EmblemModerationPanel /></TabsContent>
+          <TabsContent value="vip" className="mt-4"><VipAdminPanel /></TabsContent>
         </Tabs>
       </div>
     </Layout>

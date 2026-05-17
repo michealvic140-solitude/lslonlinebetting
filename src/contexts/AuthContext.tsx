@@ -26,6 +26,16 @@ export interface Profile {
   streak_days?: number;
   longest_streak?: number;
   last_login_date?: string | null;
+  referral_code?: string | null;
+  referred_by?: string | null;
+  xp?: number;
+  vip_tier?: string;
+  gang_emblem_url?: string | null;
+  emblem_status?: string;
+  chat_color?: string | null;
+  profile_banner_url?: string | null;
+  profile_title?: string | null;
+  showcase_achievement_ids?: string[];
 }
 
 interface AuthCtx {

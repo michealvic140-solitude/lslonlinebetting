@@ -1,63 +1,87 @@
-# LSL Platform — 2nd Update Rollout Plan
+# Full platform update from `betting-bliss` reference repo
 
-The request covers ~18 feature areas. Shipping in 5 verified phases keeps each batch testable and avoids regressions in the betting/ token flow.
+After a deep diff against `michealvic140-solitude/betting-bliss`, only its 5th migration (watchlist + profile customization) is brand-new SQL — but its **app code references a much larger backend** (referrals, VIP/XP, push notifications, live activity, broadcasts, gang emblems, risk/P&L dashboards, AI copilot, daily-spin and token-gift rules, friend system, watchlist). To "make sure everything is up to date" I need to port both the missing schema *and* the matching app surfaces.
 
-## Phase 1 — Foundation (DB + shared UI)
-**Database migration**
-- New `app_role` value: `sponsor`
-- New table `promo_code_requests` (user_id, amount, usage_limit, reason, status, generated_code, admin_note) — already exists, verify
-- New table `user_tasks` + `user_achievements` (placeholder, "coming soon" friendly)
-- New columns on `profiles`: `ingame_name`, `discord_full_name` (Discord username already there)
-- RPC `kick_banned_user(uid)` — invalidates session via `auth.sessions` delete (admin-only)
+## What's new in the reference (currently missing here)
 
-**Shared UI**
-- Replace remaining `window.confirm` calls with the existing `useConfirm` glass modal (audit admin.tsx, dashboard, withdraw flows)
-- Add `<GlassModal>` premium variant with reason textarea support
+**Routes**
+- `src/routes/settings.tsx` — push notification & account hub
+- `src/routes/watchlist.tsx` — saved matches / teams / players
 
-## Phase 2 — Bet Slip + Betting UX
-- Redesign `BetSlip.tsx`: luxury glass card, gradient header, animated total odds counter, per-selection cards with team logos, sticky payout bar, "max payout cap" badge
-- Bet Slip already supports edit/reorder/stake — polish visuals only
-- Cash-out gating already correct (winning + ended only) — verify and add "cash out unavailable" hint state
+**Components**
+- `src/components/UserHubSections.tsx` (~740 lines): `ReferralCard`, `VipCard`, `PushNotifSettings`, `UserAnalyticsDashboard`, `BetHistoryAdvanced`, `GangEmblemUpload`
+- `src/components/WatchlistStar.tsx` — toggleable ★ widget for any match/team/player
+- `src/components/admin/AdminExtensions.tsx` (~880 lines): `StreakAndPushPanel`, `RiskPanel`, `PnLPanel`, `TokenRulesPanel`, `BroadcastPanel`, `ActivityPanel`, `ReportsPanel`, `AdminAILivePanel`, `ReferralsAdminPanel`, `EmblemModerationPanel`, `VipAdminPanel`
 
-## Phase 3 — User Dashboard Overhaul
-- Premium grid of panels: **Bet Slips · Edit Profile · Withdrawal · Deposit (Coming Soon) · Request Tokens · Request Promo Code (sponsor only) · Tasks (Coming Soon) · Achievements (Coming Soon)**
-- Each panel = glass card with icon, gradient border, hover lift
-- "My Withdrawals" already added — restyle to match new grid
-- Sponsor-only promo request form: amount, usage_limit, reason → inserts into `promo_code_requests`
+**Server**
+- `src/routes/api/public/hooks/send-push.ts` — Web Push delivery (uses `web-push`)
+- `src/lib/admin-ai.functions.ts` — server fn calling Lovable AI gateway, grounded with live platform snapshot
 
-## Phase 4 — Admin Panel Premium Rebuild
-- **Analytics tab**: real-time recharts (revenue area chart, bets/day bar chart, active users line) using `token_transactions` + `bets` aggregations; Supabase realtime subscription for live updates
-- **Users management**: click row → side drawer with sub-tabs (Profile · Tokens · Roles · Actions · Bet Slips · Transactions · Audit)
-- **Ticket Tracker** (new tab): all bets table with filter (open/won/lost/suspended), click → full ticket detail, admin actions: Suspend, Unsuspend, Delete (refund optional), already wired via `admin_suspend_bet`/`admin_delete_bet` RPCs — surface them here
-- **Support Tickets** tab: chat-style thread viewer with image preview, status controls (existing table `support_tickets` + `ticket_messages`)
-- **Settings**: luxury card layout — sections for Stakes/Payout, Maintenance, Pop-up Ad, Hero, Contact, Terms
-- **Live match controls**: edit `home_score`/`away_score` while status=`live`, edit odds (only updates `odds.value`, locked_odds on existing `bet_selections` unchanged), delete featured/main matches
-- **Featured matches slider**: admin marks multiple matches `is_featured=true`; home page renders embla carousel auto-sliding every 5s with arrows
-- **Categories on home**: bug — verify query joins matches→categories and renders sections; fix filter
-- **Admin AI tab**: placeholder "Coming Soon" with elegant locked card
+**Static**
+- `public/sw.js` — service worker for push notifications
 
-## Phase 5 — Auth + Account
-- **Registration**: add fields `ingame_name`, `server` (input), `discord_full_name`; make `discord_username` required; gang/faction conditional input already in place
-- **Banned-user kick-out**: add realtime listener on `profiles.is_banned` in `AuthContext`; on flip → `signOut()` + redirect to `/login` with `?banned=1`
-- Login page: when `?banned=1`, show glass appeal card with "Submit Appeal" CTA → `/support` ban appeal form (table already exists)
+**Admin tabs added**: tokenrules, broadcast, activity, reports, adminai, risk, pnl, streakpush, referrals, emblems, vip
 
----
+## Database changes required
 
-## Technical notes
-- All client-side route additions go through `src/routes/`, no `routeTree.gen.ts` edits
-- Use existing `useConfirm` for confirmations; extend to accept `reason` field
-- Realtime: already enabled on key tables; analytics uses postgres_changes channel
-- Carousel: use existing `src/components/ui/carousel.tsx` (embla)
-- Charts: use existing `src/components/ui/chart.tsx` + recharts (already in deps)
+Single new migration that adds everything the reference code expects:
 
-## Out of scope / clarifications needed
-- "Deposit (Coming Soon)" — placeholder card only, no payment integration
-- Tasks/Achievements — schema + placeholder UI only, no quest engine yet
-- Admin AI — placeholder card only
+### New tables
+- `watchlist` (already specified in ref migration 5)
+- `referrals` (referrer_id, referee_id, referrer_bonus, referee_bonus, created_at)
+- `notification_prefs` (user_id PK, push_enabled + per-channel booleans for match_starting, bet_results, rewards, daily_streak, referrals, vip_tier_up, withdrawals, promotions, chat_mentions, ticket_replies)
+- `push_subscriptions` (user_id, endpoint UNIQUE, p256dh, auth_key, user_agent, enabled)
+- `user_sessions` (user_id, last_seen, route, user_agent) — for live activity
+- `broadcasts` (title, body, link, segment, sent_count, created_by, created_at)
+- `gang_emblems` (user_id, image_url, status pending/approved/declined, reviewed_by, reviewed_at)
+- `friends` / follow edges (follower_id, followee_id, created_at)
+- `spins` (user_id, amount, created_at) and `gifts` (sender_id, recipient_id, amount, fee, created_at) for cooldown/limit tracking
 
----
+### `profiles` column additions
+`referral_code` (text UNIQUE, auto-gen on insert), `referred_by` uuid, `xp` bigint, `vip_tier` text, `gang_emblem_url`, `emblem_status`, `chat_color`, `profile_banner_url`, `profile_title`, `showcase_achievement_ids uuid[]`.
 
-## Recommended starting point
-Begin with **Phase 1 (DB migration)** so all subsequent phases have the schema they need. After approval I'll run the migration, then ship Phases 2 and 3 together (bet slip + dashboard), then Phase 4 (the largest), then Phase 5.
+### `app_settings` column additions
+VAPID: `vapid_public_key`, `vapid_subject`, `push_endpoint_url`.
+Daily login: `daily_login_enabled`, `daily_login_base_reward`, `daily_login_bonus_per_day`, `daily_login_max_streak`.
+XP rules: `xp_per_bet`, `xp_per_win`, `xp_per_login`, `xp_per_referral`.
+Referrals: `referral_bonus_referrer`, `referral_bonus_referee`.
+VIP: `vip_token_multipliers jsonb`, `challenge_reward_multiplier numeric`.
+Spin: `spin_enabled`, `spin_min_reward`, `spin_max_reward`, `spin_cooldown_hours`.
+Gifts: `gift_enabled`, `gift_daily_limit`, `gift_min_amount`, `gift_max_per_tx`, `gift_fee_pct`.
+Friends/AI/limits: `friends_enabled`, `admin_ai_enabled`, `admin_ai_model`, `exposure_warn_pct`, `house_low_balance`, `min_selections_per_ticket`, `max_selections_per_ticket`.
 
-This is roughly 4–6 large message turns of work. Confirm the plan or tell me which phase to prioritize first if you want to reorder.
+### New RPCs (SECURITY DEFINER)
+`apply_referral_code(_code)`, `verify_xp_consistency(_user_id)`, `admin_risk_summary()`, `admin_exposure_per_match()`, `admin_pnl_summary(_days)`, `admin_broadcast(_title,_body,_link,_segment)`. All admin RPCs gated by `is_admin(auth.uid())`.
+
+### Triggers
+- Auto-generate `profiles.referral_code` on insert.
+- On bet placed/won → add XP, recompute `vip_tier`.
+- On `notifications` insert → optional HTTP post to `app_settings.push_endpoint_url` (best-effort, ignore failure).
+
+RLS on every new table — user-owned where applicable, admin-managed for broadcasts/emblems/sessions.
+
+## Dependencies
+- `bun add web-push` (used only inside `/api/public/hooks/send-push.ts`).
+
+## Wiring
+- Extend `Profile` type in `src/contexts/AuthContext.tsx` with the new optional fields.
+- Mount `WatchlistStar` on match cards, team rows, and player avatars.
+- Add `/settings` and `/watchlist` to the side/bottom nav in `Layout.tsx`.
+- Register service worker once from `Layout` (or root) if `'serviceWorker' in navigator`.
+- Slot the new admin panels into `src/routes/admin.tsx` as additional tabs.
+- Add a tiny ping helper that POSTs to `user_sessions` upsert on route change so `ActivityPanel` has data.
+
+## Implementation order
+
+1. Migration (tables + columns + RPCs + triggers + RLS) → wait for approval.
+2. `bun add web-push`; copy `public/sw.js`.
+3. Drop in the new component/route files verbatim from the reference, then adjust imports if any local path differs.
+4. Update `AuthContext` profile type + nav links + service-worker registration.
+5. Wire the new admin tabs.
+6. Manual smoke test: open /settings, /watchlist, each new admin tab; check console for RPC/column 404s and patch any gaps.
+7. Run the security linter and fix any new warnings introduced by the migration.
+
+## Out of scope (call out explicitly)
+- I will NOT add real VAPID keys — admin must paste them in the new Streak/Push panel, and set `VAPID_PRIVATE_KEY` as a secret.
+- I will NOT enable the AI copilot button until `LOVABLE_API_KEY` is confirmed present (it already is in this project's secret list).
+- Existing features (ticket UI, promo codes, hot bets, seasons, challenges) stay untouched — this is purely additive.
