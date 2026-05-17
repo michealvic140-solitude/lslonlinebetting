@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { Ticket as TicketIcon, ChevronRight, Wallet, UserCog, CreditCard, Coins, Tag, Trophy, ListChecks, Sparkles, Lock } from "lucide-react";
 import { ChallengesPanel } from "@/components/ChallengesPanel";
+import { ReferralCard, VipCard, UserAnalyticsDashboard, BetHistoryAdvanced, GangEmblemUpload } from "@/components/UserHubSections";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — LSL" }] }),
@@ -84,6 +85,23 @@ function Dashboard() {
 
         <div className="mb-10">
           <ChallengesPanel />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4 mb-10">
+          <VipCard />
+          <ReferralCard />
+        </div>
+
+        <div className="mb-10">
+          <UserAnalyticsDashboard bets={bets} />
+        </div>
+
+        <div className="mb-10">
+          <GangEmblemUpload />
+        </div>
+
+        <div className="mb-10">
+          <BetHistoryAdvanced bets={bets} />
         </div>
 
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><TicketIcon className="h-5 w-5 text-primary" />My Bet Tickets</h2>
