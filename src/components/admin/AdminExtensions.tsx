@@ -589,9 +589,12 @@ export function ReportsPanel() {
 }
 
 /* ===================== ADMIN AI PANEL (LIVE) ===================== */
+type AiAction = { name: string; args: any; result: any; error?: string };
+type AiMsg = { role: "user" | "assistant"; content: string; actions?: AiAction[] };
+
 export function AdminAILivePanel() {
   const ask = useServerFn(adminAiChat);
-  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [messages, setMessages] = useState<AiMsg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [model, setModel] = useState<string>("google/gemini-2.5-flash");
@@ -599,11 +602,13 @@ export function AdminAILivePanel() {
   async function send() {
     const text = input.trim();
     if (!text) return;
-    const next = [...messages, { role: "user" as const, content: text }];
+    const next: AiMsg[] = [...messages, { role: "user", content: text }];
     setMessages(next); setInput(""); setLoading(true);
     try {
-      const { reply } = await ask({ data: { messages: next, model } });
-      setMessages([...next, { role: "assistant", content: reply || "(no reply)" }]);
+      const { reply, actions } = await ask({
+        data: { messages: next.map(({ role, content }) => ({ role, content })), model },
+      });
+      setMessages([...next, { role: "assistant", content: reply || "(no reply)", actions: actions ?? [] }]);
     } catch (e: any) {
       toast.error(e?.message ?? "AI request failed");
     } finally { setLoading(false); }
@@ -611,16 +616,19 @@ export function AdminAILivePanel() {
 
   const quick = [
     "Summarize today's platform health",
-    "Which users look suspicious based on rapid bets?",
-    "Draft a broadcast announcing weekend bonus tokens",
-    "Should we pause payouts? Why or why not?",
+    "Show top 5 matches by open exposure",
+    "Broadcast: weekend 2x XP event to all users",
+    "Find user 'lomita' and credit them 5000 tokens as goodwill",
   ];
 
   return (
     <div className="space-y-4">
-      <Card className="p-5 flex items-center gap-3 flex-wrap">
-        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/30 to-accent/30 grid place-items-center"><Bot className="h-5 w-5 text-primary" /></div>
-        <div><div className="font-bold">Admin AI Copilot</div><div className="text-xs text-muted-foreground">Grounded with a live snapshot of the platform on every request.</div></div>
+      <Card className="p-5 flex items-center gap-3 flex-wrap bg-gradient-to-br from-card to-primary/5">
+        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/40 to-accent/40 grid place-items-center shadow-gold"><Bot className="h-5 w-5 text-primary" /></div>
+        <div className="min-w-0">
+          <div className="font-bold flex items-center gap-2">Admin AI Copilot <Badge variant="outline" className="border-accent/50 text-accent text-[10px]">Tool-enabled</Badge></div>
+          <div className="text-xs text-muted-foreground">Full admin powers: search, broadcast, refund, ban/mute, house controls, withdrawals, promo reviews.</div>
+        </div>
         <select value={model} onChange={(e)=>setModel(e.target.value)} className="ml-auto text-xs bg-background border border-border rounded px-2 py-1">
           <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (fast)</option>
           <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (deep)</option>
@@ -640,7 +648,28 @@ export function AdminAILivePanel() {
         )}
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role==="user"?"justify-end":"justify-start"}`}>
-            <div className={`max-w-[85%] rounded-xl p-3 text-sm whitespace-pre-wrap ${m.role==="user"?"bg-primary/20 text-foreground":"bg-card border border-border"}`}>{m.content}</div>
+            <div className={`max-w-[85%] space-y-2 ${m.role==="user"?"":""}`}>
+              <div className={`rounded-xl p-3 text-sm whitespace-pre-wrap ${m.role==="user"?"bg-primary/20 text-foreground":"bg-card border border-border"}`}>{m.content}</div>
+              {m.actions && m.actions.length > 0 && (
+                <div className="space-y-1">
+                  {m.actions.map((a, j) => (
+                    <details key={j} className="rounded-lg border border-accent/30 bg-accent/5 p-2 text-[11px]">
+                      <summary className="cursor-pointer flex items-center gap-2">
+                        <Sparkles className="h-3 w-3 text-accent" />
+                        <span className="font-mono font-semibold">{a.name}</span>
+                        {a.error
+                          ? <Badge variant="outline" className="border-destructive/50 text-destructive ml-auto">error</Badge>
+                          : <Badge variant="outline" className="border-accent/50 text-accent ml-auto">ok</Badge>}
+                      </summary>
+                      <div className="mt-2 grid gap-1">
+                        <div><span className="text-muted-foreground">args:</span> <code className="break-all">{JSON.stringify(a.args)}</code></div>
+                        <div><span className="text-muted-foreground">result:</span> <code className="break-all">{JSON.stringify(a.result).slice(0, 400)}</code></div>
+                      </div>
+                    </details>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         ))}
         {loading && <div className="flex justify-start"><div className="bg-card border border-border rounded-xl p-3 text-sm flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" />Thinking…</div></div>}
