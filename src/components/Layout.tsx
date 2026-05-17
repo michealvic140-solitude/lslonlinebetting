@@ -177,12 +177,21 @@ function SiteFooter() {
 
 function MobLink({ to, icon: Icon, label, badge }: { to: string; icon: any; label: string; badge?: number }) {
   return (
-    <Link to={to} className="relative flex flex-col items-center px-3 py-1 rounded-lg text-[10px] min-w-[60px] text-muted-foreground [&.active]:text-primary [&.active]:bg-primary/10" activeProps={{ className: "active" }}>
-      <span className="relative">
-        <Icon className="h-5 w-5 mb-0.5" />
-        {badge && badge > 0 ? <span className="absolute -top-1 -right-2 h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-black grid place-items-center animate-pulse">{badge > 9 ? "9+" : badge}</span> : null}
+    <Link
+      to={to}
+      activeProps={{ className: "active" }}
+      className="group relative flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl min-w-[58px] text-[10px] font-semibold tracking-wide text-muted-foreground transition-all duration-200 hover:text-foreground active:scale-95 [&.active]:text-primary"
+    >
+      <span className="pointer-events-none absolute inset-x-2 top-0 h-[2px] rounded-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-[.active]:opacity-100 transition-opacity" />
+      <span className="relative grid place-items-center h-9 w-9 rounded-xl transition-all group-[.active]:bg-gradient-to-br group-[.active]:from-primary/25 group-[.active]:to-primary/5 group-[.active]:shadow-[0_0_18px_-4px_rgba(212,175,55,0.55)]">
+        <Icon className="h-[18px] w-[18px] transition-transform group-[.active]:scale-110" />
+        {badge && badge > 0 ? (
+          <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-black grid place-items-center ring-2 ring-card animate-pulse">
+            {badge > 9 ? "9+" : badge}
+          </span>
+        ) : null}
       </span>
-      {label}
+      <span className="leading-none">{label}</span>
     </Link>
   );
 }
