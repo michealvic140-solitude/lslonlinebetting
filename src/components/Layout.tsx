@@ -47,6 +47,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
   const { user, profile, roles, isAdmin, signOut } = useAuth();
   const nav = useNavigate();
   const chatUnread = useChatUnread();
+  useRegisterServiceWorker();
 
   return (
     <div className="relative min-h-screen">
