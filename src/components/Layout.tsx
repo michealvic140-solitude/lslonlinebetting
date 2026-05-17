@@ -108,9 +108,10 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         )}
       </header>
       <main className="relative">{children}</main>
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl bg-card/80 border-t border-border safe-bottom">
-        <div className="overflow-x-auto">
-          <div className="flex items-center gap-1 px-2 py-2 min-w-max">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-2xl bg-gradient-to-t from-card/95 to-card/70 border-t border-primary/20 shadow-[0_-8px_30px_-8px_rgba(0,0,0,0.6)] safe-bottom">
+        <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+        <div className="overflow-x-auto scrollbar-none">
+          <div className="flex items-stretch justify-around gap-0.5 px-1.5 py-1.5 w-full min-w-max">
             <MobLink to="/" icon={Home} label="Home" />
             <MobLink to="/matches" icon={MatchIcon} label="Matches" />
             <MobLink to="/leaderboard" icon={Trophy} label="Top" />
