@@ -100,10 +100,20 @@ function Index() {
 
       <BookingCodeFab />
 
+      {/* Hot Bets & Hall of Fame — prominent full-width sections */}
+      <section className="container mt-10 grid md:grid-cols-2 gap-6">
+        <div>
+          <SectionHeader icon={Flame} title="Hot Bets" subtitle="What the league is backing right now." />
+          <div className="mt-4"><HotBets /></div>
+        </div>
+        <div>
+          <SectionHeader icon={Trophy} title="Hall of Fame" subtitle="Grand prize winners — most tokens won." />
+          <div className="mt-4"><GrandPrizeWinners /></div>
+        </div>
+      </section>
+
       <section className="container mt-10 grid lg:grid-cols-[300px_1fr] gap-6">
         <aside className="lg:sticky lg:top-20 self-start space-y-4 lg:order-first">
-          <GrandPrizeWinners />
-          <HotBets />
           <Card className="glass p-4">
             <div className="flex items-center gap-2 mb-2">
               <Skull className="h-4 w-4 text-primary" />
