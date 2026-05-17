@@ -90,7 +90,7 @@ export function GrandPrizeWinners() {
           </div>
         </div>
       </div>
-      <div className="max-h-[560px] overflow-y-auto">
+      <div className="max-h-[500px] overflow-y-auto">
         {loading && <div className="p-4 text-xs text-muted-foreground">Loading winners…</div>}
         {!loading && rows.length === 0 && (
           <div className="p-4 text-xs text-muted-foreground">No winning tickets yet — be the first to claim glory.</div>
