@@ -81,6 +81,7 @@ export type Database = {
           daily_login_bonus_per_day: number
           daily_login_enabled: boolean
           daily_login_max_streak: number
+          emblem_auto_approve: boolean
           exposure_warn_pct: number
           friends_enabled: boolean
           gift_daily_limit: number
@@ -113,6 +114,7 @@ export type Database = {
           updated_at: string
           vapid_public_key: string | null
           vapid_subject: string | null
+          vip_enabled: boolean
           vip_token_multipliers: Json
           why_trust_us: string | null
           xp_per_bet: number
@@ -132,6 +134,7 @@ export type Database = {
           daily_login_bonus_per_day?: number
           daily_login_enabled?: boolean
           daily_login_max_streak?: number
+          emblem_auto_approve?: boolean
           exposure_warn_pct?: number
           friends_enabled?: boolean
           gift_daily_limit?: number
@@ -164,6 +167,7 @@ export type Database = {
           updated_at?: string
           vapid_public_key?: string | null
           vapid_subject?: string | null
+          vip_enabled?: boolean
           vip_token_multipliers?: Json
           why_trust_us?: string | null
           xp_per_bet?: number
@@ -183,6 +187,7 @@ export type Database = {
           daily_login_bonus_per_day?: number
           daily_login_enabled?: boolean
           daily_login_max_streak?: number
+          emblem_auto_approve?: boolean
           exposure_warn_pct?: number
           friends_enabled?: boolean
           gift_daily_limit?: number
@@ -215,6 +220,7 @@ export type Database = {
           updated_at?: string
           vapid_public_key?: string | null
           vapid_subject?: string | null
+          vip_enabled?: boolean
           vip_token_multipliers?: Json
           why_trust_us?: string | null
           xp_per_bet?: number
@@ -2015,6 +2021,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_adjust_xp: {
+        Args: { _delta: number; _reason?: string; _user_id: string }
+        Returns: Json
+      }
       admin_broadcast: {
         Args: { _body: string; _link: string; _segment: string; _title: string }
         Returns: Json
@@ -2086,6 +2096,10 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_mod_or_admin: { Args: { _user_id: string }; Returns: boolean }
       redeem_promo_code: { Args: { _code: string }; Returns: Json }
+      review_gang_emblem: {
+        Args: { _approve: boolean; _id: string; _note?: string }
+        Returns: undefined
+      }
       review_withdrawal_request: {
         Args: { _approve: boolean; _id: string; _note?: string }
         Returns: undefined
