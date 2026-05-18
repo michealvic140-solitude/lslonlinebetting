@@ -201,9 +201,9 @@
 @layer utilities {
   .voucher-bg {
     background:
-      radial-gradient(ellipse at top left, oklch(0.42 0.12 70 / 0.55), transparent 60%),
-      radial-gradient(ellipse at bottom right, oklch(0.32 0.09 60 / 0.45), transparent 65%),
-      linear-gradient(165deg, oklch(0.28 0.08 70) 0%, oklch(0.20 0.06 60) 45%, oklch(0.14 0.05 55) 100%);
+      radial-gradient(ellipse at top left, oklch(0.44 0.12 75 / 0.55), transparent 60%),
+      radial-gradient(ellipse at bottom right, oklch(0.34 0.11 158 / 0.45), transparent 65%),
+      linear-gradient(165deg, oklch(0.30 0.09 75) 0%, oklch(0.22 0.07 95) 40%, oklch(0.18 0.07 140) 75%, oklch(0.16 0.08 158) 100%);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
   }
@@ -212,10 +212,15 @@
       0 0 0 1.5px oklch(0.85 0.16 88 / 0.85),
       0 0 0 4px oklch(0.14 0.04 60 / 0.95),
       0 0 0 5px oklch(0.62 0.14 80 / 0.65),
+      0 14px 28px -8px oklch(0 0 0 / 0.75),
+      0 28px 60px -14px oklch(0 0 0 / 0.65),
       0 0 28px -2px oklch(0.78 0.15 80 / 0.55),
-      0 0 60px -10px oklch(0.62 0.14 70 / 0.55),
-      inset 0 2px 0 oklch(0.95 0.10 92 / 0.18),
-      inset 0 -3px 0 oklch(0 0 0 / 0.6);
+      0 0 70px -10px oklch(0.62 0.16 158 / 0.45),
+      inset 0 2px 0 oklch(0.95 0.10 92 / 0.22),
+      inset 0 -4px 0 oklch(0 0 0 / 0.7),
+      inset 8px 0 16px -10px oklch(0.95 0.10 92 / 0.18),
+      inset -8px 0 16px -10px oklch(0 0 0 / 0.55);
+    transition: transform .4s ease, box-shadow .4s ease;
   }
   .voucher-circuit {
     background-image:
