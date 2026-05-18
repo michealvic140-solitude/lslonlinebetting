@@ -3269,8 +3269,9 @@ function ChallengesAdminPanel() {
     await supabase.from("challenges").update({ is_active: !c.is_active }).eq("id", c.id);
     load();
   }
+  const confirm = useConfirm();
   async function remove(id: string) {
-    if (!confirm("Delete challenge?")) return;
+    if (!await confirm({ title: "Delete challenge?", description: "This permanently removes the challenge.", tone: "danger", confirmText: "Delete" })) return;
     await supabase.from("challenges").delete().eq("id", id);
     load();
   }
@@ -3328,8 +3329,9 @@ function SeasonsAdminPanel() {
     await supabase.from("seasons").update({ is_active: !s.is_active }).eq("id", s.id);
     load();
   }
+  const confirm = useConfirm();
   async function remove(id: string) {
-    if (!confirm("Delete season?")) return;
+    if (!await confirm({ title: "Delete season?", description: "This permanently removes the season.", tone: "danger", confirmText: "Delete" })) return;
     await supabase.from("seasons").delete().eq("id", id);
     load();
   }
