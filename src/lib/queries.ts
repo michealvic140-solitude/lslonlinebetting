@@ -24,7 +24,7 @@ const matchSelect = `
 `;
 
 export async function fetchMatches(): Promise<MatchRow[]> {
-  const { data, error } = await supabase.from("matches").select(matchSelect).order("start_time", { ascending: true });
+  const { data, error } = await supabase.from("matches").select(matchSelect).eq("is_archived", false).order("start_time", { ascending: true });
   if (error) throw error;
   return (data ?? []) as unknown as MatchRow[];
 }

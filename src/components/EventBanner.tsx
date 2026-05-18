@@ -54,11 +54,11 @@ export function EventBanner() {
         return (
           <Card key={e.id} className="relative overflow-hidden border-primary/30 glass-strong">
             {e.banner_url ? (
-              <img src={e.banner_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
+              <img src={e.banner_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/10 to-primary/20" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/40 to-background/80" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background/55 via-background/20 to-background/55" />
             <div className="relative p-4 md:p-6 flex items-center gap-4 flex-wrap">
               <div className="h-12 w-12 rounded-full bg-gradient-emerald grid place-items-center shrink-0">
                 <Calendar className="h-6 w-6 text-primary-foreground" />
@@ -68,7 +68,7 @@ export function EventBanner() {
                 <div className="font-bold text-lg md:text-2xl truncate">{e.title}</div>
                 {e.description && <div className="text-sm text-muted-foreground line-clamp-1">{e.description}</div>}
               </div>
-              <div className="font-mono text-2xl md:text-4xl font-extrabold gradient-gold-text tabular-nums tracking-wider">
+              <div className="text-2xl md:text-4xl font-extrabold gradient-gold-text tabular-nums tracking-wider" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
                 {left}
               </div>
             </div>
