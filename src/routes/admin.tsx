@@ -386,6 +386,7 @@ function UsersPanel() {
 }
 
 function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; onClose: () => void }) {
+  const { isAdmin } = useAuth();
   const [tab, setTab] = useState("profile");
   const [form, setForm] = useState({ ...user });
   const [tokenDelta, setTokenDelta] = useState(0);
@@ -583,9 +584,15 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
                 <Textarea value={actionReason} onChange={(e) => setActionReason(e.target.value)} rows={3} />
               </FieldLuxe>
               <div className="grid grid-cols-1 gap-2">
-                <Button variant={user.is_banned ? "outline" : "destructive"} className="h-11 justify-start" onClick={() => flagAction("is_banned", !user.is_banned, "ban_reason")}>
-                  <Lock className="h-4 w-4 mr-2" />{user.is_banned ? "Unban user" : "Ban user from platform"}
-                </Button>
+                {isAdmin ? (
+                  <Button variant={user.is_banned ? "outline" : "destructive"} className="h-11 justify-start" onClick={() => flagAction("is_banned", !user.is_banned, "ban_reason")}>
+                    <Lock className="h-4 w-4 mr-2" />{user.is_banned ? "Unban user" : "Ban user from platform"}
+                  </Button>
+                ) : (
+                  <Button variant="outline" disabled className="h-11 justify-start opacity-60">
+                    <Lock className="h-4 w-4 mr-2" />Ban (admin only)
+                  </Button>
+                )}
                 <Button variant={user.is_muted ? "outline" : "destructive"} className="h-11 justify-start" onClick={() => flagAction("is_muted", !user.is_muted, "mute_reason")}>
                   <MessageSquare className="h-4 w-4 mr-2" />{user.is_muted ? "Unmute chat" : "Mute in chat"}
                 </Button>
