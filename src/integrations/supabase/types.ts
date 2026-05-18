@@ -844,6 +844,7 @@ export type Database = {
           home_score: number
           home_team_id: string
           id: string
+          is_archived: boolean
           is_featured: boolean
           location: string | null
           name: string
@@ -861,6 +862,7 @@ export type Database = {
           home_score?: number
           home_team_id: string
           id?: string
+          is_archived?: boolean
           is_featured?: boolean
           location?: string | null
           name: string
@@ -878,6 +880,7 @@ export type Database = {
           home_score?: number
           home_team_id?: string
           id?: string
+          is_archived?: boolean
           is_featured?: boolean
           location?: string | null
           name?: string
