@@ -4,6 +4,7 @@ import { useBetSlip } from "@/contexts/BetSlipContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Flame, Users, TrendingUp, Copy } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +21,7 @@ type Hot = {
 
 export function HotBets() {
   const [rows, setRows] = useState<Hot[]>([]);
+  const [statusMap, setStatusMap] = useState<Record<string, string>>({});
   const { user } = useAuth();
   const { add } = useBetSlip();
 
@@ -30,7 +32,15 @@ export function HotBets() {
         .select("*")
         .order("bets_count", { ascending: false })
         .limit(50);
-      setRows((data ?? []) as any);
+      const list = (data ?? []) as Hot[];
+      setRows(list);
+      const ids = Array.from(new Set(list.map((r) => r.match_id).filter(Boolean))) as string[];
+      if (ids.length) {
+        const { data: ms } = await supabase.from("matches").select("id,status").in("id", ids);
+        const map: Record<string, string> = {};
+        (ms ?? []).forEach((m: any) => { map[m.id] = m.status; });
+        setStatusMap(map);
+      }
     };
     load();
     const interval = setInterval(load, 60_000);
@@ -43,18 +53,26 @@ export function HotBets() {
   async function copyToSlip(h: Hot) {
     if (!user) return toast.error("Sign in to copy");
     if (!h.match_id) return;
-    // find odd id
-    const { data: mk } = await supabase.from("markets").select("id, odds(id,label,value)").eq("match_id", h.match_id);
-    const market = (mk ?? []).find((m: any) => m.name === h.market_name) as any
-      ?? (mk ?? []).find((m: any) => (m.odds ?? []).some((o: any) => o.label === h.selection_label));
+    // find odd id — include market name so we can match even after settlement
+    const { data: mk } = await supabase
+      .from("markets")
+      .select("id, name, odds(id,label,value)")
+      .eq("match_id", h.match_id);
+    const markets = (mk ?? []) as any[];
+    const market =
+      markets.find((m: any) => m.name === h.market_name) ??
+      markets.find((m: any) => (m.odds ?? []).some((o: any) => o.label === h.selection_label));
     const odd = market?.odds?.find((o: any) => o.label === h.selection_label);
-    if (!odd) return toast.error("Selection no longer available");
+    if (!odd || !market) return toast.error("Selection no longer available");
     add({
       match_id: h.match_id, match_name: h.match_name ?? "Match",
       market_id: market.id, market_name: h.market_name,
       odd_id: odd.id, selection_label: odd.label, odds: Number(odd.value),
     });
-    toast.success("Added to slip");
+    const st = statusMap[h.match_id];
+    if (st === "live") toast.success("Added to slip", { description: "Match is live — odds may be locked at submission." });
+    else if (st === "ended") toast.success("Added to slip", { description: "Match has ended — this pick will settle on submission." });
+    else toast.success("Added to slip");
   }
 
   return (
@@ -73,7 +91,21 @@ export function HotBets() {
           <div key={i} className="rounded-lg border border-border/60 bg-background/40 p-2.5 hover:border-primary/40 transition">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <div className="text-[11px] text-muted-foreground truncate">{h.match_name ?? "Match"}</div>
+                <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1.5">
+                  <span className="truncate">{h.match_name ?? "Match"}</span>
+                  {h.match_id && statusMap[h.match_id] && statusMap[h.match_id] !== "scheduled" && (
+                    <Badge
+                      variant="outline"
+                      className={
+                        statusMap[h.match_id] === "live"
+                          ? "h-4 px-1 text-[8px] uppercase border-destructive/50 text-destructive"
+                          : "h-4 px-1 text-[8px] uppercase border-muted-foreground/40 text-muted-foreground"
+                      }
+                    >
+                      {statusMap[h.match_id]}
+                    </Badge>
+                  )}
+                </div>
                 <div className="text-sm font-bold truncate"><span className="text-primary">{h.selection_label}</span> <span className="text-muted-foreground font-normal">· {h.market_name}</span></div>
                 <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
                   <span className="flex items-center gap-1"><Users className="h-3 w-3" />{h.users_count}</span>
