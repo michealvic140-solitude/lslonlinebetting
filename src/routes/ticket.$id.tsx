@@ -76,7 +76,7 @@ function BetTicket({ bet, viewerId }: { bet: any; viewerId: string }) {
 
   return (
     <Layout>
-      <div className="mx-auto w-full max-w-xl px-3 py-6">
+      <div className="w-full max-w-xl px-3 py-6 md:ml-0 md:mr-auto">
         <Link to="/dashboard" className="text-muted-foreground text-sm flex items-center gap-1 hover:text-primary mb-3"><ArrowLeft className="h-4 w-4" />My bets</Link>
         <BetVoucher bet={bet} sels={sels} statusBadge={statusBadge} allWon={allWon} copy={copy} shareCode={shareCode} />
 
@@ -118,7 +118,7 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
       {/* Outer ambient glow */}
       <div className="absolute -inset-6 rounded-[40px] bg-[radial-gradient(circle_at_30%_20%,oklch(0.85_0.22_152/0.30),transparent_60%),radial-gradient(circle_at_80%_80%,oklch(0.82_0.17_90/0.22),transparent_60%)] blur-3xl pointer-events-none" />
 
-      <div className="relative mx-auto rounded-[28px] voucher-frame voucher-bg overflow-hidden transition-transform hover:-translate-y-0.5">
+      <div className="relative rounded-[28px] voucher-frame voucher-bg overflow-hidden transition-transform hover:-translate-y-1 hover:[transform:perspective(1200px)_rotateX(1.5deg)_rotateY(-1.5deg)_translateY(-4px)] [transform-style:preserve-3d]">
         {/* Holographic corner patches (4 corners like reference) */}
         <div className="absolute left-0 top-0 w-16 h-16 rounded-br-2xl overflow-hidden pointer-events-none">
           <div className="absolute inset-0 voucher-holo" />
