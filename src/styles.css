@@ -346,3 +346,40 @@
     box-shadow: 0 0 18px -4px oklch(0.82 0.17 90 / 0.6), inset 0 0 14px oklch(0.82 0.17 90 / 0.18);
   }
 }
+
+/* ===== Admin Users — muted golden brown with emerald wash ===== */
+@layer utilities {
+  .admin-user-bg {
+    background:
+      radial-gradient(ellipse at top left, oklch(0.38 0.10 70 / 0.45), transparent 60%),
+      radial-gradient(ellipse at bottom right, oklch(0.32 0.09 158 / 0.40), transparent 65%),
+      linear-gradient(160deg, oklch(0.22 0.06 70) 0%, oklch(0.18 0.05 95) 45%, oklch(0.16 0.06 158) 100%);
+    backdrop-filter: blur(16px) saturate(130%);
+    -webkit-backdrop-filter: blur(16px) saturate(130%);
+  }
+  .admin-user-frame {
+    box-shadow:
+      0 0 0 1px oklch(0.62 0.12 80 / 0.55),
+      0 0 0 2px oklch(0.14 0.04 70 / 0.85),
+      0 0 18px -6px oklch(0.55 0.12 90 / 0.35),
+      0 0 30px -12px oklch(0.55 0.14 158 / 0.30),
+      inset 0 1px 0 oklch(0.92 0.08 92 / 0.10);
+  }
+  .admin-user-inner {
+    background: linear-gradient(180deg, oklch(0.22 0.06 80 / 0.45), oklch(0.16 0.05 140 / 0.55));
+    border: 1px solid oklch(0.62 0.12 90 / 0.25);
+    backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 oklch(0.92 0.08 92 / 0.06);
+  }
+  .admin-user-foil {
+    background: linear-gradient(135deg,
+      oklch(0.82 0.13 92) 0%,
+      oklch(0.70 0.14 90) 30%,
+      oklch(0.62 0.12 120) 60%,
+      oklch(0.70 0.14 158) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 1px 0 oklch(0 0 0 / 0.35));
+  }
+}
