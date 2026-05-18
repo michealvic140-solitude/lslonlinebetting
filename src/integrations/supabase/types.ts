@@ -2028,6 +2028,16 @@ export type Database = {
         Args: { _delta: number; _reason?: string; _user_id: string }
         Returns: Json
       }
+      admin_award_achievement: {
+        Args: {
+          _code: string
+          _description?: string
+          _icon?: string
+          _title: string
+          _user_id: string
+        }
+        Returns: string
+      }
       admin_broadcast: {
         Args: { _body: string; _link: string; _segment: string; _title: string }
         Returns: Json
@@ -2044,6 +2054,10 @@ export type Database = {
           match_id: string
           match_name: string
         }[]
+      }
+      admin_mark_task_completed: {
+        Args: { _task_id: string }
+        Returns: undefined
       }
       admin_pnl_summary: { Args: { _days?: number }; Returns: Json }
       admin_refund_bet: {
@@ -2068,6 +2082,7 @@ export type Database = {
       can_use_gang_chat: { Args: { _user_id: string }; Returns: boolean }
       claim_challenge: { Args: { _progress_id: string }; Returns: Json }
       claim_daily_login: { Args: never; Returns: Json }
+      claim_task: { Args: { _task_id: string }; Returns: Json }
       create_withdrawal_request: {
         Args: {
           _amount: number
