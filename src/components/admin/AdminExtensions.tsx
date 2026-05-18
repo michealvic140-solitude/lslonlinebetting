@@ -12,6 +12,7 @@ import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianG
 import { useServerFn } from "@tanstack/react-start";
 import { adminAiChat } from "@/lib/admin-ai.functions";
 import { generateVapidKeys } from "@/lib/vapid.functions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 /* =============== STREAK / LOGIN / PUSH SETTINGS =============== */
 export function StreakAndPushPanel() {
@@ -49,9 +50,13 @@ export function StreakAndPushPanel() {
         toast.error((res as any).error);
         return;
       }
+      if (!res?.privateKey) {
+        toast.error("Server returned no private key. Check server logs.");
+        return;
+      }
       setS((prev: any) => ({ ...prev, vapid_public_key: res.publicKey, vapid_subject: prev?.vapid_subject || "mailto:admin@lomitashootersleague.com" }));
       setGeneratedPriv(res.privateKey ?? null);
-      toast.success("VAPID keys generated. Copy the private key now — it won't be shown again.");
+      toast.success("VAPID keys generated. Copy the private key from the dialog.");
     } catch (e: any) {
       toast.error(e?.message || "Failed to generate VAPID keys");
     } finally { setGenLoading(false); }
@@ -89,14 +94,26 @@ export function StreakAndPushPanel() {
         <div className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary" /><div className="font-bold">Web push (VAPID)</div></div>
         <p className="text-[11px] text-muted-foreground">Click <strong>Generate keys</strong> to create a VAPID pair on the server. The public key is saved automatically — copy the private key and paste it into the <span className="font-mono">VAPID_PRIVATE_KEY</span> backend secret.</p>
         <Button onClick={generate} disabled={genLoading} variant="outline">{genLoading ? "Generating…" : "Generate keys"}</Button>
-        {generatedPriv && (
-          <Card className="p-3 bg-amber-500/10 border-amber-500/40 space-y-1">
-            <div className="text-[11px] uppercase tracking-widest text-amber-300">Private key (one-time)</div>
-            <code className="text-xs break-all block font-mono">{generatedPriv}</code>
-            <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(generatedPriv); toast.success("Copied"); }}>Copy</Button>
-            <p className="text-[11px] text-muted-foreground">Save this in your backend secrets as <span className="font-mono">VAPID_PRIVATE_KEY</span>. Closing this panel will hide it forever.</p>
-          </Card>
-        )}
+        <Dialog open={!!generatedPriv} onOpenChange={(o) => { if (!o) setGeneratedPriv(null); }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>VAPID private key (one-time)</DialogTitle>
+              <DialogDescription>
+                Copy this now. It will <strong>never</strong> be shown again. Paste it into your backend secret named <span className="font-mono">VAPID_PRIVATE_KEY</span>.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <div className="text-[10px] uppercase tracking-widest text-amber-300">Public key (saved automatically)</div>
+              <code className="text-xs break-all block font-mono p-2 rounded bg-muted">{s?.vapid_public_key}</code>
+              <div className="text-[10px] uppercase tracking-widest text-amber-300">Private key</div>
+              <code className="text-xs break-all block font-mono p-2 rounded bg-amber-500/10 border border-amber-500/40">{generatedPriv}</code>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => { if (generatedPriv) { navigator.clipboard.writeText(generatedPriv); toast.success("Private key copied"); } }}>Copy private key</Button>
+              <Button onClick={() => setGeneratedPriv(null)}>I've saved it</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <div>
           <label className="text-[10px] uppercase text-muted-foreground">VAPID public key</label>
           <Input value={s.vapid_public_key ?? ""} onChange={(e) => setS({ ...s, vapid_public_key: e.target.value })} placeholder="BNc..." />
