@@ -91,7 +91,16 @@ function AdminPage() {
         {isAdmin && <Stats />}
         <AdminSectionRail alerts={alerts} onOpen={setActiveTab} />
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="flex w-full max-w-full overflow-x-auto h-auto justify-start gap-1 p-2 rounded-2xl md:flex-wrap bg-card/70 border border-border/60 backdrop-blur-md shadow-luxury">
+          <TabsList
+            className="flex w-full max-w-full overflow-x-auto h-auto justify-start gap-1 p-2 rounded-2xl md:flex-wrap backdrop-blur-xl shadow-luxury"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.32 0.08 70 / 0.85) 0%, oklch(0.22 0.06 60 / 0.78) 45%, oklch(0.18 0.05 55 / 0.85) 100%)",
+              border: "1px solid oklch(0.78 0.14 78 / 0.45)",
+              boxShadow:
+                "inset 0 1px 0 oklch(0.95 0.08 92 / 0.15), inset 0 -1px 0 oklch(0 0 0 / 0.4), 0 12px 40px -12px oklch(0.45 0.14 70 / 0.55), 0 0 0 1px oklch(0.62 0.14 80 / 0.25)",
+            }}
+          >
             {(isAdmin || isMod) && <TabsTrigger value="analytics"><BarChart3 className="h-3 w-3 mr-1" />Analytics</TabsTrigger>}
             <TabsTrigger value="users"><AdminTab icon={Users} label="Users" count={alerts.users} /></TabsTrigger>
             {(isAdmin || isMod) && <TabsTrigger value="matches"><Trophy className="h-3 w-3 mr-1" />Matches</TabsTrigger>}
