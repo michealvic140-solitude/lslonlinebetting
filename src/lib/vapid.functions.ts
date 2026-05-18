@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createClient } from "@supabase/supabase-js";
+import { getRequestHeader } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Database } from "@/integrations/supabase/types";
 
 function b64url(buf: ArrayBuffer | Uint8Array) {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
@@ -24,20 +26,34 @@ async function generateVapidKeyPair() {
 }
 
 export const generateVapidKeys = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async () => {
     try {
-      const { userId, supabase } = context;
-      const { data: isAdminRes } = await supabase.rpc("is_admin", { _user_id: userId });
+      const authHeader = getRequestHeader("authorization");
+      const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+      if (!token) return { error: "Please sign in as an admin before generating VAPID keys." };
+
+      const url = process.env.SUPABASE_URL;
+      const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+      if (!url || !key) return { error: "Backend auth is not configured." };
+
+      const supabase = createClient<Database>(url, key, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data: claims, error: claimsError } = await supabase.auth.getClaims(token);
+      if (claimsError || !claims?.claims?.sub) return { error: "Your admin session expired. Please sign in again." };
+
+      const { data: isAdminRes } = await supabase.rpc("is_admin", { _user_id: claims.claims.sub });
       if (!isAdminRes) return { error: "Admin only" };
       const pair = await generateVapidKeyPair();
-      await supabaseAdmin
+      const { error: saveError } = await supabaseAdmin
         .from("app_settings")
         .update({
           vapid_public_key: pair.publicKey,
           vapid_subject: "mailto:admin@lomitashootersleague.com",
         })
         .eq("id", 1);
+      if (saveError) return { error: saveError.message };
       return {
         publicKey: pair.publicKey,
         privateKey: pair.privateKey,
