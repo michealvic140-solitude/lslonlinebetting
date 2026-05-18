@@ -619,8 +619,9 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-0 border-primary/30 bg-gradient-to-b from-card to-background">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-0 border-0 admin-user-bg admin-user-frame">
         <div className="relative px-6 pt-10 pb-6">
+          <div className="pointer-events-none absolute inset-0 opacity-[0.08] voucher-circuit" />
           {/* Avatar with golden glow */}
           <div className="relative mx-auto h-24 w-24 -mt-4">
             <div className="absolute inset-[-10px] rounded-3xl blur-2xl bg-[radial-gradient(circle,oklch(0.82_0.17_90/0.55),transparent_70%)]" />
