@@ -8,7 +8,26 @@ import { Crosshair } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/matches")({
-  head: () => ({ meta: [{ title: "Matches — Lomita Shooters League" }, { name: "description", content: "Browse upcoming, live, and finished matches with live odds." }] }),
+  head: () => ({
+    meta: [
+      { title: "All Matches — Lomita Shooters League" },
+      { name: "description", content: "Browse every upcoming, live, and finished LSL match with real-time odds and quick-pick wagering." },
+      { property: "og:title", content: "All Matches — Lomita Shooters League" },
+      { property: "og:description", content: "Upcoming, live, and finished LSL matches with real-time odds." },
+      { property: "og:url", content: "https://lslonlinebetting.lovable.app/matches" },
+    ],
+    links: [{ rel: "canonical", href: "https://lslonlinebetting.lovable.app/matches" }],
+    scripts: [{
+      type: "application/ld+json",
+      children: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: "LSL Matches",
+        description: "All matches in the Lomita Shooters League.",
+        url: "https://lslonlinebetting.lovable.app/matches",
+      }),
+    }],
+  }),
   component: MatchesPage,
 });
 

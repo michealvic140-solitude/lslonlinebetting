@@ -11,7 +11,16 @@ import { Layout } from "@/components/Layout";
 import { ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — Lomita Shooters League" }] }),
+  head: () => ({
+    meta: [
+      { title: "Sign in — Lomita Shooters League" },
+      { name: "description", content: "Sign in to your Lomita Shooters League account to place bets, track your tickets, and follow your gang." },
+      { property: "og:title", content: "Sign in — Lomita Shooters League" },
+      { property: "og:description", content: "Sign in to place bets, track tickets, and follow your gang at LSL." },
+      { property: "og:url", content: "https://lslonlinebetting.lovable.app/login" },
+    ],
+    links: [{ rel: "canonical", href: "https://lslonlinebetting.lovable.app/login" }],
+  }),
   validateSearch: (s: Record<string, unknown>): { banned?: number } => {
     return s.banned === "1" || s.banned === 1 ? { banned: 1 } : {};
   },
