@@ -7,6 +7,10 @@ export const Route = createFileRoute('/api/public/hooks/send-push')({
     handlers: {
       POST: async ({ request }) => {
         try {
+          const secret = request.headers.get('x-push-secret')
+          if (!secret || !process.env.PUSH_WEBHOOK_SECRET || secret !== process.env.PUSH_WEBHOOK_SECRET) {
+            return new Response('Forbidden', { status: 403 })
+          }
           const body = (await request.json()) as { user_id?: string; title?: string; body?: string; link?: string; notification_id?: string }
           if (!body?.user_id || !body?.title) return new Response('bad', { status: 400 })
 
