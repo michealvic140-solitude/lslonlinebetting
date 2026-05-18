@@ -7,7 +7,26 @@ import { Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/leaderboard")({
-  head: () => ({ meta: [{ title: "Leaderboard — LSL" }, { name: "description", content: "Top shooters and gangs in the Lomita Shooters League." }] }),
+  head: () => ({
+    meta: [
+      { title: "Leaderboard — Lomita Shooters League" },
+      { name: "description", content: "See the top shooters and top gangs ranked by season points, wins, and tokens won across the Lomita Shooters League." },
+      { property: "og:title", content: "LSL Leaderboard — Top Shooters & Gangs" },
+      { property: "og:description", content: "Top shooters and gangs ranked by season points, wins, and tokens won." },
+      { property: "og:url", content: "https://lslonlinebetting.lovable.app/leaderboard" },
+    ],
+    links: [{ rel: "canonical", href: "https://lslonlinebetting.lovable.app/leaderboard" }],
+    scripts: [{
+      type: "application/ld+json",
+      children: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: "LSL Leaderboard",
+        description: "Top shooters and gangs in the Lomita Shooters League.",
+        url: "https://lslonlinebetting.lovable.app/leaderboard",
+      }),
+    }],
+  }),
   component: Page,
 });
 

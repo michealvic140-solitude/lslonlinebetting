@@ -12,7 +12,32 @@ import { ArrowLeft, MapPin, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/matches/$matchId")({
-  head: ({ params }) => ({ meta: [{ title: `Match ${params.matchId} — LSL` }, { name: "description", content: "Match details, markets and odds." }] }),
+  head: ({ params }) => ({
+    meta: [
+      { title: `Match ${params.matchId} — Lomita Shooters League` },
+      { name: "description", content: "Live match details, team line-ups, real-time odds, and betting markets for this Lomita Shooters League fixture." },
+      { property: "og:title", content: `Match ${params.matchId} — Lomita Shooters League` },
+      { property: "og:description", content: "Live team line-ups, real-time odds, and betting markets for this LSL fixture." },
+      { property: "og:type", content: "article" },
+      { property: "og:url", content: `https://lslonlinebetting.lovable.app/matches/${params.matchId}` },
+    ],
+    links: [{ rel: "canonical", href: `https://lslonlinebetting.lovable.app/matches/${params.matchId}` }],
+    scripts: [{
+      type: "application/ld+json",
+      children: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "SportsEvent",
+        name: `Lomita Shooters League — Match ${params.matchId}`,
+        sport: "Competitive Shooting",
+        url: `https://lslonlinebetting.lovable.app/matches/${params.matchId}`,
+        organizer: {
+          "@type": "Organization",
+          name: "Lomita Shooters League",
+          url: "https://lslonlinebetting.lovable.app/",
+        },
+      }),
+    }],
+  }),
   component: Page,
 });
 

@@ -1,0 +1,20 @@
+# Lomita Shooters League (LSL)
+
+> Virtual token-only shooting league. Live matches, gang leaderboards, and risk-free wagering using in-app tokens.
+
+LSL is a fan-driven competitive shooting circuit. Users register, join a gang, follow live matches, place virtual-token bets on outcomes, and climb seasonal leaderboards. No real-money gambling.
+
+## Pages
+
+- [Home](/): Featured matches, live odds, hot bets, and grand-prize winners.
+- [Matches](/matches): Browse all upcoming, live, and finished matches.
+- [Leaderboard](/leaderboard): Top shooters and top gangs ranked by season points.
+- [Gangs](/gangs): All gangs competing in the league.
+- [About](/about): The league's story, rules, and why to trust us.
+- [Sign in](/login): Existing-member sign-in.
+- [Join the League](/register): Create an account and start betting.
+
+## Optional
+
+- [Support](/support): Help center and contact options.
+- [Achievements](/achievements): User badges and rewards.

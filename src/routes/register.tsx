@@ -11,7 +11,16 @@ import { toast } from "sonner";
 import { Layout } from "@/components/Layout";
 
 export const Route = createFileRoute("/register")({
-  head: () => ({ meta: [{ title: "Join the League — Lomita Shooters League" }] }),
+  head: () => ({
+    meta: [
+      { title: "Join the League — Lomita Shooters League" },
+      { name: "description", content: "Create your free LSL account, pick your gang, claim starter tokens, and start betting on live shooting matches today." },
+      { property: "og:title", content: "Join the League — Lomita Shooters League" },
+      { property: "og:description", content: "Create a free account, pick your gang, and start betting on live shooting matches." },
+      { property: "og:url", content: "https://lslonlinebetting.lovable.app/register" },
+    ],
+    links: [{ rel: "canonical", href: "https://lslonlinebetting.lovable.app/register" }],
+  }),
   component: RegisterPage,
 });
 
