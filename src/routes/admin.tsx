@@ -92,16 +92,16 @@ function AdminPage() {
         <AdminSectionRail alerts={alerts} onOpen={setActiveTab} />
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex w-full max-w-full overflow-x-auto h-auto justify-start gap-1 p-2 rounded-2xl md:flex-wrap bg-card/70 border border-border/60 backdrop-blur-md shadow-luxury">
-            {isAdmin && <TabsTrigger value="analytics"><BarChart3 className="h-3 w-3 mr-1" />Analytics</TabsTrigger>}
+            {(isAdmin || isMod) && <TabsTrigger value="analytics"><BarChart3 className="h-3 w-3 mr-1" />Analytics</TabsTrigger>}
             <TabsTrigger value="users"><AdminTab icon={Users} label="Users" count={alerts.users} /></TabsTrigger>
-            {isAdmin && <TabsTrigger value="matches"><Trophy className="h-3 w-3 mr-1" />Matches</TabsTrigger>}
+            {(isAdmin || isMod) && <TabsTrigger value="matches"><Trophy className="h-3 w-3 mr-1" />Matches</TabsTrigger>}
             {isAdmin && <TabsTrigger value="events"><Calendar className="h-3 w-3 mr-1" />Events</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="tokens"><AdminTab icon={Coins} label="Tokens" count={alerts.tokens} /></TabsTrigger>}
-            {isAdmin && <TabsTrigger value="withdrawals"><AdminTab icon={Wallet} label="Withdrawals" count={alerts.withdrawals} /></TabsTrigger>}
+            {(isAdmin || isMod) && <TabsTrigger value="tokens"><AdminTab icon={Coins} label="Tokens" count={alerts.tokens} /></TabsTrigger>}
+            {(isAdmin || isMod) && <TabsTrigger value="withdrawals"><AdminTab icon={Wallet} label="Withdrawals" count={alerts.withdrawals} /></TabsTrigger>}
             {isAdmin && <TabsTrigger value="housewallet"><Wallet className="h-3 w-3 mr-1" />House Wallet</TabsTrigger>}
             {isAdmin && <TabsTrigger value="leaderboard"><ListOrdered className="h-3 w-3 mr-1" />Leaderboard</TabsTrigger>}
             {isAdmin && <TabsTrigger value="promos"><Tag className="h-3 w-3 mr-1" />Promo Codes</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="content"><Megaphone className="h-3 w-3 mr-1" />Content</TabsTrigger>}
+            {(isAdmin || isMod) && <TabsTrigger value="content"><Megaphone className="h-3 w-3 mr-1" />Content</TabsTrigger>}
             <TabsTrigger value="tickets"><AdminTab icon={Ticket} label="Tickets" count={alerts.tickets} /></TabsTrigger>
             {isAdmin && <TabsTrigger value="tasks"><ClipboardList className="h-3 w-3 mr-1" />Tasks & Achievements</TabsTrigger>}
             {isAdmin && <TabsTrigger value="challenges"><Sparkles className="h-3 w-3 mr-1" />Challenges</TabsTrigger>}
@@ -110,7 +110,7 @@ function AdminPage() {
             {isAdmin && <TabsTrigger value="promoreqs"><AdminTab icon={Tag} label="Promo Requests" count={alerts.promoreqs} /></TabsTrigger>}
             <TabsTrigger value="appeals"><AdminTab icon={AlertTriangle} label="Appeals" count={alerts.appeals} /></TabsTrigger>
             <TabsTrigger value="chat"><AdminTab icon={MessageSquare} label="Chat" count={alerts.chat} /></TabsTrigger>
-            {isAdmin && <TabsTrigger value="notify"><Send className="h-3 w-3 mr-1" />Notify</TabsTrigger>}
+            {(isAdmin || isMod) && <TabsTrigger value="notify"><Send className="h-3 w-3 mr-1" />Notify</TabsTrigger>}
             {isAdmin && <TabsTrigger value="audit"><History className="h-3 w-3 mr-1" />Audit</TabsTrigger>}
             {isAdmin && <TabsTrigger value="settings"><SettingsIcon className="h-3 w-3 mr-1" />Settings</TabsTrigger>}
             {isAdmin && <TabsTrigger value="adminai"><Sparkles className="h-3 w-3 mr-1" />Admin AI</TabsTrigger>}
@@ -386,6 +386,7 @@ function UsersPanel() {
 }
 
 function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; onClose: () => void }) {
+  const { isAdmin } = useAuth();
   const [tab, setTab] = useState("profile");
   const [form, setForm] = useState({ ...user });
   const [tokenDelta, setTokenDelta] = useState(0);
@@ -583,9 +584,15 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
                 <Textarea value={actionReason} onChange={(e) => setActionReason(e.target.value)} rows={3} />
               </FieldLuxe>
               <div className="grid grid-cols-1 gap-2">
-                <Button variant={user.is_banned ? "outline" : "destructive"} className="h-11 justify-start" onClick={() => flagAction("is_banned", !user.is_banned, "ban_reason")}>
-                  <Lock className="h-4 w-4 mr-2" />{user.is_banned ? "Unban user" : "Ban user from platform"}
-                </Button>
+                {isAdmin ? (
+                  <Button variant={user.is_banned ? "outline" : "destructive"} className="h-11 justify-start" onClick={() => flagAction("is_banned", !user.is_banned, "ban_reason")}>
+                    <Lock className="h-4 w-4 mr-2" />{user.is_banned ? "Unban user" : "Ban user from platform"}
+                  </Button>
+                ) : (
+                  <Button variant="outline" disabled className="h-11 justify-start opacity-60">
+                    <Lock className="h-4 w-4 mr-2" />Ban (admin only)
+                  </Button>
+                )}
                 <Button variant={user.is_muted ? "outline" : "destructive"} className="h-11 justify-start" onClick={() => flagAction("is_muted", !user.is_muted, "mute_reason")}>
                   <MessageSquare className="h-4 w-4 mr-2" />{user.is_muted ? "Unmute chat" : "Mute in chat"}
                 </Button>
@@ -2418,6 +2425,7 @@ function TasksAchievementsPanel() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [achievements, setAchievements] = useState<any[]>([]);
   const [draft, setDraft] = useState({ user_id: "", title: "", description: "", reward_tokens: 0 });
+  const [ach, setAch] = useState({ user_id: "", code: "", title: "", description: "", icon: "🏆" });
   async function load() {
     const [{ data: u }, { data: t }, { data: a }] = await Promise.all([
       supabase.from("profiles").select("id,full_name,email").order("created_at", { ascending: false }).limit(500),
@@ -2441,6 +2449,22 @@ function TasksAchievementsPanel() {
     await supabase.from("notifications").insert({ user_id: task.user_id, title: "Task completed", body: `${task.title}${task.reward_tokens ? ` · +${task.reward_tokens} tokens` : ""}` });
     toast.success("Task completed"); load();
   }
+  async function awardAchievement() {
+    if (!ach.user_id || !ach.code || !ach.title) { toast.error("User, code and title required"); return; }
+    const { error } = await supabase.from("user_achievements").insert({
+      user_id: ach.user_id, code: ach.code, title: ach.title,
+      description: ach.description || null, icon: ach.icon || null,
+    });
+    if (error) { toast.error(error.message); return; }
+    await supabase.from("notifications").insert({ user_id: ach.user_id, title: "Achievement unlocked! 🏆", body: `${ach.icon} ${ach.title}` });
+    toast.success("Achievement awarded");
+    setAch({ user_id: "", code: "", title: "", description: "", icon: "🏆" });
+    load();
+  }
+  async function revokeAchievement(id: string) {
+    await supabase.from("user_achievements").delete().eq("id", id);
+    toast.success("Revoked"); load();
+  }
   return (
     <div className="space-y-4">
       <Card className="glass-strong p-4 space-y-3">
@@ -2462,10 +2486,32 @@ function TasksAchievementsPanel() {
           {tasks.length === 0 && <p className="text-sm text-muted-foreground">No tasks yet.</p>}
           {tasks.map((t) => <div key={t.id} className="rounded-lg border border-border/70 p-3 text-sm"><div className="font-bold">{t.title}</div><div className="text-xs text-muted-foreground">{t.profiles?.full_name || t.profiles?.email} · {t.status} · reward {Number(t.reward_tokens).toLocaleString()}</div>{t.status !== "completed" && <Button size="sm" variant="outline" className="mt-2" onClick={() => markDone(t)}><Check className="h-3 w-3 mr-1" />Mark complete</Button>}</div>)}
         </Card>
-        <Card className="glass p-4 space-y-2">
-          <div className="font-bold">Achievements <Badge variant="outline" className="ml-2 border-primary/40 text-primary">Coming soon</Badge></div>
-          {achievements.length === 0 && <p className="text-sm text-muted-foreground">No achievements awarded yet.</p>}
-          {achievements.map((a) => <div key={a.id} className="rounded-lg border border-border/70 p-3 text-sm"><div className="font-bold">{a.icon} {a.title}</div><div className="text-xs text-muted-foreground">{a.profiles?.full_name || a.profiles?.email} · {new Date(a.awarded_at).toLocaleString()}</div></div>)}
+        <Card className="glass p-4 space-y-3">
+          <div className="font-bold flex items-center gap-2"><Trophy className="h-4 w-4 text-amber-300" />Achievements</div>
+          <div className="grid md:grid-cols-2 gap-2">
+            <Select value={ach.user_id} onValueChange={(v) => setAch({ ...ach, user_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Award to user" /></SelectTrigger>
+              <SelectContent>{users.map((u) => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}</SelectContent>
+            </Select>
+            <Input placeholder="Code (e.g. first_win)" value={ach.code} onChange={(e) => setAch({ ...ach, code: e.target.value })} />
+            <Input placeholder="Title" value={ach.title} onChange={(e) => setAch({ ...ach, title: e.target.value })} />
+            <Input placeholder="Icon (emoji)" value={ach.icon} onChange={(e) => setAch({ ...ach, icon: e.target.value })} />
+            <Input className="md:col-span-2" placeholder="Description" value={ach.description} onChange={(e) => setAch({ ...ach, description: e.target.value })} />
+          </div>
+          <Button className="btn-luxury" onClick={awardAchievement}><Trophy className="h-4 w-4 mr-1" />Award achievement</Button>
+          <div className="space-y-2 pt-2 max-h-72 overflow-y-auto">
+            {achievements.length === 0 && <p className="text-sm text-muted-foreground">No achievements awarded yet.</p>}
+            {achievements.map((a) => (
+              <div key={a.id} className="rounded-lg border border-border/70 p-3 text-sm flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-bold truncate">{a.icon} {a.title}</div>
+                  <div className="text-xs text-muted-foreground truncate">{a.profiles?.full_name || a.profiles?.email} · {new Date(a.awarded_at).toLocaleString()}</div>
+                  {a.description && <div className="text-xs mt-1 text-muted-foreground">{a.description}</div>}
+                </div>
+                <Button size="sm" variant="outline" onClick={() => revokeAchievement(a.id)}><Trash2 className="h-3 w-3" /></Button>
+              </div>
+            ))}
+          </div>
         </Card>
       </div>
     </div>

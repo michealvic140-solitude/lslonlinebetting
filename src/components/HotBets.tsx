@@ -62,7 +62,10 @@ export function HotBets() {
       <div className="flex items-center gap-2 mb-3">
         <Flame className="h-4 w-4 text-destructive animate-pulse" />
         <div className="font-bold tracking-widest text-sm">HOT BETS</div>
-        <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground">7d trending</span>
+        <span className="ml-auto text-[10px] uppercase tracking-widest text-emerald-300/90 flex items-center gap-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          Live · refresh 60s
+        </span>
       </div>
       {rows.length === 0 && <p className="text-xs text-muted-foreground">No trending bets yet.</p>}
       <div className="space-y-2 max-h-[440px] overflow-y-auto pr-1">

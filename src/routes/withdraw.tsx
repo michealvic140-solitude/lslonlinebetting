@@ -25,12 +25,15 @@ function Page() {
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState(false);
   const [list, setList] = useState<any[]>([]);
+  const [minAmt, setMinAmt] = useState<number>(2000000);
 
   useEffect(() => {
     if (!user) return;
     setGang(profile?.gang_name ?? "");
     setIngame(profile?.full_name ?? "");
     load();
+    supabase.from("app_settings").select("min_withdrawal").eq("id", 1).maybeSingle()
+      .then(({ data }) => { if ((data as any)?.min_withdrawal) setMinAmt(Number((data as any).min_withdrawal)); });
     const ch = supabase.channel("my-wd")
       .on("postgres_changes", { event: "*", schema: "public", table: "withdrawal_requests", filter: `user_id=eq.${user.id}` }, load)
       .subscribe();
@@ -49,6 +52,7 @@ function Page() {
     if (!user || !profile) return;
     if (!ingame.trim() || !gang.trim()) { toast.error("In-game name and gang are required"); return; }
     if (!amount || amount <= 0) { toast.error("Enter a valid amount"); return; }
+    if (amount < minAmt) { toast.error(`Minimum withdrawal is ${minAmt.toLocaleString()} tokens`); return; }
     if (amount > (profile.token_balance ?? 0)) { toast.error("Amount exceeds balance"); return; }
     setBusy(true);
     const { error } = await supabase.rpc("create_withdrawal_request", {
@@ -71,8 +75,9 @@ function Page() {
           <form onSubmit={submit} className="space-y-3">
             <Field label="In-game Name *"><Input value={ingame} onChange={(e) => setIngame(e.target.value)} required /></Field>
             <Field label="In-game Gang Name *"><Input value={gang} onChange={(e) => setGang(e.target.value)} required /></Field>
-            <Field label="Withdrawal Amount *">
-              <Input type="number" min={1} max={profile?.token_balance ?? 0} value={amount || ""} onChange={(e) => setAmount(Number(e.target.value))} required />
+            <Field label={`Withdrawal Amount * (min ${minAmt.toLocaleString()})`}>
+              <Input type="number" min={minAmt} max={profile?.token_balance ?? 0} value={amount || ""} onChange={(e) => setAmount(Number(e.target.value))} required />
+              <p className="text-[10px] text-muted-foreground mt-1">Minimum withdrawal is {minAmt.toLocaleString()} tokens.</p>
             </Field>
             <Field label="Bet Ticket ID / Tracking ID (optional)"><Input value={ticketRef} onChange={(e) => setTicketRef(e.target.value)} placeholder="LSL-XXXXXXXXXX" /></Field>
             <Button className="btn-luxury w-full" disabled={busy}>{busy ? "Submitting…" : "Submit Withdrawal Request"}</Button>

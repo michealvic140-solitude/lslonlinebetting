@@ -98,6 +98,7 @@ export type Database = {
           max_selections_per_ticket: number
           min_selections_per_ticket: number
           min_stake: number
+          min_withdrawal: number
           popup_ad_active: boolean
           popup_ad_image: string | null
           popup_ad_link: string | null
@@ -151,6 +152,7 @@ export type Database = {
           max_selections_per_ticket?: number
           min_selections_per_ticket?: number
           min_stake?: number
+          min_withdrawal?: number
           popup_ad_active?: boolean
           popup_ad_image?: string | null
           popup_ad_link?: string | null
@@ -204,6 +206,7 @@ export type Database = {
           max_selections_per_ticket?: number
           min_selections_per_ticket?: number
           min_stake?: number
+          min_withdrawal?: number
           popup_ad_active?: boolean
           popup_ad_image?: string | null
           popup_ad_link?: string | null
