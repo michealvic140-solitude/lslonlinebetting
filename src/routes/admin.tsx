@@ -643,7 +643,7 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
           </div>
 
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-display tracking-wider">Manage {user.full_name}</DialogTitle>
+            <DialogTitle className="text-center text-2xl font-display tracking-wider admin-user-foil">Manage {user.full_name}</DialogTitle>
           </DialogHeader>
 
           <Tabs value={tab} onValueChange={setTab} className="mt-4">
