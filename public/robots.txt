@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://lslonlinebetting.lovable.app/sitemap.xml
