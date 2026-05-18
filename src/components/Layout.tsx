@@ -108,8 +108,18 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         )}
       </header>
       <main className="relative">{children}</main>
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-2xl bg-gradient-to-t from-card/95 to-card/70 border-t border-primary/20 shadow-[0_-8px_30px_-8px_rgba(0,0,0,0.6)] safe-bottom">
-        <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-2xl border-t safe-bottom"
+        style={{
+          background:
+            "linear-gradient(180deg, oklch(0.22 0.06 70 / 0.78) 0%, oklch(0.16 0.05 90 / 0.92) 55%, oklch(0.14 0.06 158 / 0.95) 100%)",
+          borderColor: "oklch(0.62 0.14 80 / 0.45)",
+          boxShadow:
+            "0 -10px 32px -10px oklch(0 0 0 / 0.7), inset 0 1px 0 oklch(0.95 0.08 92 / 0.10), 0 -1px 24px -6px oklch(0.55 0.14 158 / 0.35)",
+        }}
+      >
+        <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary to-emerald/70" />
+        <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_top,oklch(0.65_0.17_158/0.18),transparent_65%)]" />
         <div className="overflow-x-auto scrollbar-none">
           <div className="flex items-stretch justify-around gap-0.5 px-1.5 py-1.5 w-full min-w-max">
             <MobLink to="/" icon={Home} label="Home" />

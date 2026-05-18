@@ -102,37 +102,37 @@ function AdminPage() {
             }}
           >
             {(isAdmin || isMod) && <TabsTrigger value="analytics"><BarChart3 className="h-3 w-3 mr-1" />Analytics</TabsTrigger>}
-            <TabsTrigger value="users"><AdminTab icon={Users} label="Users" count={alerts.users} /></TabsTrigger>
-            {(isAdmin || isMod) && <TabsTrigger value="matches"><Trophy className="h-3 w-3 mr-1" />Matches</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="activity"><Users className="h-3 w-3 mr-1" />Activity</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="adminai"><Sparkles className="h-3 w-3 mr-1" />Admin AI</TabsTrigger>}
+            <TabsTrigger value="appeals"><AdminTab icon={AlertTriangle} label="Appeals" count={alerts.appeals} /></TabsTrigger>
+            {isAdmin && <TabsTrigger value="audit"><History className="h-3 w-3 mr-1" />Audit</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="bettracker"><AdminTab icon={ClipboardList} label="Bet Tracker" count={alerts.bettracker} /></TabsTrigger>}
+            {isAdmin && <TabsTrigger value="broadcast"><Send className="h-3 w-3 mr-1" />Broadcast</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="challenges"><Sparkles className="h-3 w-3 mr-1" />Challenges</TabsTrigger>}
+            <TabsTrigger value="chat"><AdminTab icon={MessageSquare} label="Chat" count={alerts.chat} /></TabsTrigger>
+            {(isAdmin || isMod) && <TabsTrigger value="content"><Megaphone className="h-3 w-3 mr-1" />Content</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="emblems"><Trophy className="h-3 w-3 mr-1" />Emblems</TabsTrigger>}
             {isAdmin && <TabsTrigger value="events"><Calendar className="h-3 w-3 mr-1" />Events</TabsTrigger>}
-            {(isAdmin || isMod) && <TabsTrigger value="tokens"><AdminTab icon={Coins} label="Tokens" count={alerts.tokens} /></TabsTrigger>}
-            {(isAdmin || isMod) && <TabsTrigger value="withdrawals"><AdminTab icon={Wallet} label="Withdrawals" count={alerts.withdrawals} /></TabsTrigger>}
             {isAdmin && <TabsTrigger value="housewallet"><Wallet className="h-3 w-3 mr-1" />House Wallet</TabsTrigger>}
             {isAdmin && <TabsTrigger value="leaderboard"><ListOrdered className="h-3 w-3 mr-1" />Leaderboard</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="promos"><Tag className="h-3 w-3 mr-1" />Promo Codes</TabsTrigger>}
-            {(isAdmin || isMod) && <TabsTrigger value="content"><Megaphone className="h-3 w-3 mr-1" />Content</TabsTrigger>}
-            <TabsTrigger value="tickets"><AdminTab icon={Ticket} label="Tickets" count={alerts.tickets} /></TabsTrigger>
-            {isAdmin && <TabsTrigger value="tasks"><ClipboardList className="h-3 w-3 mr-1" />Tasks & Achievements</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="challenges"><Sparkles className="h-3 w-3 mr-1" />Challenges</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="seasons"><Trophy className="h-3 w-3 mr-1" />Seasons</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="bettracker"><AdminTab icon={ClipboardList} label="Bet Tracker" count={alerts.bettracker} /></TabsTrigger>}
-            {isAdmin && <TabsTrigger value="promoreqs"><AdminTab icon={Tag} label="Promo Requests" count={alerts.promoreqs} /></TabsTrigger>}
-            <TabsTrigger value="appeals"><AdminTab icon={AlertTriangle} label="Appeals" count={alerts.appeals} /></TabsTrigger>
-            <TabsTrigger value="chat"><AdminTab icon={MessageSquare} label="Chat" count={alerts.chat} /></TabsTrigger>
+            {(isAdmin || isMod) && <TabsTrigger value="matches"><Trophy className="h-3 w-3 mr-1" />Matches</TabsTrigger>}
             {(isAdmin || isMod) && <TabsTrigger value="notify"><Send className="h-3 w-3 mr-1" />Notify</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="audit"><History className="h-3 w-3 mr-1" />Audit</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="settings"><SettingsIcon className="h-3 w-3 mr-1" />Settings</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="adminai"><Sparkles className="h-3 w-3 mr-1" />Admin AI</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="risk"><AlertTriangle className="h-3 w-3 mr-1" />Risk</TabsTrigger>}
             {isAdmin && <TabsTrigger value="pnl"><BarChart3 className="h-3 w-3 mr-1" />P&L</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="reports"><BarChart3 className="h-3 w-3 mr-1" />Reports</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="tokenrules"><Coins className="h-3 w-3 mr-1" />Token Rules</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="broadcast"><Send className="h-3 w-3 mr-1" />Broadcast</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="activity"><Users className="h-3 w-3 mr-1" />Activity</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="streakpush"><Sparkles className="h-3 w-3 mr-1" />Streak & Push</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="promos"><Tag className="h-3 w-3 mr-1" />Promo Codes</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="promoreqs"><AdminTab icon={Tag} label="Promo Requests" count={alerts.promoreqs} /></TabsTrigger>}
             {isAdmin && <TabsTrigger value="referrals"><Users className="h-3 w-3 mr-1" />Referrals</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="emblems"><Trophy className="h-3 w-3 mr-1" />Emblems</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="reports"><BarChart3 className="h-3 w-3 mr-1" />Reports</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="risk"><AlertTriangle className="h-3 w-3 mr-1" />Risk</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="seasons"><Trophy className="h-3 w-3 mr-1" />Seasons</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="settings"><SettingsIcon className="h-3 w-3 mr-1" />Settings</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="streakpush"><Sparkles className="h-3 w-3 mr-1" />Streak & Push</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="tasks"><ClipboardList className="h-3 w-3 mr-1" />Tasks & Achievements</TabsTrigger>}
+            <TabsTrigger value="tickets"><AdminTab icon={Ticket} label="Tickets" count={alerts.tickets} /></TabsTrigger>
+            {(isAdmin || isMod) && <TabsTrigger value="tokens"><AdminTab icon={Coins} label="Tokens" count={alerts.tokens} /></TabsTrigger>}
+            {isAdmin && <TabsTrigger value="tokenrules"><Coins className="h-3 w-3 mr-1" />Token Rules</TabsTrigger>}
+            <TabsTrigger value="users"><AdminTab icon={Users} label="Users" count={alerts.users} /></TabsTrigger>
             {isAdmin && <TabsTrigger value="vip"><Trophy className="h-3 w-3 mr-1" />VIP</TabsTrigger>}
+            {(isAdmin || isMod) && <TabsTrigger value="withdrawals"><AdminTab icon={Wallet} label="Withdrawals" count={alerts.withdrawals} /></TabsTrigger>}
           </TabsList>
           <TabsContent value="users" className="mt-4"><UsersPanel /></TabsContent>
           <TabsContent value="matches" className="mt-4"><MatchesPanel /></TabsContent>
@@ -619,8 +619,9 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-0 border-primary/30 bg-gradient-to-b from-card to-background">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-0 border-0 admin-user-bg admin-user-frame">
         <div className="relative px-6 pt-10 pb-6">
+          <div className="pointer-events-none absolute inset-0 opacity-[0.08] voucher-circuit" />
           {/* Avatar with golden glow */}
           <div className="relative mx-auto h-24 w-24 -mt-4">
             <div className="absolute inset-[-10px] rounded-3xl blur-2xl bg-[radial-gradient(circle,oklch(0.82_0.17_90/0.55),transparent_70%)]" />
@@ -642,7 +643,7 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
           </div>
 
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-display tracking-wider">Manage {user.full_name}</DialogTitle>
+            <DialogTitle className="text-center text-2xl font-display tracking-wider admin-user-foil">Manage {user.full_name}</DialogTitle>
           </DialogHeader>
 
           <Tabs value={tab} onValueChange={setTab} className="mt-4">
