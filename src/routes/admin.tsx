@@ -2057,6 +2057,51 @@ function Detail({ icon: Icon, label, children }: { icon: any; label: string; chi
 }
 function humanize(action: string) { return action.replace(/_/g, " "); }
 
+function humanizeKind(kind: string) {
+  const map: Record<string, string> = {
+    balance_change: "Balance change",
+    daily_login: "Daily login",
+    bet_placed: "Bet placed",
+    bet_settled: "Bet settled",
+    bet_refund: "Bet refund",
+    payout: "Payout",
+    promo_redemption: "Promo redemption",
+    withdrawal: "Withdrawal",
+    withdrawal_refund: "Withdrawal refund",
+    grant: "Admin grant",
+    revoke: "Admin revoke",
+    referral_bonus: "Referral bonus",
+    streak_bonus: "Streak bonus",
+    task_reward: "Task reward",
+    challenge_reward: "Challenge reward",
+  };
+  return map[kind] ?? kind.replace(/_/g, " ");
+}
+
+function prettySource(kind: string, dir: "in" | "out") {
+  const k = kind.toLowerCase();
+  if (k.includes("daily")) return dir === "in" ? "Daily login system" : "User";
+  if (k.includes("payout") || k.includes("settled")) return dir === "in" ? "House wallet (winnings)" : "User";
+  if (k.includes("bet_placed") || k === "bet") return dir === "in" ? "House wallet" : "Bet stake (house wallet)";
+  if (k.includes("refund")) return dir === "in" ? "House wallet (refund)" : "User";
+  if (k.includes("promo")) return dir === "in" ? "Promo code redemption" : "User";
+  if (k.includes("withdrawal")) return dir === "in" ? "User" : "Withdrawal request";
+  if (k.includes("grant") || k === "balance_change") return dir === "in" ? "Admin grant" : "Admin revoke";
+  if (k.includes("referral")) return "Referral program";
+  if (k.includes("streak")) return "Streak reward system";
+  if (k.includes("task") || k.includes("challenge")) return "Rewards system";
+  return dir === "in" ? "System" : "User";
+}
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline gap-1.5 min-w-0">
+      <span className="text-[9px] uppercase tracking-widest text-muted-foreground shrink-0">{label}</span>
+      <span className="truncate text-foreground/90">{value}</span>
+    </div>
+  );
+}
+
 /* ============================ ANALYTICS ============================ */
 function AnalyticsPanel() {
   const [stats, setStats] = useState<any>(null);
