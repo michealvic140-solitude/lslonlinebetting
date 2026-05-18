@@ -34,7 +34,6 @@ export const Route = createFileRoute("/")({
       { name: "twitter:title", content: "Lomita Shooters League" },
       { name: "twitter:description", content: "Follow live shooting matches, back your gang with virtual tokens, and climb the seasonal leaderboard." },
     ],
-    links: [{ rel: "canonical", href: "https://lslonlinebetting.lovable.app/" }],
     links: [
       { rel: "canonical", href: "https://lslonlinebetting.lovable.app/" },
       { rel: "preload", as: "image", href: hero, fetchpriority: "high" },
