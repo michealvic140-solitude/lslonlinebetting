@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MessageSquare, Send, Image as ImageIcon, Lock } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/chat")({
@@ -119,8 +121,8 @@ function Room({ room, muted }: { room: Room; muted: boolean }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-xs">
-                  <span className="font-bold text-primary">{p?.name ?? "Shooter"}</span>
-                  <span className="text-muted-foreground ml-1">· {p?.gang ?? "Independent"} · {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                    <UserBadge userId={m.user_id} name={p?.name ?? "Shooter"} />
+                    <span className="text-muted-foreground ml-1">· {p?.gang ?? "Independent"} · {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
                 {m.content && <div className="text-sm break-words">{m.content}</div>}
                 {m.image_url && <img src={m.image_url} alt="" className="mt-1 rounded max-h-64 border border-border" />}
@@ -144,5 +146,72 @@ function Room({ room, muted }: { room: Room; muted: boolean }) {
         </form>
       )}
     </Card>
+  );
+}
+
+function UserBadge({ userId, name }: { userId: string; name: string }) {
+  const [profile, setProfile] = useState<any>(null);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open || profile) return;
+    (async () => {
+      const [{ data: p }, { data: r }] = await Promise.all([
+        supabase.from("profiles").select("id, full_name, ingame_name, gang_name, vip_tier, xp, streak_days, longest_streak, profile_title, avatar_url, country").eq("id", userId).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", userId),
+      ]);
+      setProfile(p);
+      setRoles((r ?? []).map((x: any) => x.role));
+    })();
+  }, [open, userId, profile]);
+
+  const tier = profile?.vip_tier || "bronze";
+  const tierColor: Record<string, string> = {
+    bronze: "from-amber-700 to-amber-900",
+    silver: "from-slate-300 to-slate-500",
+    gold: "from-amber-300 to-amber-600",
+    platinum: "from-cyan-200 to-cyan-500",
+    legend: "from-fuchsia-300 to-violet-600",
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button className="font-bold text-primary hover:underline">{name}</button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0 overflow-hidden border-primary/40 bg-card/95 backdrop-blur-xl">
+        <div className={`h-16 bg-gradient-to-r ${tierColor[tier] ?? tierColor.bronze}`} />
+        <div className="-mt-8 px-4 pb-4">
+          <div className="h-16 w-16 rounded-2xl border-2 border-card bg-gradient-gold grid place-items-center text-primary-foreground font-bold shadow-xl">
+            {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full rounded-2xl object-cover" /> : (name).slice(0, 2).toUpperCase()}
+          </div>
+          <div className="mt-2 font-bold text-base">{profile?.ingame_name || profile?.full_name || name}</div>
+          {profile?.profile_title && <div className="text-xs text-amber-300">{profile.profile_title}</div>}
+          <div className="text-xs text-muted-foreground">{profile?.gang_name ?? "Independent"}{profile?.country ? ` · ${profile.country}` : ""}</div>
+
+          <div className="flex flex-wrap gap-1 mt-3">
+            <Badge variant="outline" className="text-[10px] uppercase border-primary/40 text-primary capitalize">{tier} VIP</Badge>
+            {roles.length === 0 && <Badge variant="outline" className="text-[10px]">Viewer</Badge>}
+            {roles.map((r) => <Badge key={r} variant="outline" className="text-[10px]">{ROLE_LABELS[r as AppRole] ?? r}</Badge>)}
+          </div>
+
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-lg border border-border/60 bg-background/40 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">XP</div>
+              <div className="font-bold gradient-gold-text text-sm">{Number(profile?.xp ?? 0).toLocaleString()}</div>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background/40 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Streak</div>
+              <div className="font-bold text-amber-300 text-sm">{profile?.streak_days ?? 0}🔥</div>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background/40 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Best</div>
+              <div className="font-bold text-emerald-300 text-sm">{profile?.longest_streak ?? 0}</div>
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
