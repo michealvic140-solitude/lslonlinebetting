@@ -11,6 +11,7 @@ import { AnnouncementSlider, HighlightsRow, AdsRow } from "@/components/HomeCont
 import { GrandPrizeWinners } from "@/components/GrandPrizeWinners";
 import { HotBets } from "@/components/HotBets";
 import { SeasonBanner } from "@/components/SeasonBanner";
+import { Spotlight } from "@/components/Spotlight";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { Crosshair, Flame, Trophy, ChevronRight, Skull, Coins, Ticket as TicketIcon, ClipboardPaste, X } from "lucide-react";
@@ -92,6 +93,7 @@ function Index() {
 
       <EventBanner />
       <SeasonBanner />
+      <Spotlight />
 
       {/* Highlights → Announcements → Ads → Matches */}
       <HighlightsRow />

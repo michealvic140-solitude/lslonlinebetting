@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth, ROLE_COLORS, ROLE_LABELS } from "@/contexts/AuthContext";
 import { NotificationBell } from "@/components/NotificationBell";
+import { LevelUpModal } from "@/components/Spotlight";
 import { ReactNode, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation } from "@tanstack/react-router";
@@ -108,6 +109,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         )}
       </header>
       <main className="relative">{children}</main>
+      <LevelUpModal />
       <nav
         className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-2xl border-t safe-bottom"
         style={{
