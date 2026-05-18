@@ -53,6 +53,9 @@ export function HotBets() {
   async function copyToSlip(h: Hot) {
     if (!user) return toast.error("Sign in to copy");
     if (!h.match_id) return;
+    const st = statusMap[h.match_id];
+    if (st === "live") return toast.error("Match is live — picks are locked");
+    if (st === "ended") return toast.error("Match has ended — picks are locked");
     // find odd id — include market name so we can match even after settlement
     const { data: mk } = await supabase
       .from("markets")
@@ -69,10 +72,7 @@ export function HotBets() {
       market_id: market.id, market_name: h.market_name,
       odd_id: odd.id, selection_label: odd.label, odds: Number(odd.value),
     });
-    const st = statusMap[h.match_id];
-    if (st === "live") toast.success("Added to slip", { description: "Match is live — odds may be locked at submission." });
-    else if (st === "ended") toast.success("Added to slip", { description: "Match has ended — this pick will settle on submission." });
-    else toast.success("Added to slip");
+    toast.success("Added to slip");
   }
 
   return (
@@ -114,9 +114,21 @@ export function HotBets() {
                 </div>
                 <div className="text-[10px] text-amber-300 mt-0.5">Total stake {Number(h.total_stake).toLocaleString()}</div>
               </div>
-              <Button size="sm" variant="outline" className="h-7 px-2 text-[10px]" onClick={() => copyToSlip(h)}>
-                <Copy className="h-3 w-3 mr-1" />Copy
-              </Button>
+              {(() => {
+                const locked = h.match_id ? (statusMap[h.match_id] === "live" || statusMap[h.match_id] === "ended") : false;
+                return (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-[10px]"
+                    disabled={locked}
+                    onClick={() => copyToSlip(h)}
+                    title={locked ? "Match has started or ended" : "Copy to slip"}
+                  >
+                    <Copy className="h-3 w-3 mr-1" />{locked ? "Locked" : "Copy"}
+                  </Button>
+                );
+              })()}
             </div>
           </div>
         ))}
