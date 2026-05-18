@@ -24,6 +24,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
 } from "recharts";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { SpotlightsAdminPanel } from "@/components/Spotlight";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — LSL" }, { name: "description", content: "League administration dashboard." }] }),
