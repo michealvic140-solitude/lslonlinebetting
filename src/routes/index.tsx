@@ -28,8 +28,13 @@ export const Route = createFileRoute("/")({
       { title: "Lomita Shooters League — Virtual Token Shooting League" },
       { name: "description", content: "Live matches, gang leaderboards and virtual-token wagering for the Lomita Shooters League." },
       { property: "og:title", content: "Lomita Shooters League" },
+      { property: "og:description", content: "Follow live shooting matches, back your gang with virtual tokens, and climb the seasonal leaderboard." },
+      { property: "og:url", content: "https://lslonlinebetting.lovable.app/" },
       { property: "og:image", content: hero },
+      { name: "twitter:title", content: "Lomita Shooters League" },
+      { name: "twitter:description", content: "Follow live shooting matches, back your gang with virtual tokens, and climb the seasonal leaderboard." },
     ],
+    links: [{ rel: "canonical", href: "https://lslonlinebetting.lovable.app/" }],
   }),
   component: Index,
 });
