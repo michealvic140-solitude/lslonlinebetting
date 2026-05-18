@@ -330,6 +330,7 @@ export const adminAiChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { messages: Msg[]; model?: string }) => input)
   .handler(async ({ data, context }) => {
+    try {
     const { supabase, userId } = context;
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
     const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
@@ -421,4 +422,9 @@ Live snapshot (just fetched): ${JSON.stringify(snapshot)}`,
     }
 
     return { reply: "Reached max tool-call rounds. Please ask a more specific question.", snapshot, actions };
+    } catch (e: any) {
+      const message = e?.message ?? String(e);
+      console.error("adminAiChat error:", message, e);
+      return { reply: "", snapshot: null as any, actions: [], error: message };
+    }
   });
