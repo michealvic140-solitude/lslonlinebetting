@@ -125,6 +125,7 @@ function AdminPage() {
             {isAdmin && <TabsTrigger value="risk"><AlertTriangle className="h-3 w-3 mr-1" />Risk</TabsTrigger>}
             {isAdmin && <TabsTrigger value="seasons"><Trophy className="h-3 w-3 mr-1" />Seasons</TabsTrigger>}
             {isAdmin && <TabsTrigger value="settings"><SettingsIcon className="h-3 w-3 mr-1" />Settings</TabsTrigger>}
+            {(isAdmin || isMod) && <TabsTrigger value="spotlights"><Sparkles className="h-3 w-3 mr-1" />Spotlights</TabsTrigger>}
             {isAdmin && <TabsTrigger value="streakpush"><Sparkles className="h-3 w-3 mr-1" />Streak & Push</TabsTrigger>}
             {isAdmin && <TabsTrigger value="tasks"><ClipboardList className="h-3 w-3 mr-1" />Tasks & Achievements</TabsTrigger>}
             <TabsTrigger value="tickets"><AdminTab icon={Ticket} label="Tickets" count={alerts.tickets} /></TabsTrigger>
@@ -166,6 +167,7 @@ function AdminPage() {
           <TabsContent value="referrals" className="mt-4"><ReferralsAdminPanel /></TabsContent>
           <TabsContent value="emblems" className="mt-4"><EmblemModerationPanel /></TabsContent>
           <TabsContent value="vip" className="mt-4"><VipAdminPanel /></TabsContent>
+          <TabsContent value="spotlights" className="mt-4"><SpotlightsAdminPanel /></TabsContent>
         </Tabs>
       </div>
     </Layout>
