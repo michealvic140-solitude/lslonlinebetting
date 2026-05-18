@@ -11,11 +11,15 @@ import { AlertTriangle, Activity, TrendingUp, TrendingDown, Wallet, Users, Image
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from "recharts";
 import { useServerFn } from "@tanstack/react-start";
 import { adminAiChat } from "@/lib/admin-ai.functions";
+import { generateVapidKeys } from "@/lib/vapid.functions";
 
 /* =============== STREAK / LOGIN / PUSH SETTINGS =============== */
 export function StreakAndPushPanel() {
   const [s, setS] = useState<any>(null);
   const [verifying, setVerifying] = useState(false);
+  const [generatedPriv, setGeneratedPriv] = useState<string | null>(null);
+  const [genLoading, setGenLoading] = useState(false);
+  const genVapid = useServerFn(generateVapidKeys);
 
   async function load() {
     const { data } = await supabase.from("app_settings")
@@ -35,6 +39,18 @@ export function StreakAndPushPanel() {
     const { data, error } = await supabase.rpc("verify_xp_consistency", { _user_id: undefined });
     setVerifying(false);
     if (error) toast.error(error.message); else toast.success(`Checked ${(data as any)?.checked ?? 0} users · fixed ${(data as any)?.fixed ?? 0}`);
+  }
+
+  async function generate() {
+    setGenLoading(true);
+    try {
+      const res = await genVapid();
+      setS((prev: any) => ({ ...prev, vapid_public_key: res.publicKey, vapid_subject: prev?.vapid_subject || "mailto:admin@lomitashootersleague.com" }));
+      setGeneratedPriv(res.privateKey);
+      toast.success("VAPID keys generated. Copy the private key now — it won't be shown again.");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to generate VAPID keys");
+    } finally { setGenLoading(false); }
   }
 
   if (!s) return null;
@@ -67,7 +83,16 @@ export function StreakAndPushPanel() {
 
       <Card className="p-5 space-y-3">
         <div className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary" /><div className="font-bold">Web push (VAPID)</div></div>
-        <p className="text-[11px] text-muted-foreground">Set the public key here. Add the matching <span className="font-mono">VAPID_PRIVATE_KEY</span> as a secret in backend settings. Generate a pair with <span className="font-mono">npx web-push generate-vapid-keys</span>.</p>
+        <p className="text-[11px] text-muted-foreground">Click <strong>Generate keys</strong> to create a VAPID pair on the server. The public key is saved automatically — copy the private key and paste it into the <span className="font-mono">VAPID_PRIVATE_KEY</span> backend secret.</p>
+        <Button onClick={generate} disabled={genLoading} variant="outline">{genLoading ? "Generating…" : "Generate keys"}</Button>
+        {generatedPriv && (
+          <Card className="p-3 bg-amber-500/10 border-amber-500/40 space-y-1">
+            <div className="text-[11px] uppercase tracking-widest text-amber-300">Private key (one-time)</div>
+            <code className="text-xs break-all block font-mono">{generatedPriv}</code>
+            <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(generatedPriv); toast.success("Copied"); }}>Copy</Button>
+            <p className="text-[11px] text-muted-foreground">Save this in your backend secrets as <span className="font-mono">VAPID_PRIVATE_KEY</span>. Closing this panel will hide it forever.</p>
+          </Card>
+        )}
         <div>
           <label className="text-[10px] uppercase text-muted-foreground">VAPID public key</label>
           <Input value={s.vapid_public_key ?? ""} onChange={(e) => setS({ ...s, vapid_public_key: e.target.value })} placeholder="BNc..." />
