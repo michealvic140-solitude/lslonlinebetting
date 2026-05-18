@@ -1,0 +1,15 @@
+{
+  "name": "LOMITA SHOOTERS LEAGUE",
+  "short_name": "LSL",
+  "description": "Register and bet on your favorite gang in the Lomita Shooters League.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b0a14",
+  "theme_color": "#0b0a14",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ]
+}
