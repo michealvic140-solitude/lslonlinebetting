@@ -1489,6 +1489,39 @@ export type Database = {
         }
         Relationships: []
       }
+      spotlights: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          headline: string
+          id: string
+          is_active: boolean
+          message: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          headline: string
+          id?: string
+          is_active?: boolean
+          message?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          headline?: string
+          id?: string
+          is_active?: boolean
+          message?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           assigned_to: string | null
@@ -2116,6 +2149,7 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_mod_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      recalc_vip_tier: { Args: { _user_id: string }; Returns: string }
       redeem_promo_code: { Args: { _code: string }; Returns: Json }
       review_gang_emblem: {
         Args: { _approve: boolean; _id: string; _note?: string }
