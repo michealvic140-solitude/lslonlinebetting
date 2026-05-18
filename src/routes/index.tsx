@@ -34,7 +34,10 @@ export const Route = createFileRoute("/")({
       { name: "twitter:title", content: "Lomita Shooters League" },
       { name: "twitter:description", content: "Follow live shooting matches, back your gang with virtual tokens, and climb the seasonal leaderboard." },
     ],
-    links: [{ rel: "canonical", href: "https://lslonlinebetting.lovable.app/" }],
+    links: [
+      { rel: "canonical", href: "https://lslonlinebetting.lovable.app/" },
+      { rel: "preload", as: "image", href: hero, fetchpriority: "high" },
+    ],
   }),
   component: Index,
 });
@@ -74,7 +77,15 @@ function Index() {
   return (
     <Layout>
       <section className="relative overflow-hidden">
-        <img src={hero} alt="" width={1920} height={1080} className="absolute inset-0 h-full w-full object-cover opacity-40" />
+        <img
+          src={hero}
+          alt=""
+          width={1920}
+          height={1080}
+          fetchPriority="high"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover opacity-40"
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background" />
         <div className="container relative py-20 md:py-32">
           <Badge variant="outline" className="border-primary/50 text-primary mb-4">
