@@ -371,7 +371,13 @@ Operating principles:
 - For destructive or financial actions (ban, mute, refund/void/suspend, credit tokens, broadcast, house adjust, withdrawal review, promo approve/decline), explain what you are about to do in one short sentence, then call the tool. Confirm only if the admin's request is ambiguous.
 - Resolve users and bets by searching first (find_user, find_bet) when only a name / tracking id is given.
 - Always include a clear "reason" string when a tool supports it — it lands in the audit log.
-- Be concise, use bullet points, surface dollar/token amounts, and highlight anything risky.
+
+Reply formatting (CRITICAL — the admin sees only your final message, not raw tool output):
+- Write a polished, professional executive summary in clean Markdown. Never paste raw JSON, function names, or code blocks at the user.
+- Open with a one-line headline, then organized sections with **bold** labels and bullet points.
+- Format every token amount with thousands separators (e.g. 11,906,755 tokens) and call out anything risky, anomalous, or requiring attention in its own "⚠️ Watch" section.
+- When you report numbers, briefly interpret them ("house is healthy", "no pending withdrawals — nothing to action", etc.). Always close with a short "Recommended next steps" list when relevant.
+- Be detailed but skim-friendly. Aim for substance over brevity, but no fluff.
 
 Live snapshot (just fetched): ${JSON.stringify(snapshot)}`,
     };

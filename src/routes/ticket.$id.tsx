@@ -76,7 +76,7 @@ function BetTicket({ bet, viewerId }: { bet: any; viewerId: string }) {
 
   return (
     <Layout>
-      <div className="container py-6 max-w-md px-3">
+      <div className="mx-auto w-full max-w-xl px-3 py-6">
         <Link to="/dashboard" className="text-muted-foreground text-sm flex items-center gap-1 hover:text-primary mb-3"><ArrowLeft className="h-4 w-4" />My bets</Link>
         <BetVoucher bet={bet} sels={sels} statusBadge={statusBadge} allWon={allWon} copy={copy} shareCode={shareCode} />
 
@@ -142,9 +142,9 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
               <GangLogo size={22} withGlow={false} />
               <span className="text-[10px] sm:text-[11px] tracking-[0.32em] text-muted-foreground font-bold">LOMITA SHOOTERS LEAGUE</span>
             </div>
-            <h2 className="font-display text-3xl sm:text-5xl font-black tracking-[0.08em] leading-none">
+              <h2 className="font-display text-3xl sm:text-5xl font-black tracking-[0.08em] leading-none">
               <Sparkles className="inline h-4 w-4 text-primary mr-2 -mt-2" />
-              <span className="gold-foil">BET</span> <span className="neon-green">VOUCHER</span>
+                <span className="gold-foil">BET</span> <span className="gold-foil">VOUCHER</span>
               <Sparkles className="inline h-4 w-4 text-primary ml-2 -mt-2" />
             </h2>
           </div>

@@ -703,23 +703,23 @@ export function AdminAILivePanel() {
             <div className={`max-w-[85%] space-y-2 ${m.role==="user"?"":""}`}>
               <div className={`rounded-xl p-3 text-sm whitespace-pre-wrap ${m.role==="user"?"bg-primary/20 text-foreground":"bg-card border border-border"}`}>{m.content}</div>
               {m.actions && m.actions.length > 0 && (
-                <div className="space-y-1">
-                  {m.actions.map((a, j) => (
-                    <details key={j} className="rounded-lg border border-accent/30 bg-accent/5 p-2 text-[11px]">
-                      <summary className="cursor-pointer flex items-center gap-2">
-                        <Sparkles className="h-3 w-3 text-accent" />
-                        <span className="font-mono font-semibold">{a.name}</span>
+                <details className="rounded-lg border border-accent/30 bg-accent/5 p-2 text-[11px]">
+                  <summary className="cursor-pointer flex items-center gap-2 text-muted-foreground">
+                    <Sparkles className="h-3 w-3 text-accent" />
+                    <span>Used {m.actions.length} admin tool{m.actions.length>1?"s":""}</span>
+                    <span className="ml-auto opacity-60">view details</span>
+                  </summary>
+                  <ul className="mt-2 space-y-1">
+                    {m.actions.map((a, j) => (
+                      <li key={j} className="flex items-center gap-2">
                         {a.error
-                          ? <Badge variant="outline" className="border-destructive/50 text-destructive ml-auto">error</Badge>
-                          : <Badge variant="outline" className="border-accent/50 text-accent ml-auto">ok</Badge>}
-                      </summary>
-                      <div className="mt-2 grid gap-1">
-                        <div><span className="text-muted-foreground">args:</span> <code className="break-all">{JSON.stringify(a.args)}</code></div>
-                        <div><span className="text-muted-foreground">result:</span> <code className="break-all">{JSON.stringify(a.result).slice(0, 400)}</code></div>
-                      </div>
-                    </details>
-                  ))}
-                </div>
+                          ? <Badge variant="outline" className="border-destructive/50 text-destructive">error</Badge>
+                          : <Badge variant="outline" className="border-accent/50 text-accent">ok</Badge>}
+                        <span className="font-mono">{a.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
               )}
             </div>
           </div>
