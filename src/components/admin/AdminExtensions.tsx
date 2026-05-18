@@ -605,9 +605,15 @@ export function AdminAILivePanel() {
     const next: AiMsg[] = [...messages, { role: "user", content: text }];
     setMessages(next); setInput(""); setLoading(true);
     try {
-      const { reply, actions } = await ask({
+      const res: any = await ask({
         data: { messages: next.map(({ role, content }) => ({ role, content })), model },
       });
+      if (res?.error) {
+        toast.error(res.error);
+        setMessages([...next, { role: "assistant", content: `⚠️ ${res.error}`, actions: res.actions ?? [] }]);
+        return;
+      }
+      const { reply, actions } = res;
       setMessages([...next, { role: "assistant", content: reply || "(no reply)", actions: actions ?? [] }]);
     } catch (e: any) {
       toast.error(e?.message ?? "AI request failed");
