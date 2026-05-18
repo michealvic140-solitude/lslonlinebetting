@@ -86,7 +86,7 @@ export function HotBets() {
         </span>
       </div>
       {rows.length === 0 && <p className="text-xs text-muted-foreground">No trending bets yet.</p>}
-      <div className="space-y-2 max-h-[440px] overflow-y-auto pr-1">
+      <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
         {rows.map((h, i) => (
           <div key={i} className="rounded-lg border border-border/60 bg-background/40 p-2.5 hover:border-primary/40 transition">
             <div className="flex items-start justify-between gap-2">
