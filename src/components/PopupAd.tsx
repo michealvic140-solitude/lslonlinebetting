@@ -20,11 +20,27 @@ export function PopupAd() {
   const close = () => { sessionStorage.setItem(`popup-${s.updated_at}`, "1"); setOpen(false); };
   const sizeCls = s.popup_ad_size === "xl" ? "max-w-3xl" : s.popup_ad_size === "medium" ? "max-w-md" : "max-w-2xl";
   const imgCls = s.popup_ad_size === "xl" ? "max-h-[70vh]" : s.popup_ad_size === "medium" ? "max-h-80" : "max-h-[60vh]";
+  const hasText = !!s.popup_ad_text;
+  const hasImage = !!s.popup_ad_image;
+  const imageOnly = hasImage && !hasText;
   const Inner = (
-    <div className={`relative ${sizeCls} w-full rounded-3xl overflow-hidden border border-primary/40 bg-card/70 backdrop-blur-2xl shadow-2xl`}>
+    <div
+      className={`relative ${sizeCls} w-full ${
+        imageOnly
+          ? "bg-transparent"
+          : "rounded-3xl overflow-hidden border border-primary/40 bg-card/70 backdrop-blur-2xl shadow-2xl"
+      }`}
+    >
       <button onClick={close} className="absolute top-3 right-3 z-10 h-10 w-10 grid place-items-center rounded-full bg-background/80 hover:bg-background border border-border"><X className="h-5 w-5" /></button>
-      {s.popup_ad_image && <img src={s.popup_ad_image} alt="" className={`w-full ${imgCls} object-cover`} />}
-      {s.popup_ad_text && <div className="p-6 text-base whitespace-pre-wrap">{s.popup_ad_text}</div>}
+      {hasImage && (
+        <img
+          src={s.popup_ad_image}
+          alt=""
+          className={`w-full ${imgCls} ${imageOnly ? "object-contain drop-shadow-2xl" : "object-cover"}`}
+          style={imageOnly ? { background: "transparent" } : undefined}
+        />
+      )}
+      {hasText && <div className="p-6 text-base whitespace-pre-wrap">{s.popup_ad_text}</div>}
     </div>
   );
   return (
