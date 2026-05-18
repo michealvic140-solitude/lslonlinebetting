@@ -348,8 +348,8 @@ function UsersPanel() {
   return (
     <div className="space-y-4">
       {/* Luxury header */}
-      <div className="relative overflow-hidden rounded-2xl voucher-bg voucher-frame p-5">
-        <div className="absolute inset-0 voucher-circuit pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl admin-user-bg admin-user-frame p-5">
+        <div className="absolute inset-0 " />
         <div className="relative flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 rounded-xl grid place-items-center bg-gradient-gold shadow-gold">
@@ -357,7 +357,7 @@ function UsersPanel() {
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-[0.32em] text-primary/80">Member Registry</div>
-              <div className="text-xl font-display gold-foil">Users Panel</div>
+              <div className="text-xl font-display admin-user-foil">Users Panel</div>
             </div>
           </div>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
@@ -369,9 +369,9 @@ function UsersPanel() {
               { l: "Muted", v: stats.muted },
               { l: "Tokens", v: stats.tokens.toLocaleString() },
             ].map((s) => (
-              <div key={s.l} className="voucher-inner rounded-xl px-3 py-2 text-center min-w-[64px]">
+              <div key={s.l} className="admin-user-inner rounded-xl px-3 py-2 text-center min-w-[64px]">
                 <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">{s.l}</div>
-                <div className="text-sm font-black gold-foil leading-tight">{s.v}</div>
+                <div className="text-sm font-black admin-user-foil leading-tight">{s.v}</div>
               </div>
             ))}
           </div>
@@ -379,7 +379,7 @@ function UsersPanel() {
       </div>
 
       {/* Filter bar */}
-      <Card className="voucher-inner border-0 p-3 grid md:grid-cols-4 gap-2">
+      <Card className="admin-user-inner border-0 p-3 grid md:grid-cols-4 gap-2">
         <div className="relative md:col-span-1">
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-primary/70" />
           <Input
@@ -434,9 +434,9 @@ function UsersPanel() {
           return (
             <div
               key={u.id}
-              className="group relative voucher-bg voucher-frame rounded-2xl p-4 overflow-hidden transition-transform hover:-translate-y-0.5"
+              className="group relative admin-user-bg admin-user-frame rounded-2xl p-4 overflow-hidden transition-transform hover:-translate-y-0.5"
             >
-              <div className="absolute inset-0 voucher-circuit pointer-events-none opacity-40" />
+              <div className="absolute inset-0 admin-user-inner-noise pointer-events-none opacity-0" />
               {/* Status accent stripe */}
               <div className={`absolute top-0 left-0 right-0 h-[3px] ${u.is_banned ? "bg-gradient-to-r from-transparent via-destructive to-transparent" : isStaff ? "bg-gradient-to-r from-transparent via-accent to-transparent" : "bg-gradient-to-r from-transparent via-primary to-transparent"}`} />
 
@@ -447,7 +447,7 @@ function UsersPanel() {
                   <div className="relative h-14 w-14 rounded-2xl border-2 border-primary/70 bg-card grid place-items-center overflow-hidden shadow-gold">
                     {u.avatar_url
                       ? <img src={u.avatar_url} alt="" className="h-full w-full object-cover" />
-                      : <span className="font-display text-lg gold-foil">{initials}</span>}
+                      : <span className="font-display text-lg admin-user-foil">{initials}</span>}
                   </div>
                   {vipTier > 0 && (
                     <div className="absolute -bottom-1 -right-1 h-5 px-1.5 rounded-full bg-gradient-gold text-primary-foreground text-[9px] font-black grid place-items-center shadow-gold">
@@ -459,7 +459,7 @@ function UsersPanel() {
                 {/* Identity */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <div className="font-bold text-sm gold-foil truncate">{u.full_name || "Unnamed"}</div>
+                    <div className="font-bold text-sm admin-user-foil truncate">{u.full_name || "Unnamed"}</div>
                     {u.is_banned && <span className="badge-lost text-[9px] px-1.5 py-0.5 rounded-full font-bold">BANNED</span>}
                     {u.is_muted && <span className="badge-pending text-[9px] px-1.5 py-0.5 rounded-full font-bold">MUTED</span>}
                     {u.is_restricted && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-orange-400/60 text-orange-300 bg-orange-500/10">RESTRICTED</span>}
@@ -493,7 +493,7 @@ function UsersPanel() {
               <div className="relative mt-3 pt-3 border-t border-primary/15 grid grid-cols-3 gap-2 text-center">
                 <div>
                   <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">Tokens</div>
-                  <div className="text-sm font-black gold-foil flex items-center justify-center gap-1">
+                  <div className="text-sm font-black admin-user-foil flex items-center justify-center gap-1">
                     <Coins className="h-3 w-3 text-primary" />
                     {(u.token_balance ?? 0).toLocaleString()}
                   </div>
@@ -521,7 +521,7 @@ function UsersPanel() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="voucher-inner rounded-2xl p-10 text-center text-muted-foreground">
+        <div className="admin-user-inner rounded-2xl p-10 text-center text-muted-foreground">
           <Users className="h-8 w-8 mx-auto mb-2 text-primary/40" />
           No members match your filters.
         </div>
