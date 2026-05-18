@@ -15,7 +15,17 @@ import { ChallengesPanel } from "@/components/ChallengesPanel";
 import { ReferralCard, VipCard, UserAnalyticsDashboard, BetHistoryAdvanced, GangEmblemUpload } from "@/components/UserHubSections";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — LSL" }] }),
+  head: () => ({
+    meta: [
+      { title: "Your Dashboard — Lomita Shooters League" },
+      { name: "description", content: "Manage your bet slips, token balance, withdrawals, promo codes, achievements, and account settings in one place." },
+      { property: "og:title", content: "Your Dashboard — Lomita Shooters League" },
+      { property: "og:description", content: "Manage your bet slips, balance, withdrawals, and achievements at LSL." },
+      { property: "og:url", content: "https://lslonlinebetting.lovable.app/dashboard" },
+      { name: "robots", content: "noindex" },
+    ],
+    links: [{ rel: "canonical", href: "https://lslonlinebetting.lovable.app/dashboard" }],
+  }),
   component: Dashboard,
 });
 
