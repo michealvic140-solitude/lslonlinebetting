@@ -1009,7 +1009,7 @@ function MatchesPanel() {
   const [wizard, setWizard] = useState(false);
 
   async function load() {
-    const { data } = await supabase.from("matches").select("*, home_team:teams!home_team_id(name,logo_url), away_team:teams!away_team_id(name,logo_url)").order("start_time", { ascending: false });
+    const { data } = await supabase.from("matches").select("*, home_team:teams!home_team_id(name,logo_url), away_team:teams!away_team_id(name,logo_url)").eq("is_archived", false).order("start_time", { ascending: false });
     setMatches(data ?? []);
   }
   useEffect(() => { load(); }, []);
@@ -1033,9 +1033,9 @@ function MatchesPanel() {
     toast.success("Match settled — bets paid out"); load();
   }
   async function deleteMatch(id: string) {
-    if (!await confirm({ title: "Delete this match?", description: "This cannot be undone.", tone: "danger", confirmText: "Delete" })) return;
-    const { error } = await supabase.from("matches").delete().eq("id", id);
-    if (error) toast.error(error.message); else { logAudit("match_deleted", "match", id); load(); }
+    if (!await confirm({ title: "Remove this match from the panel?", description: "The match will be hidden from the matches list but kept in the database so existing bet vouchers keep showing team and stake info.", tone: "danger", confirmText: "Remove" })) return;
+    const { error } = await supabase.from("matches").update({ is_archived: true }).eq("id", id);
+    if (error) toast.error(error.message); else { logAudit("match_archived", "match", id); load(); toast.success("Match archived"); }
   }
 
   async function updateLiveScore(m: any, hs: number, as: number) {

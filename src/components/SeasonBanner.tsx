@@ -2,11 +2,21 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Calendar } from "lucide-react";
+import { Trophy } from "lucide-react";
+
+function seasonDiff(now: number, target: number) {
+  let s = Math.max(0, Math.floor((target - now) / 1000));
+  const d = Math.floor(s / 86400); s -= d * 86400;
+  const h = Math.floor(s / 3600); s -= h * 3600;
+  const m = Math.floor(s / 60); s -= m * 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d)}/${pad(h)}/${pad(m)}/${pad(s)}`;
+}
 
 export function SeasonBanner() {
   const [season, setSeason] = useState<any>(null);
   const [top, setTop] = useState<any[]>([]);
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -18,11 +28,18 @@ export function SeasonBanner() {
       }
     };
     load();
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    const ch = supabase
+      .channel("seasons-feed")
+      .on("postgres_changes", { event: "*", schema: "public", table: "seasons" }, load)
+      .subscribe();
+    return () => { clearInterval(t); supabase.removeChannel(ch); };
   }, []);
 
   if (!season) return null;
   const ends = new Date(season.ends_at);
-  const daysLeft = Math.max(0, Math.ceil((ends.getTime() - Date.now()) / 86400000));
+  const countdown = now === null ? "--/--/--/--" : seasonDiff(now, ends.getTime());
 
   return (
     <section className="container mt-6">
@@ -35,8 +52,15 @@ export function SeasonBanner() {
             </Badge>
             <h3 className="text-2xl font-bold gradient-gold-text">{season.name}</h3>
             {season.description && <p className="text-sm text-muted-foreground mt-1">{season.description}</p>}
-            <div className="text-xs text-muted-foreground mt-2 flex items-center gap-2">
-              <Calendar className="h-3 w-3" /> {daysLeft} day{daysLeft === 1 ? "" : "s"} left · ends {ends.toLocaleDateString()}
+            <div className="mt-3 flex items-baseline gap-3 flex-wrap">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Ends in</span>
+              <span
+                className="text-2xl md:text-3xl font-extrabold gradient-gold-text tabular-nums tracking-wider"
+                style={{ fontFamily: '"Times New Roman", Times, serif' }}
+              >
+                {countdown}
+              </span>
+              <span className="text-[10px] text-muted-foreground">DD/HH/MM/SS · ends {ends.toLocaleDateString()}</span>
             </div>
           </div>
           {top.length > 0 && (
