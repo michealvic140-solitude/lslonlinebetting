@@ -91,7 +91,16 @@ function AdminPage() {
         {isAdmin && <Stats />}
         <AdminSectionRail alerts={alerts} onOpen={setActiveTab} />
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="flex w-full max-w-full overflow-x-auto h-auto justify-start gap-1 p-2 rounded-2xl md:flex-wrap bg-card/70 border border-border/60 backdrop-blur-md shadow-luxury">
+          <TabsList
+            className="flex w-full max-w-full overflow-x-auto h-auto justify-start gap-1 p-2 rounded-2xl md:flex-wrap backdrop-blur-xl shadow-luxury"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.32 0.08 70 / 0.85) 0%, oklch(0.22 0.06 60 / 0.78) 45%, oklch(0.18 0.05 55 / 0.85) 100%)",
+              border: "1px solid oklch(0.78 0.14 78 / 0.45)",
+              boxShadow:
+                "inset 0 1px 0 oklch(0.95 0.08 92 / 0.15), inset 0 -1px 0 oklch(0 0 0 / 0.4), 0 12px 40px -12px oklch(0.45 0.14 70 / 0.55), 0 0 0 1px oklch(0.62 0.14 80 / 0.25)",
+            }}
+          >
             {(isAdmin || isMod) && <TabsTrigger value="analytics"><BarChart3 className="h-3 w-3 mr-1" />Analytics</TabsTrigger>}
             <TabsTrigger value="users"><AdminTab icon={Users} label="Users" count={alerts.users} /></TabsTrigger>
             {(isAdmin || isMod) && <TabsTrigger value="matches"><Trophy className="h-3 w-3 mr-1" />Matches</TabsTrigger>}
@@ -655,16 +664,105 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
               <section>
                 <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">Token transactions ({tx.length})</div>
                 {tx.length === 0 && <div className="text-xs text-muted-foreground">None.</div>}
-                <div className="space-y-1">
-                  {tx.map((t: any) => (
-                    <div key={t.id} className="glass rounded-lg p-2 text-[11px] flex items-center gap-2 flex-wrap">
-                      <span className="capitalize text-muted-foreground w-20 shrink-0">{t.kind}</span>
-                      <span className="flex-1 min-w-[120px] truncate">{t.description ?? "—"}</span>
-                      <span className="text-muted-foreground shrink-0">{new Date(t.created_at).toLocaleString()}</span>
-                      <span className={`font-bold w-24 text-right shrink-0 ${t.amount > 0 ? "text-emerald-300" : "text-destructive"}`}>{t.amount > 0 ? "+" : ""}{Number(t.amount).toLocaleString()}</span>
-                      <span className="text-muted-foreground w-28 text-right shrink-0">bal {Number(t.balance_after).toLocaleString()}</span>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  {tx.map((t: any) => {
+                    const m = (t.metadata ?? {}) as Record<string, any>;
+                    const isIn = Number(t.amount) > 0;
+                    const balBefore = Number(t.balance_after) - Number(t.amount);
+                    // Try to associate an admin audit log within ±10s (for grant/revoke)
+                    const ts = new Date(t.created_at).getTime();
+                    const nearAudit = audits.find((a: any) =>
+                      Math.abs(new Date(a.created_at).getTime() - ts) < 10_000 &&
+                      /token|grant|revoke|credit|debit|refund|payout/i.test(String(a.action ?? "")),
+                    );
+                    const actorName = nearAudit?.actor_id ? (actorMap[nearAudit.actor_id] ?? nearAudit.actor_id) : (m.actor_name ?? m.by ?? null);
+                    const reason = m.reason ?? nearAudit?.metadata?.reason ?? null;
+                    const refId = m.ref ?? m.reference ?? m.bet_id ?? m.match_id ?? m.withdrawal_id ?? m.promo_code ?? null;
+                    const fromLabel = m.from ?? m.source ?? (isIn ? prettySource(t.kind, "in") : "User balance");
+                    const toLabel = m.to ?? m.destination ?? (isIn ? "User balance" : prettySource(t.kind, "out"));
+                    const purpose = m.purpose ?? m.for ?? t.description ?? humanizeKind(t.kind);
+                    return (
+                      <div
+                        key={t.id}
+                        className="rounded-xl p-3 text-[11px] space-y-2"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, oklch(0.22 0.05 65 / 0.7), oklch(0.16 0.04 60 / 0.85))",
+                          border: "1px solid oklch(0.72 0.13 78 / 0.35)",
+                          boxShadow:
+                            "inset 0 1px 0 oklch(0.95 0.08 92 / 0.08), 0 6px 18px -8px oklch(0.45 0.14 70 / 0.5)",
+                        }}
+                      >
+                        {/* Header row */}
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold"
+                              style={{
+                                background: isIn
+                                  ? "oklch(0.32 0.12 158 / 0.4)"
+                                  : "oklch(0.32 0.14 25 / 0.4)",
+                                color: isIn ? "oklch(0.88 0.22 152)" : "oklch(0.85 0.22 25)",
+                                border: `1px solid ${isIn ? "oklch(0.78 0.18 152 / 0.6)" : "oklch(0.78 0.22 25 / 0.6)"}`,
+                              }}
+                            >
+                              {isIn ? "Credit" : "Debit"}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider border border-primary/40 text-primary bg-primary/10">
+                              {humanizeKind(t.kind)}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <div className={`font-bold text-sm ${isIn ? "text-emerald-300" : "text-destructive"}`}>
+                              {isIn ? "+" : ""}{Number(t.amount).toLocaleString()}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground font-mono">
+                              {balBefore.toLocaleString()} → {Number(t.balance_after).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Flow row */}
+                        <div className="flex items-center gap-2 text-[11px]">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[9px] uppercase tracking-widest text-muted-foreground">From</div>
+                            <div className="truncate font-medium text-foreground/90">{fromLabel}</div>
+                          </div>
+                          <span className="text-primary/70">→</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[9px] uppercase tracking-widest text-muted-foreground">To</div>
+                            <div className="truncate font-medium text-foreground/90">{toLabel}</div>
+                          </div>
+                        </div>
+
+                        {/* Detail grid */}
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 pt-1 border-t border-border/40">
+                          <DetailRow label="Purpose" value={purpose} />
+                          <DetailRow label="By" value={actorName ?? (t.kind === "daily_login" ? "System (auto)" : t.kind === "bet_settled" || t.kind === "payout" ? "House (auto-settle)" : "System")} />
+                          {reason && <DetailRow label="Reason" value={String(reason)} />}
+                          {refId && <DetailRow label="Ref" value={<span className="font-mono">{String(refId).slice(0, 18)}</span>} />}
+                          <DetailRow label="When" value={new Date(t.created_at).toLocaleString()} />
+                          <DetailRow label="Tx ID" value={<span className="font-mono">{String(t.id).slice(0, 8)}</span>} />
+                        </div>
+
+                        {/* Raw metadata fallback (extra keys not yet shown) */}
+                        {(() => {
+                          const shown = new Set(["from", "to", "source", "destination", "reason", "ref", "reference", "bet_id", "match_id", "withdrawal_id", "promo_code", "purpose", "for", "actor_name", "by"]);
+                          const extras = Object.entries(m).filter(([k]) => !shown.has(k));
+                          if (!extras.length) return null;
+                          return (
+                            <div className="flex flex-wrap gap-1 pt-1">
+                              {extras.map(([k, v]) => (
+                                <span key={k} className="px-1.5 py-0.5 rounded bg-background/40 border border-border/40 text-[10px] text-muted-foreground">
+                                  <span className="text-foreground/70">{k}:</span> {typeof v === "object" ? JSON.stringify(v) : String(v)}
+                                </span>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
 
@@ -1958,6 +2056,51 @@ function Detail({ icon: Icon, label, children }: { icon: any; label: string; chi
   );
 }
 function humanize(action: string) { return action.replace(/_/g, " "); }
+
+function humanizeKind(kind: string) {
+  const map: Record<string, string> = {
+    balance_change: "Balance change",
+    daily_login: "Daily login",
+    bet_placed: "Bet placed",
+    bet_settled: "Bet settled",
+    bet_refund: "Bet refund",
+    payout: "Payout",
+    promo_redemption: "Promo redemption",
+    withdrawal: "Withdrawal",
+    withdrawal_refund: "Withdrawal refund",
+    grant: "Admin grant",
+    revoke: "Admin revoke",
+    referral_bonus: "Referral bonus",
+    streak_bonus: "Streak bonus",
+    task_reward: "Task reward",
+    challenge_reward: "Challenge reward",
+  };
+  return map[kind] ?? kind.replace(/_/g, " ");
+}
+
+function prettySource(kind: string, dir: "in" | "out") {
+  const k = kind.toLowerCase();
+  if (k.includes("daily")) return dir === "in" ? "Daily login system" : "User";
+  if (k.includes("payout") || k.includes("settled")) return dir === "in" ? "House wallet (winnings)" : "User";
+  if (k.includes("bet_placed") || k === "bet") return dir === "in" ? "House wallet" : "Bet stake (house wallet)";
+  if (k.includes("refund")) return dir === "in" ? "House wallet (refund)" : "User";
+  if (k.includes("promo")) return dir === "in" ? "Promo code redemption" : "User";
+  if (k.includes("withdrawal")) return dir === "in" ? "User" : "Withdrawal request";
+  if (k.includes("grant") || k === "balance_change") return dir === "in" ? "Admin grant" : "Admin revoke";
+  if (k.includes("referral")) return "Referral program";
+  if (k.includes("streak")) return "Streak reward system";
+  if (k.includes("task") || k.includes("challenge")) return "Rewards system";
+  return dir === "in" ? "System" : "User";
+}
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline gap-1.5 min-w-0">
+      <span className="text-[9px] uppercase tracking-widest text-muted-foreground shrink-0">{label}</span>
+      <span className="truncate text-foreground/90">{value}</span>
+    </div>
+  );
+}
 
 /* ============================ ANALYTICS ============================ */
 function AnalyticsPanel() {
