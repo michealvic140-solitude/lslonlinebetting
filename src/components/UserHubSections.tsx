@@ -236,6 +236,14 @@ export function PushNotifSettings() {
 
   async function enable() {
     if (typeof Notification === "undefined") return toast.error("Browser doesn't support notifications");
+    const inIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+    if (inIframe) {
+      toast.error("Open the app in a new tab to enable notifications", {
+        description: "Browsers block notification prompts inside the Lovable preview iframe. Click the open-in-new-tab icon at the top of the preview, then try again.",
+        duration: 8000,
+      });
+      return;
+    }
     const p = await Notification.requestPermission();
     setPermission(p);
     if (p === "granted") {
@@ -264,7 +272,10 @@ export function PushNotifSettings() {
         toast.error(err?.message || "Push subscription failed");
       }
     } else {
-      toast.error("Permission denied");
+      toast.error("Permission denied by your browser", {
+        description: "You previously blocked notifications for this site. Click the 🔒 icon in your address bar → Site settings → set Notifications to Allow, then reload and try again.",
+        duration: 9000,
+      });
     }
   }
 
