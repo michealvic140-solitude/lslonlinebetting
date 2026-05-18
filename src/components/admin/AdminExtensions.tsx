@@ -45,8 +45,12 @@ export function StreakAndPushPanel() {
     setGenLoading(true);
     try {
       const res = await genVapid();
+      if ((res as any)?.error) {
+        toast.error((res as any).error);
+        return;
+      }
       setS((prev: any) => ({ ...prev, vapid_public_key: res.publicKey, vapid_subject: prev?.vapid_subject || "mailto:admin@lomitashootersleague.com" }));
-      setGeneratedPriv(res.privateKey);
+      setGeneratedPriv(res.privateKey ?? null);
       toast.success("VAPID keys generated. Copy the private key now — it won't be shown again.");
     } catch (e: any) {
       toast.error(e?.message || "Failed to generate VAPID keys");
