@@ -334,12 +334,63 @@ function UsersPanel() {
     return out;
   }, [users, q, filterRole, filterStatus, sort, rolesByUser]);
 
+  const stats = useMemo(() => {
+    const total = users.length;
+    const banned = users.filter((u) => u.is_banned).length;
+    const muted = users.filter((u) => u.is_muted).length;
+    const restricted = users.filter((u) => u.is_restricted).length;
+    const active = total - banned;
+    const tokens = users.reduce((a, u) => a + (u.token_balance ?? 0), 0);
+    const vip = users.filter((u) => (u.vip_tier ?? 0) > 0).length;
+    return { total, banned, muted, restricted, active, tokens, vip };
+  }, [users]);
+
   return (
-    <div className="space-y-3">
-      <Card className="glass-strong p-3 grid md:grid-cols-4 gap-2">
-        <Input placeholder="Search name, email, gang…" value={q} onChange={(e) => setQ(e.target.value)} />
+    <div className="space-y-4">
+      {/* Luxury header */}
+      <div className="relative overflow-hidden rounded-2xl voucher-bg voucher-frame p-5">
+        <div className="absolute inset-0 voucher-circuit pointer-events-none" />
+        <div className="relative flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-xl grid place-items-center bg-gradient-gold shadow-gold">
+              <Users className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.32em] text-primary/80">Member Registry</div>
+              <div className="text-xl font-display gold-foil">Users Panel</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+            {[
+              { l: "Total", v: stats.total },
+              { l: "Active", v: stats.active },
+              { l: "VIP", v: stats.vip },
+              { l: "Banned", v: stats.banned },
+              { l: "Muted", v: stats.muted },
+              { l: "Tokens", v: stats.tokens.toLocaleString() },
+            ].map((s) => (
+              <div key={s.l} className="voucher-inner rounded-xl px-3 py-2 text-center min-w-[64px]">
+                <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">{s.l}</div>
+                <div className="text-sm font-black gold-foil leading-tight">{s.v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Filter bar */}
+      <Card className="voucher-inner border-0 p-3 grid md:grid-cols-4 gap-2">
+        <div className="relative md:col-span-1">
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-primary/70" />
+          <Input
+            placeholder="Search name, email, gang…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="pl-9 bg-background/40 border-primary/25 focus-visible:ring-primary/60"
+          />
+        </div>
         <Select value={filterRole} onValueChange={setFilterRole}>
-          <SelectTrigger><SelectValue placeholder="Role" /></SelectTrigger>
+          <SelectTrigger className="bg-background/40 border-primary/25"><SelectValue placeholder="Role" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All roles</SelectItem>
             {(["viewer", "shooter", "gang_leader", "registered", "sponsor", "moderator", "admin"] as AppRole[]).map((r) => (
@@ -348,7 +399,7 @@ function UsersPanel() {
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="bg-background/40 border-primary/25"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="active">Active</SelectItem>
@@ -358,7 +409,7 @@ function UsersPanel() {
           </SelectContent>
         </Select>
         <Select value={sort} onValueChange={setSort}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectTrigger className="bg-background/40 border-primary/25"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="newest">Newest first</SelectItem>
             <SelectItem value="oldest">Oldest first</SelectItem>
@@ -368,26 +419,113 @@ function UsersPanel() {
         </Select>
       </Card>
 
-      <div className="text-xs text-muted-foreground">{filtered.length} user(s)</div>
+      <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.28em] text-primary/70">
+        <span>{filtered.length} member{filtered.length === 1 ? "" : "s"}</span>
+        <span className="h-px flex-1 mx-3 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      </div>
 
-      {filtered.map((u) => (
-        <Card key={u.id} className="glass p-4">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div className="min-w-0">
-              <div className="font-bold">{u.full_name} {u.is_banned && <Badge variant="destructive" className="ml-1 text-[10px]">BANNED</Badge>}{u.is_muted && <Badge variant="outline" className="ml-1 text-[10px] border-yellow-500/50 text-yellow-400">MUTED</Badge>}{u.is_restricted && <Badge variant="outline" className="ml-1 text-[10px] border-orange-500/50 text-orange-400">RESTRICTED</Badge>}</div>
-              <div className="text-xs text-muted-foreground">{u.email}</div>
-              <div className="text-xs text-muted-foreground">{u.gang_name ?? "Independent"}{u.gang_type && ` · ${u.gang_type}`}</div>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {(rolesByUser[u.id] ?? []).map((r) => (
-                  <Badge key={r} variant="outline" className="text-[10px]">{ROLE_LABELS[r as AppRole]}</Badge>
-                ))}
+      <div className="grid gap-3 md:grid-cols-2">
+        {filtered.map((u) => {
+          const initials = (u.full_name ?? u.email ?? "U").split(/\s|@/).filter(Boolean).map((p: string) => p[0]).slice(0, 2).join("").toUpperCase();
+          const userRoles = rolesByUser[u.id] ?? [];
+          const isStaff = userRoles.includes("admin") || userRoles.includes("moderator");
+          const vipTier = u.vip_tier ?? 0;
+          const joined = u.created_at ? new Date(u.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "—";
+          return (
+            <div
+              key={u.id}
+              className="group relative voucher-bg voucher-frame rounded-2xl p-4 overflow-hidden transition-transform hover:-translate-y-0.5"
+            >
+              <div className="absolute inset-0 voucher-circuit pointer-events-none opacity-40" />
+              {/* Status accent stripe */}
+              <div className={`absolute top-0 left-0 right-0 h-[3px] ${u.is_banned ? "bg-gradient-to-r from-transparent via-destructive to-transparent" : isStaff ? "bg-gradient-to-r from-transparent via-accent to-transparent" : "bg-gradient-to-r from-transparent via-primary to-transparent"}`} />
+
+              <div className="relative flex items-start gap-3">
+                {/* Avatar */}
+                <div className="relative shrink-0">
+                  <div className="absolute inset-[-4px] rounded-2xl blur-md bg-[radial-gradient(circle,oklch(0.82_0.17_90/0.55),transparent_70%)]" />
+                  <div className="relative h-14 w-14 rounded-2xl border-2 border-primary/70 bg-card grid place-items-center overflow-hidden shadow-gold">
+                    {u.avatar_url
+                      ? <img src={u.avatar_url} alt="" className="h-full w-full object-cover" />
+                      : <span className="font-display text-lg gold-foil">{initials}</span>}
+                  </div>
+                  {vipTier > 0 && (
+                    <div className="absolute -bottom-1 -right-1 h-5 px-1.5 rounded-full bg-gradient-gold text-primary-foreground text-[9px] font-black grid place-items-center shadow-gold">
+                      VIP {vipTier}
+                    </div>
+                  )}
+                </div>
+
+                {/* Identity */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="font-bold text-sm gold-foil truncate">{u.full_name || "Unnamed"}</div>
+                    {u.is_banned && <span className="badge-lost text-[9px] px-1.5 py-0.5 rounded-full font-bold">BANNED</span>}
+                    {u.is_muted && <span className="badge-pending text-[9px] px-1.5 py-0.5 rounded-full font-bold">MUTED</span>}
+                    {u.is_restricted && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-orange-400/60 text-orange-300 bg-orange-500/10">RESTRICTED</span>}
+                    {!u.is_banned && !u.is_muted && !u.is_restricted && <span className="badge-won text-[9px] px-1.5 py-0.5 rounded-full font-bold">ACTIVE</span>}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground truncate">{u.email}</div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
+                    <Shield className="h-3 w-3 text-primary/70" />
+                    <span className="truncate">{u.gang_name ?? "Independent"}{u.gang_type && ` · ${u.gang_type}`}</span>
+                  </div>
+                  {userRoles.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {userRoles.map((r) => (
+                        <span
+                          key={r}
+                          className={`text-[9px] px-2 py-0.5 rounded-full border font-semibold uppercase tracking-wider ${
+                            r === "admin" ? "border-destructive/60 text-destructive bg-destructive/10"
+                            : r === "moderator" ? "border-accent/60 text-accent bg-accent/10"
+                            : "border-primary/40 text-primary/90 bg-primary/5"
+                          }`}
+                        >
+                          {ROLE_LABELS[r as AppRole]}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="text-xs mt-1">Tokens: <span className="font-bold text-primary">{(u.token_balance ?? 0).toLocaleString()}</span></div>
+
+              {/* Stats footer */}
+              <div className="relative mt-3 pt-3 border-t border-primary/15 grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">Tokens</div>
+                  <div className="text-sm font-black gold-foil flex items-center justify-center gap-1">
+                    <Coins className="h-3 w-3 text-primary" />
+                    {(u.token_balance ?? 0).toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">XP</div>
+                  <div className="text-sm font-black text-primary/90">{(u.xp ?? 0).toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">Joined</div>
+                  <div className="text-[11px] font-semibold text-foreground/80">{joined}</div>
+                </div>
+              </div>
+
+              <Button
+                size="sm"
+                onClick={() => setEdit(u)}
+                className="btn-luxury w-full mt-3 h-9 font-bold tracking-wide"
+              >
+                <Pencil className="h-3 w-3 mr-1" />Manage Member
+              </Button>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setEdit(u)}><Pencil className="h-3 w-3 mr-1" />Manage</Button>
-          </div>
-        </Card>
-      ))}
+          );
+        })}
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="voucher-inner rounded-2xl p-10 text-center text-muted-foreground">
+          <Users className="h-8 w-8 mx-auto mb-2 text-primary/40" />
+          No members match your filters.
+        </div>
+      )}
 
       {edit && <UserEditDialog user={edit} roles={rolesByUser[edit.id] ?? []} onClose={() => { setEdit(null); load(); }} />}
     </div>
