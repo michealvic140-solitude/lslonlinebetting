@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { RiskPanel, PnLPanel, ReferralsAdminPanel, EmblemModerationPanel, VipAdminPanel, StreakAndPushPanel, TokenRulesPanel, BroadcastPanel, ActivityPanel, ReportsPanel, AdminAILivePanel } from "@/components/admin/AdminExtensions";
+import { VirtualAdminPanel } from "@/components/admin/VirtualAdminPanel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import {
   Shield, Users, Trophy, Coins, Megaphone, Settings as SettingsIcon, Ticket, AlertTriangle,
   Calendar, Tag, Image as ImageIcon, BarChart3, History, Send, Plus, Trash2, Pencil, ChevronRight, ChevronLeft, Wallet, ListOrdered, Sparkles, ClipboardList, Lock, Pause, Play, Check, X, MessageSquare, Eye, RotateCw, Copy, Globe, MapPin, Smartphone, Clock, Filter,
+  Dice5,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
@@ -133,10 +135,12 @@ function AdminPage() {
             {(isAdmin || isMod) && <TabsTrigger value="tokens"><AdminTab icon={Coins} label="Tokens" count={alerts.tokens} /></TabsTrigger>}
             {isAdmin && <TabsTrigger value="tokenrules"><Coins className="h-3 w-3 mr-1" />Token Rules</TabsTrigger>}
             <TabsTrigger value="users"><AdminTab icon={Users} label="Users" count={alerts.users} /></TabsTrigger>
+            {isAdmin && <TabsTrigger value="virtual"><Dice5 className="h-3 w-3 mr-1" />Virtual</TabsTrigger>}
             {isAdmin && <TabsTrigger value="vip"><Trophy className="h-3 w-3 mr-1" />VIP</TabsTrigger>}
             {(isAdmin || isMod) && <TabsTrigger value="withdrawals"><AdminTab icon={Wallet} label="Withdrawals" count={alerts.withdrawals} /></TabsTrigger>}
           </TabsList>
           <TabsContent value="users" className="mt-4"><UsersPanel /></TabsContent>
+            <TabsContent value="virtual" className="mt-4"><VirtualAdminPanel /></TabsContent>
           <TabsContent value="matches" className="mt-4"><MatchesPanel /></TabsContent>
           <TabsContent value="events" className="mt-4"><EventsPanel /></TabsContent>
           <TabsContent value="tokens" className="mt-4"><TokensPanel /></TabsContent>

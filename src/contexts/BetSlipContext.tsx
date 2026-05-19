@@ -8,6 +8,7 @@ export interface SlipSelection {
   odd_id: string;
   selection_label: string;
   odds: number;
+  is_virtual?: boolean;
 }
 
 interface Ctx {
