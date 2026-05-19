@@ -117,9 +117,18 @@ export type Database = {
           vapid_subject: string | null
           vip_enabled: boolean
           vip_token_multipliers: Json
+          virtual_animation_seconds: number
+          virtual_concurrent_rounds: number
+          virtual_cycle_last_tick: string | null
+          virtual_cycle_running: boolean
+          virtual_max_payout: number | null
+          virtual_max_score: number
+          virtual_max_selections: number
           virtual_max_stake: number
+          virtual_min_selections: number
           virtual_min_stake: number
           virtual_payout_multiplier: number
+          virtual_round_duration_seconds: number
           virtual_win_bonus_tokens: number
           virtual_xp_per_win: number
           why_trust_us: string | null
@@ -176,9 +185,18 @@ export type Database = {
           vapid_subject?: string | null
           vip_enabled?: boolean
           vip_token_multipliers?: Json
+          virtual_animation_seconds?: number
+          virtual_concurrent_rounds?: number
+          virtual_cycle_last_tick?: string | null
+          virtual_cycle_running?: boolean
+          virtual_max_payout?: number | null
+          virtual_max_score?: number
+          virtual_max_selections?: number
           virtual_max_stake?: number
+          virtual_min_selections?: number
           virtual_min_stake?: number
           virtual_payout_multiplier?: number
+          virtual_round_duration_seconds?: number
           virtual_win_bonus_tokens?: number
           virtual_xp_per_win?: number
           why_trust_us?: string | null
@@ -235,9 +253,18 @@ export type Database = {
           vapid_subject?: string | null
           vip_enabled?: boolean
           vip_token_multipliers?: Json
+          virtual_animation_seconds?: number
+          virtual_concurrent_rounds?: number
+          virtual_cycle_last_tick?: string | null
+          virtual_cycle_running?: boolean
+          virtual_max_payout?: number | null
+          virtual_max_score?: number
+          virtual_max_selections?: number
           virtual_max_stake?: number
+          virtual_min_selections?: number
           virtual_min_stake?: number
           virtual_payout_multiplier?: number
+          virtual_round_duration_seconds?: number
           virtual_win_bonus_tokens?: number
           virtual_xp_per_win?: number
           why_trust_us?: string | null
@@ -1926,6 +1953,114 @@ export type Database = {
           },
         ]
       }
+      virtual_house_transactions: {
+        Row: {
+          actor_id: string | null
+          amount: number
+          balance_after: number
+          bet_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          match_id: string | null
+          reason: string | null
+          user_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          amount: number
+          balance_after: number
+          bet_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          match_id?: string | null
+          reason?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          amount?: number
+          balance_after?: number
+          bet_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          match_id?: string | null
+          reason?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      virtual_house_wallet: {
+        Row: {
+          balance: number
+          id: number
+          total_in: number
+          total_out: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          id?: number
+          total_in?: number
+          total_out?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          id?: number
+          total_in?: number
+          total_out?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      virtual_payout_requests: {
+        Row: {
+          amount: number
+          bet_id: string
+          claimed_at: string | null
+          created_at: string
+          decline_reason: string | null
+          id: string
+          match_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          stake: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bet_id: string
+          claimed_at?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          id?: string
+          match_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          stake: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bet_id?: string
+          claimed_at?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          id?: string
+          match_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          stake?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       watchlist: {
         Row: {
           created_at: string
@@ -2137,7 +2272,12 @@ export type Database = {
         Args: { _bet_id: string; _reason?: string }
         Returns: undefined
       }
+      admin_review_virtual_payout: {
+        Args: { _approve: boolean; _id: string; _reason?: string }
+        Returns: Json
+      }
       admin_risk_summary: { Args: never; Returns: Json }
+      admin_set_virtual_cycle: { Args: { _running: boolean }; Returns: Json }
       admin_suspend_bet: {
         Args: { _bet_id: string; _reason?: string }
         Returns: undefined
@@ -2152,10 +2292,12 @@ export type Database = {
         Args: { _id: string; _note?: string }
         Returns: string
       }
+      auto_resolve_virtual_round: { Args: { _match_id: string }; Returns: Json }
       can_use_gang_chat: { Args: { _user_id: string }; Returns: boolean }
       claim_challenge: { Args: { _progress_id: string }; Returns: Json }
       claim_daily_login: { Args: never; Returns: Json }
       claim_task: { Args: { _task_id: string }; Returns: Json }
+      claim_virtual_payout: { Args: { _id: string }; Returns: Json }
       create_withdrawal_request: {
         Args: {
           _amount: number
@@ -2190,6 +2332,10 @@ export type Database = {
         Args: { _match_id: string; _odd_id: string; _stake: number }
         Returns: Json
       }
+      place_virtual_ticket: {
+        Args: { _selections: Json; _stake: number }
+        Returns: Json
+      }
       recalc_vip_tier: { Args: { _user_id: string }; Returns: string }
       redeem_promo_code: { Args: { _code: string }; Returns: Json }
       resolve_virtual_round: {
@@ -2212,6 +2358,33 @@ export type Database = {
       settle_pay_winning_bet: { Args: { _bet_id: string }; Returns: Json }
       user_cashout_bet: { Args: { _bet_id: string }; Returns: Json }
       verify_xp_consistency: { Args: { _user_id?: string }; Returns: Json }
+      virtual_tick: { Args: never; Returns: Json }
+      virtual_wallet_admin_adjust: {
+        Args: { _amount: number; _reason: string }
+        Returns: Json
+      }
+      virtual_wallet_credit: {
+        Args: {
+          _amount: number
+          _bet: string
+          _kind: string
+          _match: string
+          _reason: string
+          _user: string
+        }
+        Returns: number
+      }
+      virtual_wallet_debit: {
+        Args: {
+          _amount: number
+          _bet: string
+          _kind: string
+          _match: string
+          _reason: string
+          _user: string
+        }
+        Returns: number
+      }
       wipe_all_tokens: { Args: never; Returns: undefined }
     }
     Enums: {
