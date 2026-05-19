@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WithdrawRouteImport } from './routes/withdraw'
 import { Route as WatchlistRouteImport } from './routes/watchlist'
+import { Route as VirtualRouteImport } from './routes/virtual'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -31,6 +32,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VirtualHistoryRouteImport } from './routes/virtual.history'
 import { Route as TicketIdRouteImport } from './routes/ticket.$id'
 import { Route as MatchesMatchIdRouteImport } from './routes/matches.$matchId'
 import { Route as ApiPublicHooksSendPushRouteImport } from './routes/api/public/hooks/send-push'
@@ -43,6 +45,11 @@ const WithdrawRoute = WithdrawRouteImport.update({
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
   path: '/watchlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VirtualRoute = VirtualRouteImport.update({
+  id: '/virtual',
+  path: '/virtual',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TasksRoute = TasksRouteImport.update({
@@ -145,6 +152,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VirtualHistoryRoute = VirtualHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => VirtualRoute,
+} as any)
 const TicketIdRoute = TicketIdRouteImport.update({
   id: '/ticket/$id',
   path: '/ticket/$id',
@@ -182,10 +194,12 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
+  '/virtual': typeof VirtualRouteWithChildren
   '/watchlist': typeof WatchlistRoute
   '/withdraw': typeof WithdrawRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/ticket/$id': typeof TicketIdRoute
+  '/virtual/history': typeof VirtualHistoryRoute
   '/api/public/hooks/send-push': typeof ApiPublicHooksSendPushRoute
 }
 export interface FileRoutesByTo {
@@ -209,10 +223,12 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
+  '/virtual': typeof VirtualRouteWithChildren
   '/watchlist': typeof WatchlistRoute
   '/withdraw': typeof WithdrawRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/ticket/$id': typeof TicketIdRoute
+  '/virtual/history': typeof VirtualHistoryRoute
   '/api/public/hooks/send-push': typeof ApiPublicHooksSendPushRoute
 }
 export interface FileRoutesById {
@@ -237,10 +253,12 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
+  '/virtual': typeof VirtualRouteWithChildren
   '/watchlist': typeof WatchlistRoute
   '/withdraw': typeof WithdrawRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/ticket/$id': typeof TicketIdRoute
+  '/virtual/history': typeof VirtualHistoryRoute
   '/api/public/hooks/send-push': typeof ApiPublicHooksSendPushRoute
 }
 export interface FileRouteTypes {
@@ -266,10 +284,12 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/tasks'
+    | '/virtual'
     | '/watchlist'
     | '/withdraw'
     | '/matches/$matchId'
     | '/ticket/$id'
+    | '/virtual/history'
     | '/api/public/hooks/send-push'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -293,10 +313,12 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/tasks'
+    | '/virtual'
     | '/watchlist'
     | '/withdraw'
     | '/matches/$matchId'
     | '/ticket/$id'
+    | '/virtual/history'
     | '/api/public/hooks/send-push'
   id:
     | '__root__'
@@ -320,10 +342,12 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/tasks'
+    | '/virtual'
     | '/watchlist'
     | '/withdraw'
     | '/matches/$matchId'
     | '/ticket/$id'
+    | '/virtual/history'
     | '/api/public/hooks/send-push'
   fileRoutesById: FileRoutesById
 }
@@ -348,6 +372,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
   TasksRoute: typeof TasksRoute
+  VirtualRoute: typeof VirtualRouteWithChildren
   WatchlistRoute: typeof WatchlistRoute
   WithdrawRoute: typeof WithdrawRoute
   TicketIdRoute: typeof TicketIdRoute
@@ -368,6 +393,13 @@ declare module '@tanstack/react-router' {
       path: '/watchlist'
       fullPath: '/watchlist'
       preLoaderRoute: typeof WatchlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/virtual': {
+      id: '/virtual'
+      path: '/virtual'
+      fullPath: '/virtual'
+      preLoaderRoute: typeof VirtualRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tasks': {
@@ -510,6 +542,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/virtual/history': {
+      id: '/virtual/history'
+      path: '/history'
+      fullPath: '/virtual/history'
+      preLoaderRoute: typeof VirtualHistoryRouteImport
+      parentRoute: typeof VirtualRoute
+    }
     '/ticket/$id': {
       id: '/ticket/$id'
       path: '/ticket/$id'
@@ -545,6 +584,17 @@ const MatchesRouteChildren: MatchesRouteChildren = {
 const MatchesRouteWithChildren =
   MatchesRoute._addFileChildren(MatchesRouteChildren)
 
+interface VirtualRouteChildren {
+  VirtualHistoryRoute: typeof VirtualHistoryRoute
+}
+
+const VirtualRouteChildren: VirtualRouteChildren = {
+  VirtualHistoryRoute: VirtualHistoryRoute,
+}
+
+const VirtualRouteWithChildren =
+  VirtualRoute._addFileChildren(VirtualRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -566,6 +616,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
   TasksRoute: TasksRoute,
+  VirtualRoute: VirtualRouteWithChildren,
   WatchlistRoute: WatchlistRoute,
   WithdrawRoute: WithdrawRoute,
   TicketIdRoute: TicketIdRoute,
