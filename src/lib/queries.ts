@@ -9,6 +9,7 @@ export interface MatchRow {
   id: string; name: string; status: MatchStatus;
   start_time: string; location: string | null; is_featured: boolean;
   home_score: number; away_score: number;
+  is_virtual?: boolean; lock_time?: string | null;
   home_team: TeamRow | null; away_team: TeamRow | null;
   markets: MarketRow[];
   category_id?: string | null;
@@ -16,7 +17,7 @@ export interface MatchRow {
 }
 
 const matchSelect = `
-  id,name,status,start_time,location,is_featured,home_score,away_score,category_id,
+  id,name,status,start_time,location,is_featured,home_score,away_score,category_id,is_virtual,lock_time,
   category:categories!category_id(id,name,icon),
   home_team:teams!home_team_id(id,name,logo_url,gang_type),
   away_team:teams!away_team_id(id,name,logo_url,gang_type),
@@ -24,7 +25,7 @@ const matchSelect = `
 `;
 
 export async function fetchMatches(): Promise<MatchRow[]> {
-  const { data, error } = await supabase.from("matches").select(matchSelect).eq("is_archived", false).order("start_time", { ascending: true });
+  const { data, error } = await supabase.from("matches").select(matchSelect).eq("is_archived", false).eq("is_virtual", false).order("start_time", { ascending: true });
   if (error) throw error;
   return (data ?? []) as unknown as MatchRow[];
 }
