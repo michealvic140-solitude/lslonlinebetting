@@ -39,9 +39,9 @@ function VirtualPage() {
     const load = async () => {
       await syncServerOffset();
       const [{ data: liveRows }, { data: upRows }, { data: recRows }, { data: cfg }] = await Promise.all([
-        supabase.from("matches").select(matchSelect).eq("is_virtual", true).eq("status", "live").order("start_time", { ascending: false }).limit(3),
-        supabase.from("matches").select(matchSelect).eq("is_virtual", true).eq("status", "scheduled").order("start_time", { ascending: true }).limit(6),
-        supabase.from("matches").select(matchSelect).eq("is_virtual", true).eq("status", "ended").order("settled_at", { ascending: false }).limit(8),
+        supabase.from("matches").select(matchSelect).eq("is_virtual", true).eq("status", "live").order("start_time", { ascending: false }).limit(20),
+        supabase.from("matches").select(matchSelect).eq("is_virtual", true).eq("status", "scheduled").order("start_time", { ascending: true }).limit(40),
+        supabase.from("matches").select(matchSelect).eq("is_virtual", true).eq("status", "ended").order("settled_at", { ascending: false }).limit(16),
         supabase.from("app_settings").select("virtual_cycle_running,virtual_animation_seconds,virtual_round_duration_seconds").eq("id", 1).maybeSingle(),
       ]);
       setLive((liveRows ?? []) as unknown as MatchRow[]);
@@ -54,7 +54,7 @@ function VirtualPage() {
       });
     };
     load();
-    const t = setInterval(load, 3000);
+    const t = setInterval(load, 1000);
     // Fallback ping while signed in, in case the scheduled backend tick lags.
     const ping = setInterval(() => { supabase.rpc("virtual_tick").then(() => {}, () => {}); }, 8000);
     supabase.rpc("virtual_tick").then(() => {}, () => {});
@@ -94,7 +94,7 @@ function VirtualPage() {
               {upcoming.length > 0 && (
                 <section>
                   <SectionTitle icon={Clock} label={`Open · stake before lock (${cycle.durSec / 60} min window)`} color="text-primary" />
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {upcoming.map((m) => <VirtualRoundCard key={m.id} match={m} animSec={cycle.animSec} />)}
                   </div>
                 </section>
@@ -103,7 +103,7 @@ function VirtualPage() {
               {live.length > 0 && (
                 <section>
                   <SectionTitle icon={Flame} label="Playing out · watch live" color="text-destructive" />
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {live.map((m) => <VirtualRoundCard key={m.id} match={m} animSec={cycle.animSec} />)}
                   </div>
                 </section>
