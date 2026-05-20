@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBetSlip } from "@/contexts/BetSlipContext";
 import { toast } from "sonner";
+import { DraggableFab } from "@/components/DraggableFab";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -273,17 +274,19 @@ function BookingCodeFab() {
 
   return (
     <>
-      <button
+      <DraggableFab
+        storageKey="lsl-booking-code-fab-pos"
+        defaultSide="left"
+        ariaLabel="Paste booking code"
         onClick={() => setOpen(true)}
-        aria-label="Paste booking code"
-        className="fixed bottom-24 md:bottom-6 left-4 z-40 group"
+        className="group"
       >
         <span className="absolute inset-0 rounded-full bg-gradient-gold blur-md opacity-60 group-hover:opacity-90 transition" />
         <span className="relative h-14 w-14 rounded-full bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold border border-primary/40 active:scale-95 transition">
           <ClipboardPaste className="h-6 w-6" />
         </span>
         <span className="absolute -top-1 -right-1 h-4 px-1 rounded-full bg-accent text-accent-foreground text-[9px] font-black grid place-items-center shadow">CODE</span>
-      </button>
+      </DraggableFab>
       {open && (
         <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-md grid place-items-center p-4" onClick={() => setOpen(false)}>
           <Card className="glass-strong w-full max-w-md p-5 space-y-3 relative" onClick={(e) => e.stopPropagation()}>

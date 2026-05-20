@@ -19,9 +19,11 @@ type Hot = {
   total_stake: number;
 };
 
+type MatchStatusInfo = { status: string; is_virtual: boolean };
+
 export function HotBets() {
   const [rows, setRows] = useState<Hot[]>([]);
-  const [statusMap, setStatusMap] = useState<Record<string, string>>({});
+  const [statusMap, setStatusMap] = useState<Record<string, MatchStatusInfo>>({});
   const { user } = useAuth();
   const { add } = useBetSlip();
 
@@ -33,13 +35,15 @@ export function HotBets() {
         .order("bets_count", { ascending: false })
         .limit(50);
       const list = (data ?? []) as Hot[];
-      setRows(list);
       const ids = Array.from(new Set(list.map((r) => r.match_id).filter(Boolean))) as string[];
       if (ids.length) {
-        const { data: ms } = await supabase.from("matches").select("id,status").in("id", ids);
-        const map: Record<string, string> = {};
-        (ms ?? []).forEach((m: any) => { map[m.id] = m.status; });
+        const { data: ms } = await supabase.from("matches").select("id,status,is_virtual").in("id", ids);
+        const map: Record<string, MatchStatusInfo> = {};
+        (ms ?? []).forEach((m: any) => { map[m.id] = { status: m.status, is_virtual: !!m.is_virtual }; });
         setStatusMap(map);
+        setRows(list.filter((r) => !r.match_id || !map[r.match_id]?.is_virtual));
+      } else {
+        setRows(list);
       }
     };
     load();
@@ -53,7 +57,9 @@ export function HotBets() {
   async function copyToSlip(h: Hot) {
     if (!user) return toast.error("Sign in to copy");
     if (!h.match_id) return;
-    const st = statusMap[h.match_id];
+    const info = statusMap[h.match_id];
+    if (info?.is_virtual) return toast.error("Virtual picks are only available on the Virtual page.");
+    const st = info?.status;
     if (st === "live") return toast.error("Match is live — picks are locked");
     if (st === "ended") return toast.error("Match has ended — picks are locked");
     // find odd id — include market name so we can match even after settlement
@@ -93,16 +99,16 @@ export function HotBets() {
               <div className="min-w-0 flex-1">
                 <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1.5">
                   <span className="truncate">{h.match_name ?? "Match"}</span>
-                  {h.match_id && statusMap[h.match_id] && statusMap[h.match_id] !== "scheduled" && (
+                  {h.match_id && statusMap[h.match_id]?.status && statusMap[h.match_id].status !== "scheduled" && (
                     <Badge
                       variant="outline"
                       className={
-                        statusMap[h.match_id] === "live"
+                        statusMap[h.match_id].status === "live"
                           ? "h-4 px-1 text-[8px] uppercase border-destructive/50 text-destructive"
                           : "h-4 px-1 text-[8px] uppercase border-muted-foreground/40 text-muted-foreground"
                       }
                     >
-                      {statusMap[h.match_id]}
+                      {statusMap[h.match_id].status}
                     </Badge>
                   )}
                 </div>
@@ -115,7 +121,7 @@ export function HotBets() {
                 <div className="text-[10px] text-amber-300 mt-0.5">Total stake {Number(h.total_stake).toLocaleString()}</div>
               </div>
               {(() => {
-                const locked = h.match_id ? (statusMap[h.match_id] === "live" || statusMap[h.match_id] === "ended") : false;
+                const locked = h.match_id ? (statusMap[h.match_id]?.status === "live" || statusMap[h.match_id]?.status === "ended") : false;
                 return (
                   <Button
                     size="sm"

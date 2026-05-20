@@ -400,6 +400,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bet_selections_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_real_matches"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bet_selections_odd_id_fkey"
             columns: ["odd_id"]
             isOneToOne: false
@@ -872,6 +879,13 @@ export type Database = {
             columns: ["match_id"]
             isOneToOne: false
             referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "markets_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_real_matches"
             referencedColumns: ["id"]
           },
         ]
@@ -2157,6 +2171,13 @@ export type Database = {
             referencedRelation: "matches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bet_selections_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_real_matches"
+            referencedColumns: ["id"]
+          },
         ]
       }
       promo_code_usage_log: {
@@ -2225,6 +2246,113 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_real_matches: {
+        Row: {
+          away_score: number | null
+          away_team_id: string | null
+          category_id: string | null
+          created_at: string | null
+          created_by: string | null
+          home_score: number | null
+          home_team_id: string | null
+          id: string | null
+          is_archived: boolean | null
+          is_featured: boolean | null
+          is_virtual: boolean | null
+          location: string | null
+          lock_time: string | null
+          locked_at: string | null
+          locked_by: string | null
+          name: string | null
+          settled_at: string | null
+          settled_by: string | null
+          start_time: string | null
+          status: Database["public"]["Enums"]["match_status"] | null
+          updated_at: string | null
+          virtual_first_blood_team_id: string | null
+          winner_team_id: string | null
+        }
+        Insert: {
+          away_score?: number | null
+          away_team_id?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          home_score?: number | null
+          home_team_id?: string | null
+          id?: string | null
+          is_archived?: boolean | null
+          is_featured?: boolean | null
+          is_virtual?: boolean | null
+          location?: string | null
+          lock_time?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          name?: string | null
+          settled_at?: string | null
+          settled_by?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["match_status"] | null
+          updated_at?: string | null
+          virtual_first_blood_team_id?: string | null
+          winner_team_id?: string | null
+        }
+        Update: {
+          away_score?: number | null
+          away_team_id?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          home_score?: number | null
+          home_team_id?: string | null
+          id?: string | null
+          is_archived?: boolean | null
+          is_featured?: boolean | null
+          is_virtual?: boolean | null
+          location?: string | null
+          lock_time?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          name?: string | null
+          settled_at?: string | null
+          settled_by?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["match_status"] | null
+          updated_at?: string | null
+          virtual_first_blood_team_id?: string | null
+          winner_team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_winner_team_id_fkey"
+            columns: ["winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -2358,6 +2486,13 @@ export type Database = {
       settle_pay_winning_bet: { Args: { _bet_id: string }; Returns: Json }
       user_cashout_bet: { Args: { _bet_id: string }; Returns: Json }
       verify_xp_consistency: { Args: { _user_id?: string }; Returns: Json }
+      virtual_score_for_match: {
+        Args: { _match_id: string; _max_score?: number }
+        Returns: {
+          away_score: number
+          home_score: number
+        }[]
+      }
       virtual_tick: { Args: never; Returns: Json }
       virtual_wallet_admin_adjust: {
         Args: { _amount: number; _reason: string }

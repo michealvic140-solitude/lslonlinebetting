@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Ticket, X, ChevronUp, ChevronDown, Trash2, Coins, CheckCircle2, Copy, Share2, ExternalLink, Gem, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { DraggableFab } from "@/components/DraggableFab";
 
 export function BetSlipFab() {
   const { selections, open, setOpen } = useBetSlip();
@@ -29,8 +30,13 @@ export function BetSlipFab() {
 function FabShell({ onClick, count }: { onClick: () => void; count: number }) {
   if (count === 0) return null;
   return (
-    <button onClick={onClick}
-      className="fixed bottom-24 md:bottom-6 right-4 z-40 overflow-hidden rounded-2xl border border-primary/40 bg-gradient-luxury text-foreground shadow-luxury backdrop-blur-2xl hover:-translate-y-1 transition min-w-44">
+    <DraggableFab
+      storageKey="lsl-betslip-fab-pos"
+      defaultSide="right"
+      ariaLabel="Open bet slip"
+      onClick={onClick}
+      className="overflow-hidden rounded-2xl border border-primary/40 bg-gradient-luxury text-foreground shadow-luxury backdrop-blur-2xl hover:-translate-y-1 transition min-w-44"
+    >
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
       <div className="flex items-center gap-3 px-4 py-3">
         <span className="h-10 w-10 rounded-xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold"><Ticket className="h-5 w-5" /></span>
@@ -40,7 +46,7 @@ function FabShell({ onClick, count }: { onClick: () => void; count: number }) {
         </span>
         <span className="ml-auto h-7 min-w-7 rounded-full bg-accent/20 text-accent border border-accent/30 text-xs font-black grid place-items-center px-2">{count}</span>
       </div>
-    </button>
+    </DraggableFab>
   );
 }
 
@@ -65,11 +71,17 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
   const rawPayout = Math.floor(stake * totalOdds);
   const payout = Math.min(rawPayout, maxPayout);
   const capped = rawPayout > maxPayout;
+  const isVirtualTicket = selections.length > 0 && selections.every((s) => s.is_virtual);
+  const isMixedTicket = selections.some((s) => s.is_virtual) && selections.some((s) => !s.is_virtual);
 
   async function place() {
     if (!user || !profile) { nav({ to: "/login" }); return; }
     if (selections.length === 0) return;
-    if (selections.length < 2) {
+    if (isMixedTicket) {
+      toast.error("Virtual and real match selections must be placed on separate slips.");
+      return;
+    }
+    if (!isVirtualTicket && selections.length < 2) {
       toast.error(`Add at least 2 selections to place a bet (you have ${selections.length}).`);
       return;
     }
@@ -86,6 +98,22 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
 
     setSubmitting(true);
     try {
+      if (isVirtualTicket) {
+        const { data: placedVirtual, error } = await (supabase as any).rpc("place_virtual_ticket", {
+          _selections: selections.map((s) => ({ odd_id: s.odd_id })),
+          _stake: stake,
+        });
+        if (error) throw error;
+        const betId = placedVirtual?.bet_id;
+        const { data: freshBet } = betId
+          ? await supabase.from("bets").select("*").eq("id", betId).maybeSingle()
+          : { data: null } as any;
+        toast.success(`Virtual ticket placed! ${placedVirtual?.tracking_id ?? ""}`);
+        const snapshot = { ...(freshBet ?? placedVirtual), id: betId, _selections: selections, _payout: placedVirtual?.payout ?? payout, _is_virtual: true };
+        clear(); refresh();
+        setPlaced(snapshot);
+        return;
+      }
       const { data: bet, error: be } = await supabase.from("bets").insert({
         user_id: user.id, stake, total_odds: totalOdds, potential_payout: payout, status: "open",
       }).select().single();
@@ -104,7 +132,7 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
       await supabase.from("profiles").update({ token_balance: (profile.token_balance ?? 0) - stake }).eq("id", user.id);
       await supabase.from("notifications").insert({ user_id: user.id, title: "Bet placed", body: `Ticket ${bet.tracking_id} · ${stake.toLocaleString()} tokens staked.`, link: `/ticket/${bet.id}` });
       toast.success(`Bet placed! Ticket ${bet.tracking_id}`);
-      const snapshot = { ...bet, _selections: selections, _payout: payout };
+      const snapshot = { ...bet, _selections: selections, _payout: payout, _is_virtual: false };
       clear(); refresh();
       setPlaced(snapshot);
     } catch (e: any) {
@@ -124,7 +152,7 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
               {placed ? <CheckCircle2 className="h-5 w-5" /> : <Ticket className="h-5 w-5" />}
             </span>
             <span className="leading-tight">
-              <span className="block text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Luxury ticket desk</span>
+              <span className="block text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{isVirtualTicket ? "Virtual ticket desk" : "Real match ticket desk"}</span>
               <span className="block text-2xl gradient-gold-text">{placed ? "Ticket Placed" : "Bet Slip"}</span>
             </span>
           </SheetTitle>
@@ -237,6 +265,10 @@ function PlacedPreview({ bet, onView, onClose }: { bet: any; onView: () => void;
         <div className="rounded-xl bg-muted/40 p-3">
           <div className="text-[10px] uppercase text-muted-foreground">Potential Payout</div>
           <div className="font-bold text-accent">{Number(bet._payout ?? bet.potential_payout).toLocaleString()}</div>
+        </div>
+        <div className="rounded-xl bg-muted/40 p-3 col-span-2">
+          <div className="text-[10px] uppercase text-muted-foreground">Voucher Type</div>
+          <div className="font-bold">{bet._is_virtual ? "Virtual matches" : "Real matches"}</div>
         </div>
       </div>
       <div className="space-y-2 max-h-[28vh] overflow-y-auto pr-1">

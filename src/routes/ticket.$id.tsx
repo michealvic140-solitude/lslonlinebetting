@@ -41,7 +41,7 @@ function TicketPage() {
 
   async function loadBet() {
     const { data, error } = await supabase.from("bets")
-      .select("*, bet_selections(*, matches!match_id(name, status, home_score, away_score, home_team:teams!home_team_id(name,logo_url), away_team:teams!away_team_id(name,logo_url)), markets!market_id(name))")
+      .select("*, bet_selections(*, matches!match_id(name, status, home_score, away_score, is_virtual, home_team:teams!home_team_id(name,logo_url), away_team:teams!away_team_id(name,logo_url)), markets!market_id(name))")
       .eq("id", id).maybeSingle();
     if (error) { console.error("loadBet error", error); return; }
     if (!data) return;
@@ -96,6 +96,7 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
   copy: (t: string) => void; shareCode: () => void;
 }) {
   const status = bet.status as string;
+  const isVirtualTicket = sels.some((s: any) => s.matches?.is_virtual);
   const statusBarCls =
     status === "won" || status === "cashed_out" ? "voucher-status-bar-won"
     : status === "lost" ? "voucher-status-bar-lost"
@@ -147,6 +148,9 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
                 <span className="gold-foil">BET</span> <span className="gold-foil">VOUCHER</span>
               <Sparkles className="inline h-4 w-4 text-primary ml-2 -mt-2" />
             </h2>
+            <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary uppercase tracking-[0.22em] text-[10px]">
+              {isVirtualTicket ? "Virtual Matches Voucher" : "Real Matches Voucher"}
+            </Badge>
           </div>
 
           {/* CODES */}
@@ -307,6 +311,11 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
             <div className="text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1">
               <LockIcon className="h-3 w-3" />Awaiting match settlement. Cash-out unlocks when every selection wins.
             </div>
+          )}
+          {isVirtualTicket && status === "won" && (
+            <Link to="/virtual/history" className="w-full rounded-xl py-3 btn-luxury font-black tracking-widest text-base flex items-center justify-center gap-2">
+              <Trophy className="h-5 w-5" />Claim virtual payout
+            </Link>
           )}
 
           {/* BARCODE */}
