@@ -65,11 +65,17 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
   const rawPayout = Math.floor(stake * totalOdds);
   const payout = Math.min(rawPayout, maxPayout);
   const capped = rawPayout > maxPayout;
+  const isVirtualTicket = selections.length > 0 && selections.every((s) => s.is_virtual);
+  const isMixedTicket = selections.some((s) => s.is_virtual) && selections.some((s) => !s.is_virtual);
 
   async function place() {
     if (!user || !profile) { nav({ to: "/login" }); return; }
     if (selections.length === 0) return;
-    if (selections.length < 2) {
+    if (isMixedTicket) {
+      toast.error("Virtual and real match selections must be placed on separate slips.");
+      return;
+    }
+    if (!isVirtualTicket && selections.length < 2) {
       toast.error(`Add at least 2 selections to place a bet (you have ${selections.length}).`);
       return;
     }
@@ -86,6 +92,22 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
 
     setSubmitting(true);
     try {
+      if (isVirtualTicket) {
+        const { data: placedVirtual, error } = await (supabase as any).rpc("place_virtual_ticket", {
+          _selections: selections.map((s) => ({ odd_id: s.odd_id })),
+          _stake: stake,
+        });
+        if (error) throw error;
+        const betId = placedVirtual?.bet_id;
+        const { data: freshBet } = betId
+          ? await supabase.from("bets").select("*").eq("id", betId).maybeSingle()
+          : { data: null } as any;
+        toast.success(`Virtual ticket placed! ${placedVirtual?.tracking_id ?? ""}`);
+        const snapshot = { ...(freshBet ?? placedVirtual), id: betId, _selections: selections, _payout: placedVirtual?.payout ?? payout, _is_virtual: true };
+        clear(); refresh();
+        setPlaced(snapshot);
+        return;
+      }
       const { data: bet, error: be } = await supabase.from("bets").insert({
         user_id: user.id, stake, total_odds: totalOdds, potential_payout: payout, status: "open",
       }).select().single();
@@ -104,7 +126,7 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
       await supabase.from("profiles").update({ token_balance: (profile.token_balance ?? 0) - stake }).eq("id", user.id);
       await supabase.from("notifications").insert({ user_id: user.id, title: "Bet placed", body: `Ticket ${bet.tracking_id} · ${stake.toLocaleString()} tokens staked.`, link: `/ticket/${bet.id}` });
       toast.success(`Bet placed! Ticket ${bet.tracking_id}`);
-      const snapshot = { ...bet, _selections: selections, _payout: payout };
+      const snapshot = { ...bet, _selections: selections, _payout: payout, _is_virtual: false };
       clear(); refresh();
       setPlaced(snapshot);
     } catch (e: any) {
@@ -124,7 +146,7 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
               {placed ? <CheckCircle2 className="h-5 w-5" /> : <Ticket className="h-5 w-5" />}
             </span>
             <span className="leading-tight">
-              <span className="block text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Luxury ticket desk</span>
+              <span className="block text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{isVirtualTicket ? "Virtual ticket desk" : "Real match ticket desk"}</span>
               <span className="block text-2xl gradient-gold-text">{placed ? "Ticket Placed" : "Bet Slip"}</span>
             </span>
           </SheetTitle>
