@@ -260,6 +260,10 @@ function PlacedPreview({ bet, onView, onClose }: { bet: any; onView: () => void;
           <div className="text-[10px] uppercase text-muted-foreground">Potential Payout</div>
           <div className="font-bold text-accent">{Number(bet._payout ?? bet.potential_payout).toLocaleString()}</div>
         </div>
+        <div className="rounded-xl bg-muted/40 p-3 col-span-2">
+          <div className="text-[10px] uppercase text-muted-foreground">Voucher Type</div>
+          <div className="font-bold">{bet._is_virtual ? "Virtual matches" : "Real matches"}</div>
+        </div>
       </div>
       <div className="space-y-2 max-h-[28vh] overflow-y-auto pr-1">
         <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Selections ({sels.length})</div>
