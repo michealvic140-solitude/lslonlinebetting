@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { PageShell } from "@/components/PageShell";
 import { Card } from "@/components/ui/card";
@@ -334,39 +334,12 @@ const KILL_LINES = [
   "🛡 Clutch defuse incoming!",
 ];
 
-// Deterministic PRNG so all viewers see same live scores per match
-function seedFrom(id: string) {
-  let h = 2166136261;
-  for (let i = 0; i < id.length; i++) { h ^= id.charCodeAt(i); h = Math.imul(h, 16777619); }
-  return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return ((h >>> 0) % 10000) / 10000; };
-}
-
 function LiveMatchTicker({ match, animSec }: { match: MatchRow & { lock_time?: string | null }; animSec: number }) {
   const lockMs = (match as any).lock_time ? new Date((match as any).lock_time).getTime() : Date.now();
   const endMs = lockMs + animSec * 1000;
   const [feed, setFeed] = useState<string[]>([]);
   const [tickScore, setTickScore] = useState<{ h: number; a: number }>({ h: 0, a: 0 });
   const [progress, setProgress] = useState(0);
-
-  // Pre-roll a fixed timeline of "kills" using a match-seeded RNG so every viewer agrees.
-  // Dense schedule so something happens every couple of seconds across the live window.
-  const timeline = useMemo(() => {
-    const rnd = seedFrom(match.id);
-    const maxPerSide = 8;
-    const total = 6 + Math.floor(rnd() * 9); // 6..14 kills across the match
-    const events: { t: number; side: "h" | "a" }[] = [];
-    let h = 0, a = 0;
-    for (let i = 0; i < total; i++) {
-      // Spread events through 5%..95% of the window for a steady drumbeat
-      const t = 0.05 + rnd() * 0.9;
-      const side: "h" | "a" = rnd() < 0.5 ? "h" : "a";
-      if (side === "h" && h >= maxPerSide) continue;
-      if (side === "a" && a >= maxPerSide) continue;
-      if (side === "h") h++; else a++;
-      events.push({ t, side });
-    }
-    return events.sort((x, y) => x.t - y.t);
-  }, [match.id]);
 
   useEffect(() => {
     const tick = () => {
@@ -375,30 +348,22 @@ function LiveMatchTicker({ match, animSec }: { match: MatchRow & { lock_time?: s
       setProgress(ratio);
       const fh = match.home_score ?? 0;
       const fa = match.away_score ?? 0;
-      // Once settled, lock to final server scores
-      if (match.status === "ended" && (fh || fa)) {
-        setTickScore({ h: fh, a: fa });
-        setProgress(1);
-        return;
-      }
-      let h = 0, a = 0;
+      setTickScore({ h: fh, a: fa });
       const surfaced: string[] = [];
-      for (const ev of timeline) {
-        if (ev.t <= ratio) {
-          if (ev.side === "h") h++; else a++;
-          const team = ev.side === "h" ? match.home_team?.name : match.away_team?.name;
-          const line = KILL_LINES[Math.floor((ev.t * 9973) % KILL_LINES.length)];
-          surfaced.unshift(`${team}: ${line}`);
-        }
+      for (let i = 0; i < fh; i++) {
+        const line = KILL_LINES[Math.abs((match.id.charCodeAt(i % match.id.length) + i * 7) % KILL_LINES.length)];
+        surfaced.unshift(`${match.home_team?.name}: ${line}`);
       }
-      // Prefer server-progressed scores when they exceed ticker estimate
-      setTickScore({ h: Math.max(h, fh), a: Math.max(a, fa) });
+      for (let i = 0; i < fa; i++) {
+        const line = KILL_LINES[Math.abs((match.id.charCodeAt((i + 5) % match.id.length) + i * 11) % KILL_LINES.length)];
+        surfaced.unshift(`${match.away_team?.name}: ${line}`);
+      }
       setFeed(surfaced.slice(0, 5));
     };
     tick();
     const t = setInterval(tick, 250);
     return () => clearInterval(t);
-  }, [lockMs, endMs, timeline, match.status, match.home_score, match.away_score, match.home_team?.name, match.away_team?.name]);
+  }, [lockMs, endMs, match.id, match.status, match.home_score, match.away_score, match.home_team?.name, match.away_team?.name]);
 
   return (
     <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 overflow-hidden">
