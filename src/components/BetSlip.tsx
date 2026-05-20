@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Ticket, X, ChevronUp, ChevronDown, Trash2, Coins, CheckCircle2, Copy, Share2, ExternalLink, Gem, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { DraggableFab } from "@/components/DraggableFab";
 
 export function BetSlipFab() {
   const { selections, open, setOpen } = useBetSlip();
@@ -29,8 +30,13 @@ export function BetSlipFab() {
 function FabShell({ onClick, count }: { onClick: () => void; count: number }) {
   if (count === 0) return null;
   return (
-    <button onClick={onClick}
-      className="fixed bottom-24 md:bottom-6 right-4 z-40 overflow-hidden rounded-2xl border border-primary/40 bg-gradient-luxury text-foreground shadow-luxury backdrop-blur-2xl hover:-translate-y-1 transition min-w-44">
+    <DraggableFab
+      storageKey="lsl-betslip-fab-pos"
+      defaultSide="right"
+      ariaLabel="Open bet slip"
+      onClick={onClick}
+      className="overflow-hidden rounded-2xl border border-primary/40 bg-gradient-luxury text-foreground shadow-luxury backdrop-blur-2xl hover:-translate-y-1 transition min-w-44"
+    >
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
       <div className="flex items-center gap-3 px-4 py-3">
         <span className="h-10 w-10 rounded-xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold"><Ticket className="h-5 w-5" /></span>
@@ -40,7 +46,7 @@ function FabShell({ onClick, count }: { onClick: () => void; count: number }) {
         </span>
         <span className="ml-auto h-7 min-w-7 rounded-full bg-accent/20 text-accent border border-accent/30 text-xs font-black grid place-items-center px-2">{count}</span>
       </div>
-    </button>
+    </DraggableFab>
   );
 }
 
