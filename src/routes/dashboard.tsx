@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/Layout";
+import { PageShell } from "@/components/PageShell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ function Dashboard() {
 
   return (
     <Layout>
+      <PageShell tone="wallet">
       <div className="container mx-auto px-4 py-10">
         <div className="mb-8">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Welcome back</p>
@@ -177,6 +179,7 @@ function Dashboard() {
         </div>
       </div>
       <PromoRequestDialog open={promoOpen} onClose={() => setPromoOpen(false)} userId={user.id} />
+      </PageShell>
     </Layout>
   );
 }
