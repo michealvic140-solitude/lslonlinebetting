@@ -18,6 +18,7 @@ import {
   Dice5,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import lslLogo from "@/assets/lsl-logo.png";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { fetchTeams } from "@/lib/queries";
