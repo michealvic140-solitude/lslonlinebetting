@@ -595,7 +595,11 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
     const { error } = await supabase.from("profiles").update({ token_balance: newBal }).eq("id", user.id);
     if (error) { toast.error(error.message); return; }
     await supabase.from("notifications").insert({ user_id: user.id, title: tokenDelta > 0 ? "Tokens credited" : "Tokens debited", body: `${tokenDelta > 0 ? "+" : ""}${tokenDelta} tokens — ${tokenReason}` });
-    await logAudit(tokenDelta > 0 ? "grant_tokens" : "revoke_tokens", "user", user.id, { amount: tokenDelta, reason: tokenReason });
+    await logAudit(tokenDelta > 0 ? "grant_tokens" : "revoke_tokens", "user", user.id, {
+      amount: tokenDelta, reason: tokenReason,
+      balance_from: user.token_balance ?? 0, balance_to: newBal,
+      target_user_email: user.email, target_user_name: user.full_name,
+    });
     toast.success("Applied"); setTokenDelta(0); setTokenReason("");
   }
   async function flagAction(field: "is_banned" | "is_muted" | "is_restricted", val: boolean, reasonField: string) {
@@ -611,11 +615,11 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
   }
   async function addRole(role: AppRole) {
     const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role });
-    if (error) toast.error(error.message); else { logAudit("add_role", "user", user.id, { role }); toast.success(`+ ${role}`); onClose(); }
+    if (error) toast.error(error.message); else { logAudit("add_role", "user", user.id, { role, target_user_email: user.email, target_user_name: user.full_name }); toast.success(`+ ${role}`); onClose(); }
   }
   async function removeRole(role: string) {
     await supabase.from("user_roles").delete().eq("user_id", user.id).eq("role", role as AppRole);
-    logAudit("remove_role", "user", user.id, { role });
+    logAudit("remove_role", "user", user.id, { role, target_user_email: user.email, target_user_name: user.full_name });
     toast.success(`− ${role}`); onClose();
   }
 
