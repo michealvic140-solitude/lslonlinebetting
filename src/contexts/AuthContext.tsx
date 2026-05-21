@@ -104,6 +104,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id]);
 
+  // Heartbeat: keep user_sessions fresh so the admin "Online Users" panel works.
+  useEffect(() => {
+    if (!user || typeof window === "undefined") return;
+    let stopped = false;
+    const ping = async () => {
+      if (stopped) return;
+      try {
+        await supabase.from("user_sessions").upsert({
+          user_id: user.id,
+          last_seen: new Date().toISOString(),
+          route: window.location.pathname,
+          user_agent: navigator.userAgent.slice(0, 255),
+        }, { onConflict: "user_id" });
+      } catch {}
+    };
+    ping();
+    const iv = window.setInterval(ping, 60_000);
+    const onVis = () => { if (document.visibilityState === "visible") ping(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { stopped = true; window.clearInterval(iv); document.removeEventListener("visibilitychange", onVis); };
+  }, [user?.id]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null); setRoles([]);
