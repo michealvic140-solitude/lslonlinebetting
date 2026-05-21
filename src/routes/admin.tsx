@@ -2501,7 +2501,15 @@ function WithdrawalsPanel() {
     if (!ok || typeof ok !== "object") return;
     const note = ok.value;
     const { error } = await supabase.rpc("review_withdrawal_request", { _id: r.id, _approve: approve, _note: note || undefined });
-    if (error) toast.error(error.message); else { toast.success("Done"); logAudit(`withdrawal_${approve ? "approved" : "declined"}`, "withdrawal", r.id); load(); }
+    if (error) toast.error(error.message); else {
+      toast.success("Done");
+      await logAudit(`withdrawal_${approve ? "approved" : "declined"}`, "withdrawal", r.id, {
+        amount: r.amount, reason: note ?? null, target_user_id: r.user_id,
+        target_user_email: profiles[r.user_id]?.email, target_user_name: profiles[r.user_id]?.full_name,
+        ingame_name: r.ingame_name, gang_name: r.gang_name,
+      });
+      load();
+    }
   }
 
   return (
