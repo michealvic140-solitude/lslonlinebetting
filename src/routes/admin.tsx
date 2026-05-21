@@ -18,6 +18,7 @@ import {
   Dice5,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import lslLogo from "@/assets/lsl-logo.png";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { fetchTeams } from "@/lib/queries";
@@ -80,7 +81,9 @@ function AdminPage() {
           <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
           <div className="relative flex items-center gap-3 flex-wrap">
-            <div className="h-12 w-12 rounded-2xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold"><Shield className="h-6 w-6" /></div>
+            <div className="h-12 w-12 rounded-2xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold overflow-hidden ring-2 ring-primary/40">
+              <img src={lslLogo} alt="LSL" className="h-10 w-10 object-contain" />
+            </div>
             <div>
               <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Command center</p>
               <h1 className="text-3xl font-bold gradient-gold-text">Admin Console</h1>
@@ -595,7 +598,11 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
     const { error } = await supabase.from("profiles").update({ token_balance: newBal }).eq("id", user.id);
     if (error) { toast.error(error.message); return; }
     await supabase.from("notifications").insert({ user_id: user.id, title: tokenDelta > 0 ? "Tokens credited" : "Tokens debited", body: `${tokenDelta > 0 ? "+" : ""}${tokenDelta} tokens — ${tokenReason}` });
-    await logAudit(tokenDelta > 0 ? "grant_tokens" : "revoke_tokens", "user", user.id, { amount: tokenDelta, reason: tokenReason });
+    await logAudit(tokenDelta > 0 ? "grant_tokens" : "revoke_tokens", "user", user.id, {
+      amount: tokenDelta, reason: tokenReason,
+      balance_from: user.token_balance ?? 0, balance_to: newBal,
+      target_user_email: user.email, target_user_name: user.full_name,
+    });
     toast.success("Applied"); setTokenDelta(0); setTokenReason("");
   }
   async function flagAction(field: "is_banned" | "is_muted" | "is_restricted", val: boolean, reasonField: string) {
@@ -611,11 +618,11 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
   }
   async function addRole(role: AppRole) {
     const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role });
-    if (error) toast.error(error.message); else { logAudit("add_role", "user", user.id, { role }); toast.success(`+ ${role}`); onClose(); }
+    if (error) toast.error(error.message); else { logAudit("add_role", "user", user.id, { role, target_user_email: user.email, target_user_name: user.full_name }); toast.success(`+ ${role}`); onClose(); }
   }
   async function removeRole(role: string) {
     await supabase.from("user_roles").delete().eq("user_id", user.id).eq("role", role as AppRole);
-    logAudit("remove_role", "user", user.id, { role });
+    logAudit("remove_role", "user", user.id, { role, target_user_email: user.email, target_user_name: user.full_name });
     toast.success(`− ${role}`); onClose();
   }
 
@@ -2497,7 +2504,15 @@ function WithdrawalsPanel() {
     if (!ok || typeof ok !== "object") return;
     const note = ok.value;
     const { error } = await supabase.rpc("review_withdrawal_request", { _id: r.id, _approve: approve, _note: note || undefined });
-    if (error) toast.error(error.message); else { toast.success("Done"); logAudit(`withdrawal_${approve ? "approved" : "declined"}`, "withdrawal", r.id); load(); }
+    if (error) toast.error(error.message); else {
+      toast.success("Done");
+      await logAudit(`withdrawal_${approve ? "approved" : "declined"}`, "withdrawal", r.id, {
+        amount: r.amount, reason: note ?? null, target_user_id: r.user_id,
+        target_user_email: profiles[r.user_id]?.email, target_user_name: profiles[r.user_id]?.full_name,
+        ingame_name: r.ingame_name, gang_name: r.gang_name,
+      });
+      load();
+    }
   }
 
   return (
