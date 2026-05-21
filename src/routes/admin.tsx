@@ -80,7 +80,9 @@ function AdminPage() {
           <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
           <div className="relative flex items-center gap-3 flex-wrap">
-            <div className="h-12 w-12 rounded-2xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold"><Shield className="h-6 w-6" /></div>
+            <div className="h-12 w-12 rounded-2xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold overflow-hidden ring-2 ring-primary/40">
+              <img src="/icon.svg" alt="LSL" className="h-9 w-9 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            </div>
             <div>
               <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Command center</p>
               <h1 className="text-3xl font-bold gradient-gold-text">Admin Console</h1>
