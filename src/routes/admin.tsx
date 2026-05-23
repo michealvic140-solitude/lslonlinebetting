@@ -1052,6 +1052,22 @@ function MatchesPanel() {
     if (error) toast.error(error.message); else { logAudit("match_archived", "match", id); load(); toast.success("Match archived"); }
   }
 
+  async function clearEnded() {
+    const endedCount = matches.filter((m) => m.status === "ended").length;
+    if (endedCount === 0) { toast.info("No ended matches to clear."); return; }
+    if (!await confirm({
+      title: `Clear ${endedCount} ended match${endedCount === 1 ? "" : "es"}?`,
+      description: "All matches with status 'ended' will be archived from the panel so you can create new ones. User bet vouchers and history stay intact — only the match listing here is cleared.",
+      tone: "danger", confirmText: "Clear ended matches",
+    })) return;
+    const { data: archived, error } = await supabase
+      .from("matches").update({ is_archived: true }).eq("is_archived", false).eq("status", "ended").select("id");
+    if (error) { toast.error(error.message); return; }
+    await logAudit("matches_bulk_archive_ended", "matches", null, { count: archived?.length ?? 0, match_ids: (archived ?? []).map((m: any) => m.id) });
+    toast.success(`Archived ${archived?.length ?? 0} ended match${archived?.length === 1 ? "" : "es"}`);
+    load();
+  }
+
   async function updateLiveScore(m: any, hs: number, as: number) {
     await supabase.from("matches").update({ home_score: hs, away_score: as }).eq("id", m.id);
     await logAudit("match_live_score", "match", m.id, { home_score: hs, away_score: as });
@@ -1060,7 +1076,13 @@ function MatchesPanel() {
 
   return (
     <div className="space-y-4">
-      <Button className="btn-luxury" onClick={() => setWizard(true)}><Plus className="h-4 w-4 mr-1" />New Match (Wizard)</Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button className="btn-luxury" onClick={() => setWizard(true)}><Plus className="h-4 w-4 mr-1" />New Match (Wizard)</Button>
+        <Button variant="destructive" onClick={clearEnded}>
+          <Trash2 className="h-4 w-4 mr-1" />Clear Ended Matches
+        </Button>
+        <Badge variant="outline" className="ml-auto text-[10px]">Bet history is preserved — only the panel list is cleared.</Badge>
+      </div>
       {wizard && <MatchWizard onClose={() => { setWizard(false); load(); }} />}
 
       <div className="space-y-2">
