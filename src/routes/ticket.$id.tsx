@@ -13,6 +13,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { Sparkles, Send, ArrowLeft, Ticket as TicketIcon, Copy, Check, X, Image as ImageIcon, Share2, Trash2, Lock as LockIcon, Clock as ClockIcon, ShieldCheck, Trophy, Coins, TrendingUp, Gem, Calendar, CalendarCheck, ShieldAlert } from "lucide-react";
 import { GangLogo } from "@/components/GangLogo";
 import { toast } from "sonner";
+import lslLogo from "@/assets/lsl-logo.png";
 
 export const Route = createFileRoute("/ticket/$id")({
   head: () => ({ meta: [{ title: "Ticket — LSL" }] }),
@@ -123,6 +124,13 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
       <div className="absolute -inset-6 rounded-[40px] bg-[radial-gradient(circle_at_30%_20%,oklch(0.85_0.22_152/0.30),transparent_60%),radial-gradient(circle_at_80%_80%,oklch(0.82_0.17_90/0.22),transparent_60%)] blur-3xl pointer-events-none" />
 
       <div className="relative rounded-[28px] voucher-frame voucher-bg overflow-hidden transition-transform duration-500 hover:[transform:perspective(1600px)_rotateX(0.6deg)_rotateY(-0.6deg)_translateY(-2px)]">
+        {/* LSL logo watermark behind everything */}
+        <div
+          className="pointer-events-none absolute inset-0 grid place-items-center opacity-[0.08]"
+          aria-hidden
+        >
+          <img src={lslLogo} alt="" className="w-2/3 max-w-[420px] object-contain mix-blend-screen" />
+        </div>
         {/* Holographic corner patches (4 corners like reference) */}
         <div className="absolute left-0 top-0 w-16 h-16 rounded-br-2xl overflow-hidden pointer-events-none">
           <div className="absolute inset-0 voucher-holo" />
@@ -204,10 +212,6 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
               return (
                 <div key={s.id} className="voucher-row p-3 sm:p-4 transition-all hover:scale-[1.01]">
                   <div className="flex items-center gap-3">
-                    {/* Number */}
-                    <div className="font-display font-black text-2xl sm:text-3xl neon-green w-8 text-center shrink-0">
-                      {String(i + 1).padStart(2, "0")}
-                    </div>
                     {/* Logo */}
                     <div className="shrink-0">
                       <TeamLogo name={m?.home_team?.name} url={m?.home_team?.logo_url} size={36} rounded="full" />
