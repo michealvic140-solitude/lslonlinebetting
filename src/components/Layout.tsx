@@ -45,7 +45,7 @@ function useChatUnread() {
 }
 
 export const Layout = ({ children }: { children: ReactNode }) => {
-  const { user, profile, roles, isAdmin, signOut } = useAuth();
+  const { user, profile, roles, isAdmin, isMod, signOut } = useAuth();
   const nav = useNavigate();
   const chatUnread = useChatUnread();
   useRegisterServiceWorker();
@@ -75,7 +75,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             {user && <NavLink to="/withdraw" icon={Wallet} label="Withdraw" />}
             {user && <NavLink to="/support" icon={LifeBuoy} label="Support" />}
             {user && <NavLink to="/settings" icon={SettingsIcon} label="Settings" />}
-            {isAdmin && <NavLink to="/admin" icon={Shield} label="Admin" danger />}
+            {(isAdmin || isMod) && <NavLink to="/admin" icon={Shield} label={isAdmin ? "Admin" : "Mod"} danger />}
           </nav>
           <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
             {user && profile ? (
@@ -136,7 +136,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
               <MobLink to="/settings" icon={SettingsIcon} label="Settings" />
               <MobLink to="/support" icon={LifeBuoy} label="Help" />
             </>}
-            {isAdmin && <MobLink to="/admin" icon={Shield} label="Admin" />}
+            {(isAdmin || isMod) && <MobLink to="/admin" icon={Shield} label={isAdmin ? "Admin" : "Mod"} />}
           </div>
         </div>
       </nav>
