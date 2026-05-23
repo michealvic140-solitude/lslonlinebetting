@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Ticket, X, ChevronUp, ChevronDown, Trash2, Coins, CheckCircle2, Copy, Share2, ExternalLink, Gem, ShieldCheck } from "lucide-react";
+import { Ticket, X, Trash2, Coins, CheckCircle2, Copy, Share2, ExternalLink, Gem, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { DraggableFab } from "@/components/DraggableFab";
 
@@ -51,7 +51,7 @@ function FabShell({ onClick, count }: { onClick: () => void; count: number }) {
 }
 
 function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { selections, remove, clear, reorder, totalOdds, stake, setStake } = useBetSlip();
+  const { selections, remove, clear, totalOdds, stake, setStake } = useBetSlip();
   const { user, profile, refresh } = useAuth();
   const [minStake, setMinStake] = useState(2_000_000);
   const [maxPayout, setMaxPayout] = useState(100_000_000);
@@ -164,14 +164,10 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
         <div className="flex min-h-0 flex-col pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         <div className="px-6 mt-4 space-y-3 max-h-none overflow-visible pr-4">
           {selections.length === 0 && <p className="text-sm text-muted-foreground">No selections yet. Tap odds on a match to add.</p>}
-          {selections.map((s, i) => (
+          {selections.map((s) => (
             <Card key={s.odd_id} className="relative overflow-hidden glass p-3 text-sm border-primary/20">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-gold opacity-70" />
               <div className="flex items-start gap-2">
-                <div className="flex flex-col gap-0.5">
-                  <button disabled={i===0} onClick={() => reorder(i, i-1)} className="text-muted-foreground disabled:opacity-30"><ChevronUp className="h-3 w-3" /></button>
-                  <button disabled={i===selections.length-1} onClick={() => reorder(i, i+1)} className="text-muted-foreground disabled:opacity-30"><ChevronDown className="h-3 w-3" /></button>
-                </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-extrabold truncate">{s.match_name}</div>
                   <div className="text-xs text-muted-foreground truncate">{s.market_name}</div>
