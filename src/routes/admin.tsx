@@ -1063,7 +1063,7 @@ function MatchesPanel() {
     const { data: archived, error } = await supabase
       .from("matches").update({ is_archived: true }).eq("is_archived", false).eq("status", "ended").select("id");
     if (error) { toast.error(error.message); return; }
-    await logAudit("matches_bulk_archive_ended", "matches", null, { count: archived?.length ?? 0, match_ids: (archived ?? []).map((m: any) => m.id) });
+    await logAudit("matches_bulk_archive_ended", "matches", undefined, { count: archived?.length ?? 0, match_ids: (archived ?? []).map((m: any) => m.id) });
     toast.success(`Archived ${archived?.length ?? 0} ended match${archived?.length === 1 ? "" : "es"}`);
     load();
   }
