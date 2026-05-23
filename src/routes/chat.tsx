@@ -179,7 +179,7 @@ function Room({ room, muted }: { room: Room; muted: boolean }) {
         })}
         <div ref={endRef} />
       </div>
-      {active && <MessageActions message={active} mine={active.user_id === user?.id} isMod={isMod} onClose={() => setActive(null)} onReply={() => { setReplyTo(active); setActive(null); }} onEdit={() => { setEditing(active); setText(active.content ?? ""); setActive(null); }} onDelete={() => del(active)} onReact={(e) => react(active.id, e)} />}
+      {active && <MessageActions message={active} mine={active.user_id === user?.id} isMod={isMod} onClose={() => setActive(null)} onReply={() => { setReplyTo(active); setActive(null); }} onEdit={() => { setEditing(active); setText(active.content ?? ""); setActive(null); }} onDelete={() => del(active)} onReact={(e: string) => react(active.id, e)} />}
       {muted ? <div className="p-3 border-t border-border text-sm text-destructive text-center">You are muted and cannot send messages.</div> : (
         <form onSubmit={send} className="relative p-3 border-t border-border space-y-2">
           {(replyTo || editing) && <div className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs"><span>{editing ? "Editing" : "Replying to"} <b>{profilesById[(editing ?? replyTo).user_id]?.name ?? "Shooter"}</b></span><button type="button" onClick={() => { setReplyTo(null); setEditing(null); setText(""); }}><X className="h-3.5 w-3.5" /></button></div>}
