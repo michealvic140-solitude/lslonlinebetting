@@ -2566,20 +2566,63 @@ function WithdrawalsPanel() {
 function LeaderboardAdminPanel() {
   const [list, setList] = useState<any[]>([]);
   const [draft, setDraft] = useState({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "" });
+  const [editId, setEditId] = useState<string | null>(null);
+  const confirm = useConfirm();
   async function load() { setList((await supabase.from("leaderboard_overrides").select("*").order("kind").order("manual_rank", { ascending: true, nullsFirst: false })).data ?? []); }
   useEffect(() => { load(); }, []);
   async function save() {
     if (!draft.name) { toast.error("Name required"); return; }
     const payload: any = { ...draft, manual_rank: draft.manual_rank ? Number(draft.manual_rank) : null };
-    await supabase.from("leaderboard_overrides").upsert(payload);
+    if (editId) payload.id = editId;
+    const { error } = await supabase.from("leaderboard_overrides").upsert(payload);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(editId ? "leaderboard_override_edit" : "leaderboard_override_create", "leaderboard_overrides", editId ?? undefined, payload);
+    toast.success(editId ? "Entry updated" : "Override saved");
     setDraft({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "" });
+    setEditId(null);
     load();
   }
-  async function del(id: string) { await supabase.from("leaderboard_overrides").delete().eq("id", id); load(); }
+  async function del(id: string) {
+    if (!await confirm({ title: "Delete leaderboard entry?", tone: "danger", confirmText: "Delete" })) return;
+    await supabase.from("leaderboard_overrides").delete().eq("id", id);
+    await logAudit("leaderboard_override_delete", "leaderboard_overrides", id);
+    load();
+  }
+  function editEntry(o: any) {
+    setEditId(o.id);
+    setDraft({
+      kind: o.kind ?? "gang", name: o.name ?? "", top_player: o.top_player ?? "",
+      wins: Number(o.wins ?? 0), losses: Number(o.losses ?? 0), draws: Number(o.draws ?? 0),
+      played: Number(o.played ?? 0), points: Number(o.points ?? 0),
+      manual_rank: o.manual_rank ? String(o.manual_rank) : "",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  async function clearAll() {
+    if (!await confirm({
+      title: `Clear ALL ${list.length} leaderboard entries?`,
+      description: "This permanently removes every manual leaderboard override. Auto-computed stats from match results are unaffected.",
+      tone: "danger", confirmText: "Clear leaderboard",
+    })) return;
+    const { error } = await supabase.from("leaderboard_overrides").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) { toast.error(error.message); return; }
+    await logAudit("leaderboard_clear_all", "leaderboard_overrides", undefined, { previous_count: list.length });
+    toast.success("Leaderboard cleared");
+    load();
+  }
   return (
     <div className="space-y-3">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="text-xs text-muted-foreground">{list.length} manual override{list.length === 1 ? "" : "s"}</div>
+        <Button variant="destructive" size="sm" onClick={clearAll} disabled={list.length === 0}>
+          <Trash2 className="h-3 w-3 mr-1" />Clear Leaderboard
+        </Button>
+      </div>
       <Card className="glass-strong p-4 space-y-2">
-        <div className="font-bold">Manual override (auto-stats are computed from match results)</div>
+        <div className="font-bold flex items-center gap-2">
+          {editId ? <><Pencil className="h-4 w-4 text-primary" />Editing entry</> : "Manual override (auto-stats are computed from match results)"}
+          {editId && <button onClick={() => { setEditId(null); setDraft({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "" }); }} className="ml-auto text-xs text-muted-foreground hover:text-foreground underline">Cancel edit</button>}
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <Select value={draft.kind} onValueChange={(v) => setDraft({ ...draft, kind: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -2594,7 +2637,9 @@ function LeaderboardAdminPanel() {
           <Input type="number" placeholder="Played" value={draft.played} onChange={(e) => setDraft({ ...draft, played: Number(e.target.value) })} />
           <Input type="number" placeholder="Points" value={draft.points} onChange={(e) => setDraft({ ...draft, points: Number(e.target.value) })} />
         </div>
-        <Button className="btn-luxury" onClick={save}><Plus className="h-4 w-4 mr-1" />Save override</Button>
+        <Button className="btn-luxury" onClick={save}>
+          {editId ? <><Check className="h-4 w-4 mr-1" />Update entry</> : <><Plus className="h-4 w-4 mr-1" />Save override</>}
+        </Button>
       </Card>
       <div className="space-y-1">
         {list.map((o) => (
@@ -2602,6 +2647,7 @@ function LeaderboardAdminPanel() {
             <Badge variant="outline" className="capitalize">{o.kind}</Badge>
             <div className="font-bold flex-1 min-w-0 truncate">{o.name} {o.top_player && <span className="text-xs text-muted-foreground">· top: {o.top_player}</span>}</div>
             <span className="text-xs text-muted-foreground">W {o.wins} · L {o.losses} · D {o.draws} · PTS {o.points}{o.manual_rank ? ` · #${o.manual_rank}` : ""}</span>
+            <Button size="sm" variant="outline" onClick={() => editEntry(o)}><Pencil className="h-3 w-3" /></Button>
             <Button size="sm" variant="destructive" onClick={() => del(o.id)}><Trash2 className="h-3 w-3" /></Button>
           </Card>
         ))}
