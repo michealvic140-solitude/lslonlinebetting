@@ -63,6 +63,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
   const nav = useNavigate();
   const chatUnread = useChatUnread();
   useRegisterServiceWorker();
+  useVirtualHeartbeat();
 
   return (
     <div className="relative min-h-screen">
