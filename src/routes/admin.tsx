@@ -558,21 +558,31 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
 
   useEffect(() => {
     (async () => {
-      const [bRes, tRes, aRes, wRes, rRes] = await Promise.all([
+      const [bRes, tRes, aRes, aByRes, aMetaRes, wRes, rRes] = await Promise.all([
         supabase.from("bets").select("*, bet_selections(id, selection_label, locked_odds, result, matches!match_id(name, status, home_score, away_score), markets!market_id(name))").eq("user_id", user.id).order("created_at", { ascending: false }).limit(40),
-        supabase.from("token_transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(60),
-        supabase.from("audit_logs").select("*").eq("target_type", "user").eq("target_id", user.id).order("created_at", { ascending: false }).limit(60),
+        supabase.from("token_transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(80),
+        supabase.from("audit_logs").select("*").eq("target_type", "user").eq("target_id", user.id).order("created_at", { ascending: false }).limit(80),
+        supabase.from("audit_logs").select("*").eq("actor_id", user.id).order("created_at", { ascending: false }).limit(40),
+        supabase.from("audit_logs").select("*").contains("metadata", { target_user_id: user.id } as any).order("created_at", { ascending: false }).limit(60),
         supabase.from("withdrawal_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
         supabase.from("promo_redemptions").select("*, promo_codes:promo_id(code)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
       ]);
+      // Merge audit log sources and de-duplicate by id, newest first
+      const auditMap = new Map<string, any>();
+      for (const row of [...(aRes.data ?? []), ...(aByRes.data ?? []), ...(aMetaRes.data ?? [])]) {
+        if (row?.id) auditMap.set(row.id, row);
+      }
+      const mergedAudits = Array.from(auditMap.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
       setBets(bRes.data ?? []);
       setTx(tRes.data ?? []);
-      setAudits(aRes.data ?? []);
+      setAudits(mergedAudits);
       setWithdrawals(wRes.data ?? []);
       setRedemptions(rRes.data ?? []);
 
       const actorIds = Array.from(new Set([
-        ...(aRes.data ?? []).map((a: any) => a.actor_id).filter(Boolean),
+        ...mergedAudits.map((a: any) => a.actor_id).filter(Boolean),
         ...(wRes.data ?? []).map((w: any) => w.reviewed_by).filter(Boolean),
       ]));
       if (actorIds.length) {
