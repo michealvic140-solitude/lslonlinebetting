@@ -325,22 +325,35 @@ function CenterDial({ match, playing, settled, animSec }: { match: MatchRow; pla
 }
 
 const KILL_LINES = [
-  "⚔ Ambush at A site!",
-  "💥 Headshot — clean kill!",
-  "🔫 Trade kill on bombsite!",
-  "🎯 Wallbang for the assist!",
-  "⚡ One-tap from mid!",
-  "🧨 Grenade wipe!",
-  "🏃 Flank successful!",
-  "🛡 Clutch defuse incoming!",
+  "headshot down range",
+  "ambushed at the alley",
+  "trade-kill on the rooftop",
+  "wallbang from cover",
+  "one-tap mid-block",
+  "grenade wipes the corner",
+  "clean flank executed",
+  "clutch shot — gang down",
+  "drive-by on the street",
+  "scoped from the tower",
 ];
+
+type Shot = { t: number; team: "h" | "a"; x: number; y: number; line: string };
+
+// Deterministic pseudo-random so all clients see the same shot positions per match.
+function seeded(seed: string, n: number) {
+  let h = 2166136261;
+  const s = `${seed}:${n}`;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; }
+  return (h % 10000) / 10000;
+}
 
 function LiveMatchTicker({ match, animSec }: { match: MatchRow & { lock_time?: string | null }; animSec: number }) {
   const lockMs = (match as any).lock_time ? new Date((match as any).lock_time).getTime() : Date.now();
   const endMs = lockMs + animSec * 1000;
-  const [feed, setFeed] = useState<string[]>([]);
+  const [shots, setShots] = useState<Shot[]>([]);
   const [tickScore, setTickScore] = useState<{ h: number; a: number }>({ h: 0, a: 0 });
   const [progress, setProgress] = useState(0);
+  const [muzzle, setMuzzle] = useState<{ side: "h" | "a"; key: number } | null>(null);
 
   useEffect(() => {
     const tick = () => {
@@ -350,35 +363,149 @@ function LiveMatchTicker({ match, animSec }: { match: MatchRow & { lock_time?: s
       const fh = match.home_score ?? 0;
       const fa = match.away_score ?? 0;
       setTickScore({ h: fh, a: fa });
-      const surfaced: string[] = [];
+      const list: Shot[] = [];
       for (let i = 0; i < fh; i++) {
-        const line = KILL_LINES[Math.abs((match.id.charCodeAt(i % match.id.length) + i * 7) % KILL_LINES.length)];
-        surfaced.unshift(`${match.home_team?.name}: ${line}`);
+        list.push({
+          t: i, team: "h",
+          x: 10 + seeded(match.id + "hx", i) * 38,
+          y: 12 + seeded(match.id + "hy", i) * 76,
+          line: KILL_LINES[Math.floor(seeded(match.id + "hl", i) * KILL_LINES.length)],
+        });
       }
       for (let i = 0; i < fa; i++) {
-        const line = KILL_LINES[Math.abs((match.id.charCodeAt((i + 5) % match.id.length) + i * 11) % KILL_LINES.length)];
-        surfaced.unshift(`${match.away_team?.name}: ${line}`);
+        list.push({
+          t: i + 1000, team: "a",
+          x: 52 + seeded(match.id + "ax", i) * 38,
+          y: 12 + seeded(match.id + "ay", i) * 76,
+          line: KILL_LINES[Math.floor(seeded(match.id + "al", i) * KILL_LINES.length)],
+        });
       }
-      setFeed(surfaced.slice(0, 5));
+      setShots(list);
     };
     tick();
     const t = setInterval(tick, 250);
     return () => clearInterval(t);
-  }, [lockMs, endMs, match.id, match.status, match.home_score, match.away_score, match.home_team?.name, match.away_team?.name]);
+  }, [lockMs, endMs, match.id, match.status, match.home_score, match.away_score]);
+
+  // Muzzle-flash burst whenever the score ticks up
+  const prev = (typeof window !== "undefined") ? (window as any).__lslPrev ?? ((window as any).__lslPrev = new Map<string, { h: number; a: number }>()) : null;
+  useEffect(() => {
+    if (!prev) return;
+    const last = prev.get(match.id) ?? { h: 0, a: 0 };
+    if (tickScore.h > last.h) setMuzzle({ side: "h", key: Date.now() });
+    else if (tickScore.a > last.a) setMuzzle({ side: "a", key: Date.now() });
+    prev.set(match.id, tickScore);
+    const id = setTimeout(() => setMuzzle(null), 420);
+    return () => clearTimeout(id);
+  }, [tickScore.h, tickScore.a, match.id]);
+
+  const home = match.home_team?.name ?? "Home";
+  const away = match.away_team?.name ?? "Away";
+  const feed = [...shots].sort((a, b) => b.t - a.t).slice(0, 5);
 
   return (
-    <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 overflow-hidden">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-[10px] uppercase tracking-widest text-destructive font-bold flex items-center gap-1"><Sparkles className="h-3 w-3" />Live feed</div>
-        <div className="font-mono font-black text-2xl tabular-nums text-foreground">{tickScore.h} <span className="text-muted-foreground text-base">·</span> {tickScore.a}</div>
+    <div className="mt-3 rounded-lg overflow-hidden border border-destructive/40 bg-[oklch(0.18_0.02_30)]">
+      {/* Title bar */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-destructive/80 text-destructive-foreground">
+        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.25em]">
+          <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+          Live Gang War
+        </div>
+        <div className="text-[10px] font-mono opacity-90">Round {Math.max(1, Math.ceil(progress * 5))}/5</div>
       </div>
-      <div className="h-1 rounded-full bg-background overflow-hidden mb-2">
-        <div className="h-full bg-gradient-to-r from-primary to-destructive transition-all" style={{ width: `${progress * 100}%` }} />
+
+      {/* Battlefield arena */}
+      <div
+        className="relative h-44 w-full overflow-hidden"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 25% 50%, oklch(0.32 0.05 25 / 0.6), transparent 55%), radial-gradient(circle at 75% 50%, oklch(0.32 0.05 250 / 0.6), transparent 55%), linear-gradient(180deg, oklch(0.16 0.02 30), oklch(0.10 0.02 30))",
+        }}
+      >
+        {/* Grid streetscape */}
+        <svg className="absolute inset-0 w-full h-full opacity-30" preserveAspectRatio="none" viewBox="0 0 100 100">
+          <defs>
+            <pattern id="streetGrid" width="10" height="10" patternUnits="userSpaceOnUse">
+              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="oklch(0.7 0.05 30)" strokeWidth="0.2" />
+            </pattern>
+          </defs>
+          <rect width="100" height="100" fill="url(#streetGrid)" />
+          {/* Center divider — no-man's-land */}
+          <line x1="50" y1="0" x2="50" y2="100" stroke="oklch(0.82 0.17 90 / 0.4)" strokeWidth="0.4" strokeDasharray="2 2" />
+          {/* Cover boxes */}
+          <rect x="22" y="18" width="6" height="6" fill="oklch(0.4 0.04 30 / 0.6)" stroke="oklch(0.7 0.05 30 / 0.4)" strokeWidth="0.2" />
+          <rect x="22" y="76" width="6" height="6" fill="oklch(0.4 0.04 30 / 0.6)" stroke="oklch(0.7 0.05 30 / 0.4)" strokeWidth="0.2" />
+          <rect x="72" y="18" width="6" height="6" fill="oklch(0.4 0.04 250 / 0.6)" stroke="oklch(0.7 0.05 250 / 0.4)" strokeWidth="0.2" />
+          <rect x="72" y="76" width="6" height="6" fill="oklch(0.4 0.04 250 / 0.6)" stroke="oklch(0.7 0.05 250 / 0.4)" strokeWidth="0.2" />
+        </svg>
+
+        {/* Side labels */}
+        <div className="absolute top-1 left-2 text-[9px] font-black uppercase tracking-widest text-destructive/90 drop-shadow">{home}</div>
+        <div className="absolute top-1 right-2 text-[9px] font-black uppercase tracking-widest text-sky-400 drop-shadow">{away}</div>
+
+        {/* Gang member markers (kills/shots on the map) */}
+        {shots.map((s) => (
+          <div
+            key={`${s.team}-${s.t}`}
+            className="absolute -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${s.x}%`, top: `${s.y}%` }}
+          >
+            <span
+              className={`block h-2 w-2 rounded-full ${s.team === "h" ? "bg-destructive" : "bg-sky-400"}`}
+              style={{
+                boxShadow: s.team === "h"
+                  ? "0 0 8px oklch(0.6 0.22 25), 0 0 16px oklch(0.6 0.22 25 / 0.6)"
+                  : "0 0 8px oklch(0.65 0.18 250), 0 0 16px oklch(0.65 0.18 250 / 0.6)",
+              }}
+            />
+          </div>
+        ))}
+
+        {/* Muzzle flash burst on score change */}
+        {muzzle && (
+          <div
+            key={muzzle.key}
+            className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{
+              left: muzzle.side === "h" ? "20%" : "75%",
+              animation: "flash 420ms ease-out forwards",
+            }}
+          >
+            <div
+              className="h-20 w-20 rounded-full blur-xl"
+              style={{ background: muzzle.side === "h" ? "oklch(0.85 0.22 60)" : "oklch(0.85 0.20 230)" }}
+            />
+          </div>
+        )}
+
+        {/* Scoreboard */}
+        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 rounded-md bg-black/70 border border-primary/50 backdrop-blur-sm">
+          <span className="text-destructive font-mono font-black text-lg tabular-nums">{tickScore.h}</span>
+          <span className="text-[9px] uppercase tracking-widest text-primary">KILLS</span>
+          <span className="text-sky-400 font-mono font-black text-lg tabular-nums">{tickScore.a}</span>
+        </div>
       </div>
-      <div className="space-y-1 min-h-[64px]">
-        {feed.length === 0 && <div className="text-[10px] text-muted-foreground">Gangs entering site…</div>}
-        {feed.map((line, i) => (
-          <div key={i} className="text-[11px] text-foreground/90 animate-fade-in">{line}</div>
+
+      {/* Progress bar — round clock */}
+      <div className="h-1 bg-black">
+        <div className="h-full bg-gradient-to-r from-destructive via-primary to-sky-400 transition-all" style={{ width: `${progress * 100}%` }} />
+      </div>
+
+      {/* Kill feed (sportybet-style ticker) */}
+      <div className="bg-[oklch(0.10_0.02_30)] divide-y divide-border/30">
+        {feed.length === 0 && (
+          <div className="px-3 py-2 text-[10px] text-muted-foreground italic">Gangs taking positions…</div>
+        )}
+        {feed.map((s) => (
+          <div key={`feed-${s.team}-${s.t}`} className="flex items-center gap-2 px-3 py-1.5 text-[11px] animate-fade-in">
+            <span
+              className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${s.team === "h" ? "bg-destructive/20 text-destructive border border-destructive/40" : "bg-sky-500/20 text-sky-400 border border-sky-500/40"}`}
+            >
+              {s.team === "h" ? home : away}
+            </span>
+            <span className="text-foreground/85 truncate">— {s.line}</span>
+            <span className="ml-auto text-[9px] font-mono text-muted-foreground">+1</span>
+          </div>
         ))}
       </div>
     </div>
