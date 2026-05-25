@@ -195,9 +195,9 @@ function VirtualRoundCard({ match, animSec }: { match: MatchRow & { lock_time?: 
   const isPicked = (oddId: string) => selections.some((s) => s.odd_id === oddId);
   const hasThisRound = selections.some((s) => s.match_id === match.id);
 
-  // Virtual matches only support Win / Draw / Lose. Filter out any legacy markets.
-  const allowed = (n: string) => /win|1x2|draw|lose/i.test(n) && !/correct\s*score|total|first\s*blood/i.test(n);
-  const markets = [...(match.markets ?? [])].filter((m) => allowed(m.name) && m.is_open !== false || /win|1x2/i.test(m.name));
+  // Virtual matches only support Win / Draw / Lose. Hide any legacy markets.
+  const hideMk = (n: string) => /correct\s*score|total|first\s*blood/i.test(n);
+  const markets = [...(match.markets ?? [])].filter((m) => !hideMk(m.name));
 
   function pick(mk: any, o: any) {
     if (locked) return;
