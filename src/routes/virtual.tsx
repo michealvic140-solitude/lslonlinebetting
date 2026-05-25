@@ -55,8 +55,8 @@ function VirtualPage() {
     };
     load();
     const t = setInterval(load, 1000);
-    // Fallback ping while signed in, in case the scheduled backend tick lags.
-    const ping = setInterval(() => { supabase.rpc("virtual_tick").then(() => {}, () => {}); }, 8000);
+    // Fast fallback ping so locking + ending isn't delayed by the 60s cron.
+    const ping = setInterval(() => { supabase.rpc("virtual_tick").then(() => {}, () => {}); }, 3000);
     supabase.rpc("virtual_tick").then(() => {}, () => {});
     const ch = supabase.channel("virtual-rounds-v2")
       .on("postgres_changes", { event: "*", schema: "public", table: "matches", filter: "is_virtual=eq.true" }, load)
