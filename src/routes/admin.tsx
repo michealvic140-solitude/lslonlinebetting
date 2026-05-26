@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Shield, Users, Trophy, Coins, Megaphone, Settings as SettingsIcon, Ticket, AlertTriangle,
   Calendar, Tag, Image as ImageIcon, BarChart3, History, Send, Plus, Trash2, Pencil, ChevronRight, ChevronLeft, Wallet, ListOrdered, Sparkles, ClipboardList, Lock, Pause, Play, Check, X, MessageSquare, Eye, RotateCw, Copy, Globe, MapPin, Smartphone, Clock, Filter,
-  Dice5,
+  Dice5, LogOut,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import lslLogo from "@/assets/lsl-logo.png";
@@ -185,19 +185,23 @@ function AdminPage() {
 async function logAudit(action: string, target_type: string, target_id?: string, metadata?: any) {
   const u = (await supabase.auth.getUser()).data.user;
   if (!u) return;
-  // Best-effort enrichment: where (route, user agent), and target user resolution
   const enriched: any = {
     ...(metadata ?? {}),
-    actor_email: u.email ?? null,
     user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
     route: typeof window !== "undefined" ? window.location.pathname + window.location.search : null,
     origin: typeof window !== "undefined" ? window.location.origin : null,
     locale: typeof navigator !== "undefined" ? navigator.language : null,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    timestamp_iso: new Date().toISOString(),
+    source: "admin_panel",
   };
   if (target_type === "user" && target_id) enriched.target_user_id = target_id;
-  await supabase.from("audit_logs").insert({ actor_id: u.id, action, target_type, target_id, metadata: enriched });
+  const { error } = await (supabase as any).rpc("admin_log_action", {
+    _action: action,
+    _target_type: target_type,
+    _target_id: target_id ?? null,
+    _metadata: enriched,
+  });
+  if (error) console.warn("audit log failed", error.message);
 }
 
 function AdminTab({ icon: Icon, label, count = 0 }: { icon: any; label: string; count?: number }) {
@@ -615,6 +619,15 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
     });
     toast.success("Applied"); setTokenDelta(0); setTokenReason("");
   }
+  async function kickUser() {
+    if (!isAdmin) return;
+    if (!actionReason.trim()) { toast.error("Reason is required to kick a user."); return; }
+    const { error } = await (supabase as any).rpc("admin_kick_user", { _user_id: user.id, _reason: actionReason.trim() });
+    if (error) { toast.error(error.message); return; }
+    toast.success("User kicked — their active browser will sign out.");
+    setActionReason("");
+    onClose();
+  }
   async function flagAction(field: "is_banned" | "is_muted" | "is_restricted", val: boolean, reasonField: string) {
     if (val && !actionReason) { toast.error("Reason is required"); return; }
     const patch: any = { [field]: val, [reasonField]: val ? actionReason : null };
@@ -771,6 +784,11 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
                 <Button variant={user.is_restricted ? "outline" : "destructive"} className="h-11 justify-start" onClick={() => flagAction("is_restricted", !user.is_restricted, "restrict_reason")}>
                   <AlertTriangle className="h-4 w-4 mr-2" />{user.is_restricted ? "Allow betting" : "Restrict betting"}
                 </Button>
+                {isAdmin && (
+                  <Button variant="destructive" className="h-11 justify-start" onClick={kickUser}>
+                    <LogOut className="h-4 w-4 mr-2" />Kick user session
+                  </Button>
+                )}
               </div>
             </TabsContent>
 
