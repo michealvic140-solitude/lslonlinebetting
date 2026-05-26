@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Shield, Users, Trophy, Coins, Megaphone, Settings as SettingsIcon, Ticket, AlertTriangle,
   Calendar, Tag, Image as ImageIcon, BarChart3, History, Send, Plus, Trash2, Pencil, ChevronRight, ChevronLeft, Wallet, ListOrdered, Sparkles, ClipboardList, Lock, Pause, Play, Check, X, MessageSquare, Eye, RotateCw, Copy, Globe, MapPin, Smartphone, Clock, Filter,
-  Dice5,
+  Dice5, LogOut,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import lslLogo from "@/assets/lsl-logo.png";
@@ -185,19 +185,23 @@ function AdminPage() {
 async function logAudit(action: string, target_type: string, target_id?: string, metadata?: any) {
   const u = (await supabase.auth.getUser()).data.user;
   if (!u) return;
-  // Best-effort enrichment: where (route, user agent), and target user resolution
   const enriched: any = {
     ...(metadata ?? {}),
-    actor_email: u.email ?? null,
     user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
     route: typeof window !== "undefined" ? window.location.pathname + window.location.search : null,
     origin: typeof window !== "undefined" ? window.location.origin : null,
     locale: typeof navigator !== "undefined" ? navigator.language : null,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    timestamp_iso: new Date().toISOString(),
+    source: "admin_panel",
   };
   if (target_type === "user" && target_id) enriched.target_user_id = target_id;
-  await supabase.from("audit_logs").insert({ actor_id: u.id, action, target_type, target_id, metadata: enriched });
+  const { error } = await (supabase as any).rpc("admin_log_action", {
+    _action: action,
+    _target_type: target_type,
+    _target_id: target_id ?? null,
+    _metadata: enriched,
+  });
+  if (error) console.warn("audit log failed", error.message);
 }
 
 function AdminTab({ icon: Icon, label, count = 0 }: { icon: any; label: string; count?: number }) {
