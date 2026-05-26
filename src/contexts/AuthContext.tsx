@@ -36,6 +36,7 @@ export interface Profile {
   profile_banner_url?: string | null;
   profile_title?: string | null;
   showcase_achievement_ids?: string[];
+  force_logout_at?: string | null;
 }
 
 interface AuthCtx {
@@ -91,13 +92,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         (payload) => {
           const next = payload.new as Profile;
           setProfile((prev) => ({ ...(prev as Profile), ...next }));
-          // Auto kick-out if user just got banned
-          if (next?.is_banned) {
+          // Auto kick-out if user just got banned or an admin forces a session reset.
+          const wasKicked = !!next?.force_logout_at && next.force_logout_at !== (profile as any)?.force_logout_at;
+          if (next?.is_banned || wasKicked) {
             supabase.auth.signOut().then(() => {
-              if (typeof window !== "undefined") window.location.href = "/login?banned=1";
+              if (typeof window !== "undefined") window.location.href = next?.is_banned ? "/login?banned=1" : "/login?kicked=1";
             });
           }
         })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "token_transactions", filter: `user_id=eq.${user.id}` },
+        () => loadUserData(user.id))
       .on("postgres_changes", { event: "*", schema: "public", table: "user_roles", filter: `user_id=eq.${user.id}` },
         () => loadUserData(user.id))
       .subscribe();
