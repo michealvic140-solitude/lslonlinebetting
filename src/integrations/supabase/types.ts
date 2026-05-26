@@ -1219,6 +1219,7 @@ export type Database = {
           discord_username: string | null
           email: string
           emblem_status: string | null
+          force_logout_at: string | null
           full_name: string
           gang_emblem_url: string | null
           gang_name: string | null
@@ -1256,6 +1257,7 @@ export type Database = {
           discord_username?: string | null
           email: string
           emblem_status?: string | null
+          force_logout_at?: string | null
           full_name: string
           gang_emblem_url?: string | null
           gang_name?: string | null
@@ -1293,6 +1295,7 @@ export type Database = {
           discord_username?: string | null
           email?: string
           emblem_status?: string | null
+          force_logout_at?: string | null
           full_name?: string
           gang_emblem_url?: string | null
           gang_name?: string | null
@@ -2441,7 +2444,20 @@ export type Database = {
           match_name: string
         }[]
       }
+      admin_kick_user: {
+        Args: { _reason?: string; _user_id: string }
+        Returns: Json
+      }
       admin_lock_virtual_round: { Args: { _match_id: string }; Returns: Json }
+      admin_log_action: {
+        Args: {
+          _action: string
+          _metadata?: Json
+          _target_id?: string
+          _target_type?: string
+        }
+        Returns: Json
+      }
       admin_mark_task_completed: {
         Args: { _task_id: string }
         Returns: undefined
