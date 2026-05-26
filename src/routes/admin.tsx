@@ -619,6 +619,15 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
     });
     toast.success("Applied"); setTokenDelta(0); setTokenReason("");
   }
+  async function kickUser() {
+    if (!isAdmin) return;
+    if (!actionReason.trim()) { toast.error("Reason is required to kick a user."); return; }
+    const { error } = await (supabase as any).rpc("admin_kick_user", { _user_id: user.id, _reason: actionReason.trim() });
+    if (error) { toast.error(error.message); return; }
+    toast.success("User kicked — their active browser will sign out.");
+    setActionReason("");
+    onClose();
+  }
   async function flagAction(field: "is_banned" | "is_muted" | "is_restricted", val: boolean, reasonField: string) {
     if (val && !actionReason) { toast.error("Reason is required"); return; }
     const patch: any = { [field]: val, [reasonField]: val ? actionReason : null };
@@ -775,6 +784,11 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
                 <Button variant={user.is_restricted ? "outline" : "destructive"} className="h-11 justify-start" onClick={() => flagAction("is_restricted", !user.is_restricted, "restrict_reason")}>
                   <AlertTriangle className="h-4 w-4 mr-2" />{user.is_restricted ? "Allow betting" : "Restrict betting"}
                 </Button>
+                {isAdmin && (
+                  <Button variant="destructive" className="h-11 justify-start" onClick={kickUser}>
+                    <LogOut className="h-4 w-4 mr-2" />Kick user session
+                  </Button>
+                )}
               </div>
             </TabsContent>
 
