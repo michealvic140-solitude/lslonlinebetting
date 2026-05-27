@@ -337,7 +337,9 @@ const KILL_LINES = [
   "scoped from the tower",
 ];
 
-type Shot = { t: number; team: "h" | "a"; x: number; y: number; line: string };
+type Kill = { t: number; team: "h" | "a"; x: number; y: number; line: string };
+type Shooter = { id: string; team: "h" | "a"; x: number; y: number; dead: boolean };
+type Tracer = { id: number; team: "h" | "a"; x1: number; y1: number; x2: number; y2: number; born: number };
 
 // Deterministic pseudo-random so all clients see the same shot positions per match.
 function seeded(seed: string, n: number) {
@@ -350,10 +352,58 @@ function seeded(seed: string, n: number) {
 function LiveMatchTicker({ match, animSec }: { match: MatchRow & { lock_time?: string | null }; animSec: number }) {
   const lockMs = (match as any).lock_time ? new Date((match as any).lock_time).getTime() : Date.now();
   const endMs = lockMs + animSec * 1000;
-  const [shots, setShots] = useState<Shot[]>([]);
+  const [kills, setKills] = useState<Kill[]>([]);
+  const [shooters, setShooters] = useState<Shooter[]>([]);
+  const [tracers, setTracers] = useState<Tracer[]>([]);
   const [tickScore, setTickScore] = useState<{ h: number; a: number }>({ h: 0, a: 0 });
   const [progress, setProgress] = useState(0);
   const [muzzle, setMuzzle] = useState<{ side: "h" | "a"; key: number } | null>(null);
+
+  // Spawn the squad once per match. 6v6 gang battle.
+  useEffect(() => {
+    const squad: Shooter[] = [];
+    const N = 6;
+    for (let i = 0; i < N; i++) {
+      squad.push({
+        id: `h${i}`, team: "h", dead: false,
+        x: 6 + seeded(match.id + "sh-x", i) * 30,
+        y: 14 + seeded(match.id + "sh-y", i) * 72,
+      });
+    }
+    for (let i = 0; i < N; i++) {
+      squad.push({
+        id: `a${i}`, team: "a", dead: false,
+        x: 64 + seeded(match.id + "sa-x", i) * 30,
+        y: 14 + seeded(match.id + "sa-y", i) * 72,
+      });
+    }
+    setShooters(squad);
+    setTracers([]);
+  }, [match.id]);
+
+  // Movement loop: shooters drift toward cover and weave; runs at ~60fps via CSS transitions.
+  useEffect(() => {
+    const drift = () => {
+      const t = serverNow() / 1000;
+      setShooters((prev) => prev.map((s, i) => {
+        if (s.dead) return s;
+        const phase = seeded(match.id + s.id, 1) * Math.PI * 2;
+        const ampX = 6 + seeded(match.id + s.id, 2) * 5;
+        const ampY = 6 + seeded(match.id + s.id, 3) * 6;
+        const speed = 0.35 + seeded(match.id + s.id, 4) * 0.6;
+        const baseX = s.team === "h" ? 10 + (i % 6) * 6 : 64 + (i % 6) * 6;
+        const baseY = 18 + ((i * 11) % 60);
+        return {
+          ...s,
+          x: Math.max(3, Math.min(47, baseX + Math.cos(phase + t * speed) * ampX)),
+          y: Math.max(8, Math.min(92, baseY + Math.sin(phase + t * speed * 0.8) * ampY)),
+        };
+      }));
+    };
+    drift();
+    const id = setInterval(drift, 220);
+    return () => clearInterval(id);
+  }, [match.id]);
 
   useEffect(() => {
     const tick = () => {
@@ -363,7 +413,7 @@ function LiveMatchTicker({ match, animSec }: { match: MatchRow & { lock_time?: s
       const fh = match.home_score ?? 0;
       const fa = match.away_score ?? 0;
       setTickScore({ h: fh, a: fa });
-      const list: Shot[] = [];
+      const list: Kill[] = [];
       for (let i = 0; i < fh; i++) {
         list.push({
           t: i, team: "h",
@@ -380,12 +430,50 @@ function LiveMatchTicker({ match, animSec }: { match: MatchRow & { lock_time?: s
           line: KILL_LINES[Math.floor(seeded(match.id + "al", i) * KILL_LINES.length)],
         });
       }
-      setShots(list);
+      setKills(list);
     };
     tick();
     const t = setInterval(tick, 250);
     return () => clearInterval(t);
   }, [lockMs, endMs, match.id, match.status, match.home_score, match.away_score]);
+
+  // Continuous bullet tracers — random shooter-to-enemy shots, only living shooters fire.
+  useEffect(() => {
+    let counter = 1;
+    const fire = () => {
+      setShooters((alive) => {
+        const reds = alive.filter((s) => s.team === "h" && !s.dead);
+        const blues = alive.filter((s) => s.team === "a" && !s.dead);
+        if (reds.length === 0 || blues.length === 0) return alive;
+        const burst = 1 + Math.floor(Math.random() * 2);
+        const next: Tracer[] = [];
+        for (let i = 0; i < burst; i++) {
+          const fromRed = Math.random() < 0.5;
+          const from = fromRed ? reds[Math.floor(Math.random() * reds.length)] : blues[Math.floor(Math.random() * blues.length)];
+          const to   = fromRed ? blues[Math.floor(Math.random() * blues.length)] : reds[Math.floor(Math.random() * reds.length)];
+          next.push({ id: counter++, team: from.team, x1: from.x, y1: from.y, x2: to.x, y2: to.y, born: Date.now() });
+        }
+        setTracers((t) => [...t.slice(-12), ...next]);
+        return alive;
+      });
+    };
+    const id = setInterval(fire, 380);
+    const sweep = setInterval(() => setTracers((t) => t.filter((tr) => Date.now() - tr.born < 700)), 220);
+    return () => { clearInterval(id); clearInterval(sweep); };
+  }, [match.id]);
+
+  // Mark shooters dead as kill count rises — last-N shooters of the LOSING team.
+  useEffect(() => {
+    setShooters((prev) => {
+      // For each team, the OTHER team's score = kills against this team
+      const homeDeadCount = Math.min(6, tickScore.a);
+      const awayDeadCount = Math.min(6, tickScore.h);
+      const hReds = prev.filter((s) => s.team === "h");
+      const hBlues = prev.filter((s) => s.team === "a");
+      const markDead = (arr: Shooter[], n: number) => arr.map((s, i) => ({ ...s, dead: i < n }));
+      return [...markDead(hReds, homeDeadCount), ...markDead(hBlues, awayDeadCount)];
+    });
+  }, [tickScore.h, tickScore.a]);
 
   // Muzzle-flash burst whenever the score ticks up
   const prev = (typeof window !== "undefined") ? (window as any).__lslPrev ?? ((window as any).__lslPrev = new Map<string, { h: number; a: number }>()) : null;
@@ -401,7 +489,9 @@ function LiveMatchTicker({ match, animSec }: { match: MatchRow & { lock_time?: s
 
   const home = match.home_team?.name ?? "Home";
   const away = match.away_team?.name ?? "Away";
-  const feed = [...shots].sort((a, b) => b.t - a.t).slice(0, 5);
+  const feed = [...kills].sort((a, b) => b.t - a.t).slice(0, 5);
+  const aliveH = shooters.filter((s) => s.team === "h" && !s.dead).length;
+  const aliveA = shooters.filter((s) => s.team === "a" && !s.dead).length;
 
   return (
     <div className="mt-3 rounded-lg overflow-hidden border border-destructive/40 bg-[oklch(0.18_0.02_30)]">
@@ -411,7 +501,7 @@ function LiveMatchTicker({ match, animSec }: { match: MatchRow & { lock_time?: s
           <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
           Live Gang War
         </div>
-        <div className="text-[10px] font-mono opacity-90">Round {Math.max(1, Math.ceil(progress * 5))}/5</div>
+        <div className="text-[10px] font-mono opacity-90">Alive {aliveH}v{aliveA}</div>
       </div>
 
       {/* Battlefield arena */}
@@ -437,27 +527,66 @@ function LiveMatchTicker({ match, animSec }: { match: MatchRow & { lock_time?: s
           <rect x="22" y="76" width="6" height="6" fill="oklch(0.4 0.04 30 / 0.6)" stroke="oklch(0.7 0.05 30 / 0.4)" strokeWidth="0.2" />
           <rect x="72" y="18" width="6" height="6" fill="oklch(0.4 0.04 250 / 0.6)" stroke="oklch(0.7 0.05 250 / 0.4)" strokeWidth="0.2" />
           <rect x="72" y="76" width="6" height="6" fill="oklch(0.4 0.04 250 / 0.6)" stroke="oklch(0.7 0.05 250 / 0.4)" strokeWidth="0.2" />
+          {/* Live bullet tracers */}
+          {tracers.map((tr) => (
+            <line
+              key={tr.id}
+              x1={tr.x1} y1={tr.y1} x2={tr.x2} y2={tr.y2}
+              stroke={tr.team === "h" ? "oklch(0.78 0.22 30)" : "oklch(0.78 0.18 240)"}
+              strokeWidth="0.45"
+              strokeLinecap="round"
+              opacity="0.95"
+            >
+              <animate attributeName="opacity" from="1" to="0" dur="0.6s" fill="freeze" />
+            </line>
+          ))}
         </svg>
 
         {/* Side labels */}
         <div className="absolute top-1 left-2 text-[9px] font-black uppercase tracking-widest text-destructive/90 drop-shadow">{home}</div>
         <div className="absolute top-1 right-2 text-[9px] font-black uppercase tracking-widest text-sky-400 drop-shadow">{away}</div>
 
-        {/* Gang member markers (kills/shots on the map) */}
-        {shots.map((s) => (
+        {/* Living shooters — drifting around with weapons */}
+        {shooters.map((s) => (
           <div
-            key={`${s.team}-${s.t}`}
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: `${s.x}%`, top: `${s.y}%` }}
+            key={s.id}
+            className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            style={{
+              left: `${s.x}%`,
+              top: `${s.y}%`,
+              transition: "left 240ms linear, top 240ms linear, opacity 200ms",
+              opacity: s.dead ? 0.55 : 1,
+            }}
           >
-            <span
-              className={`block h-2 w-2 rounded-full ${s.team === "h" ? "bg-destructive" : "bg-sky-400"}`}
-              style={{
-                boxShadow: s.team === "h"
-                  ? "0 0 8px oklch(0.6 0.22 25), 0 0 16px oklch(0.6 0.22 25 / 0.6)"
-                  : "0 0 8px oklch(0.65 0.18 250), 0 0 16px oklch(0.65 0.18 250 / 0.6)",
-              }}
-            />
+            {s.dead ? (
+              <span className={`block text-[11px] font-black leading-none ${s.team === "h" ? "text-destructive/80" : "text-sky-400/80"}`}>×</span>
+            ) : (
+              <span className="relative block">
+                <span
+                  className={`block h-2.5 w-2.5 rounded-full ${s.team === "h" ? "bg-destructive" : "bg-sky-400"}`}
+                  style={{
+                    boxShadow: s.team === "h"
+                      ? "0 0 6px oklch(0.65 0.22 25), 0 0 12px oklch(0.65 0.22 25 / 0.6)"
+                      : "0 0 6px oklch(0.7 0.18 250), 0 0 12px oklch(0.7 0.18 250 / 0.6)",
+                  }}
+                />
+                {/* tiny gun barrel pointing toward enemy half */}
+                <span
+                  className={`absolute top-1/2 -translate-y-1/2 h-[2px] w-2.5 rounded-sm ${s.team === "h" ? "bg-destructive/80 left-1/2" : "bg-sky-400/80 right-1/2"}`}
+                />
+              </span>
+            )}
+          </div>
+        ))}
+
+        {/* Kill markers — "x" on the spot where a shooter went down */}
+        {kills.map((k) => (
+          <div
+            key={`kx-${k.team}-${k.t}`}
+            className="absolute -translate-x-1/2 -translate-y-1/2 text-[10px] font-black pointer-events-none animate-fade-in"
+            style={{ left: `${k.x}%`, top: `${k.y}%`, color: k.team === "h" ? "oklch(0.85 0.18 250 / 0.55)" : "oklch(0.85 0.22 25 / 0.55)" }}
+          >
+            ×
           </div>
         ))}
 
