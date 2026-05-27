@@ -121,6 +121,7 @@ export type Database = {
           virtual_concurrent_rounds: number
           virtual_cycle_last_tick: string | null
           virtual_cycle_running: boolean
+          virtual_lock_window_seconds: number
           virtual_max_payout: number | null
           virtual_max_score: number
           virtual_max_selections: number
@@ -189,6 +190,7 @@ export type Database = {
           virtual_concurrent_rounds?: number
           virtual_cycle_last_tick?: string | null
           virtual_cycle_running?: boolean
+          virtual_lock_window_seconds?: number
           virtual_max_payout?: number | null
           virtual_max_score?: number
           virtual_max_selections?: number
@@ -257,6 +259,7 @@ export type Database = {
           virtual_concurrent_rounds?: number
           virtual_cycle_last_tick?: string | null
           virtual_cycle_running?: boolean
+          virtual_lock_window_seconds?: number
           virtual_max_payout?: number | null
           virtual_max_score?: number
           virtual_max_selections?: number
