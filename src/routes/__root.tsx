@@ -157,6 +157,7 @@ import { BanGate } from "@/components/BanGate";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
 import { PopupAd } from "@/components/PopupAd";
 import { BetSlipFab } from "@/components/BetSlip";
+import { RouteProgress } from "@/components/RouteProgress";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
@@ -181,6 +182,7 @@ function RootComponent() {
             <BanGate />
             <PopupAd />
             <BetSlipFab />
+            <RouteProgress />
             <Toaster />
           </ConfirmProvider>
         </BetSlipProvider>
