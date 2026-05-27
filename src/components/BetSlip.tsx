@@ -53,26 +53,32 @@ function FabShell({ onClick, count }: { onClick: () => void; count: number }) {
 function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { selections, remove, clear, totalOdds, stake, setStake } = useBetSlip();
   const { user, profile, refresh } = useAuth();
-  const [minStake, setMinStake] = useState(2_000_000);
-  const [maxPayout, setMaxPayout] = useState(100_000_000);
+  const [realMinStake, setRealMinStake] = useState(2_000_000);
+  const [realMaxPayout, setRealMaxPayout] = useState(100_000_000);
+  const [virtMinStake, setVirtMinStake] = useState(100_000);
+  const [virtMaxPayout, setVirtMaxPayout] = useState(100_000_000);
   const [submitting, setSubmitting] = useState(false);
   const [placed, setPlaced] = useState<any>(null);
   const confirm = useConfirm();
   const nav = useNavigate();
 
   useEffect(() => {
-    supabase.from("app_settings").select("min_stake,max_payout").eq("id", 1).maybeSingle()
+    supabase.from("app_settings").select("min_stake,max_payout,virtual_min_stake,virtual_max_payout").eq("id", 1).maybeSingle()
       .then(({ data }) => {
-        if (data?.min_stake) setMinStake(Number(data.min_stake));
-        if ((data as any)?.max_payout) setMaxPayout(Number((data as any).max_payout));
+        if (data?.min_stake) setRealMinStake(Number(data.min_stake));
+        if ((data as any)?.max_payout) setRealMaxPayout(Number((data as any).max_payout));
+        if ((data as any)?.virtual_min_stake) setVirtMinStake(Number((data as any).virtual_min_stake));
+        if ((data as any)?.virtual_max_payout) setVirtMaxPayout(Number((data as any).virtual_max_payout));
       });
   }, [open]);
 
+  const isVirtualTicket = selections.length > 0 && selections.every((s) => s.is_virtual);
+  const isMixedTicket = selections.some((s) => s.is_virtual) && selections.some((s) => !s.is_virtual);
+  const minStake = isVirtualTicket ? virtMinStake : realMinStake;
+  const maxPayout = isVirtualTicket ? virtMaxPayout : realMaxPayout;
   const rawPayout = Math.floor(stake * totalOdds);
   const payout = Math.min(rawPayout, maxPayout);
   const capped = rawPayout > maxPayout;
-  const isVirtualTicket = selections.length > 0 && selections.every((s) => s.is_virtual);
-  const isMixedTicket = selections.some((s) => s.is_virtual) && selections.some((s) => !s.is_virtual);
 
   async function place() {
     if (!user || !profile) { nav({ to: "/login" }); return; }
