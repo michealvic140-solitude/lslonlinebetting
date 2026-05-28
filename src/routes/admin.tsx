@@ -91,6 +91,53 @@ function AdminPage() {
             <Badge variant="outline" className={`ml-auto ${isAdmin ? "border-accent/50 text-accent" : "border-primary/50 text-primary"}`}>
               {isAdmin ? "Admin" : "Moderator"}
             </Badge>
+            {isAdmin && (
+              <div className="flex items-center gap-1 w-full sm:w-auto sm:ml-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-[11px]"
+                  onClick={() => { if (typeof window !== "undefined") window.location.reload(); }}
+                  title="Reload this admin page"
+                >
+                  ⟳ Reload
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-[11px]"
+                  onClick={async () => {
+                    try {
+                      if ("serviceWorker" in navigator) {
+                        const regs = await navigator.serviceWorker.getRegistrations();
+                        await Promise.all(regs.map((r) => r.unregister()));
+                      }
+                      if (typeof caches !== "undefined") {
+                        const keys = await caches.keys();
+                        await Promise.all(keys.map((k) => caches.delete(k)));
+                      }
+                    } catch {}
+                    if (typeof window !== "undefined") window.location.reload();
+                  }}
+                  title="Clear caches & service workers, then reload"
+                >
+                  ⚡ Hard refresh
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="text-[11px]"
+                  onClick={async () => {
+                    const { error } = await supabase.from("app_settings").update({ force_reload_at: new Date().toISOString() }).eq("id", 1);
+                    if (error) { (await import("sonner")).toast.error(error.message); return; }
+                    (await import("sonner")).toast.success("Reload broadcast sent to every active browser.");
+                  }}
+                  title="Force every logged-in browser to reload right now"
+                >
+                  📣 Broadcast reload
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
