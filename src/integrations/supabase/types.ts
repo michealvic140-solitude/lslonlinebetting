@@ -83,6 +83,7 @@ export type Database = {
           daily_login_max_streak: number
           emblem_auto_approve: boolean
           exposure_warn_pct: number
+          force_reload_at: string | null
           friends_enabled: boolean
           gift_daily_limit: number
           gift_enabled: boolean
@@ -153,6 +154,7 @@ export type Database = {
           daily_login_max_streak?: number
           emblem_auto_approve?: boolean
           exposure_warn_pct?: number
+          force_reload_at?: string | null
           friends_enabled?: boolean
           gift_daily_limit?: number
           gift_enabled?: boolean
@@ -223,6 +225,7 @@ export type Database = {
           daily_login_max_streak?: number
           emblem_auto_approve?: boolean
           exposure_warn_pct?: number
+          force_reload_at?: string | null
           friends_enabled?: boolean
           gift_daily_limit?: number
           gift_enabled?: boolean
