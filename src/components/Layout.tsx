@@ -34,6 +34,26 @@ function useVirtualHeartbeat() {
   }, [user]);
 }
 
+// Admin "Broadcast reload" — every active browser refreshes when force_reload_at bumps.
+function useForceReloadBroadcast() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const KEY = "lsl-last-force-reload";
+    let seen = localStorage.getItem(KEY) ?? "";
+    supabase.from("app_settings").select("force_reload_at").eq("id", 1).maybeSingle().then(({ data }) => {
+      const v = (data as any)?.force_reload_at as string | null;
+      if (v && !seen) { localStorage.setItem(KEY, v); seen = v; }
+    });
+    const ch = supabase.channel("force-reload")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "app_settings" }, (p: any) => {
+        const v = p.new?.force_reload_at as string | null;
+        if (v && v !== seen) { localStorage.setItem(KEY, v); window.location.reload(); }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+}
+
 function useChatUnread() {
   const { user } = useAuth();
   const loc = useLocation();
@@ -64,6 +84,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
   const chatUnread = useChatUnread();
   useRegisterServiceWorker();
   useVirtualHeartbeat();
+  useForceReloadBroadcast();
 
   return (
     <div className="relative min-h-screen">
