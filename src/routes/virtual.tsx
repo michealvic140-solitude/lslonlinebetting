@@ -54,12 +54,15 @@ function VirtualPage() {
       });
     };
     load();
-    const t = setInterval(load, 1000);
-    // Fast fallback ping so locking + ending isn't delayed by the 60s cron.
-    const ping = setInterval(() => { supabase.rpc("virtual_tick").then(() => {}, () => {}); }, 3000);
+    // Realtime is the primary update channel — poll only as a safety net.
+    const t = setInterval(load, 5000);
+    // Heartbeat so locking + new-round spawn never stalls when nobody is on the page.
+    const ping = setInterval(() => { supabase.rpc("virtual_tick").then(() => {}, () => {}); }, 4000);
     supabase.rpc("virtual_tick").then(() => {}, () => {});
-    const ch = supabase.channel("virtual-rounds-v2")
+    const ch = supabase.channel("virtual-rounds-v3")
       .on("postgres_changes", { event: "*", schema: "public", table: "matches", filter: "is_virtual=eq.true" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "markets" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "odds" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "app_settings" }, load)
       .subscribe();
     return () => { clearInterval(t); clearInterval(ping); supabase.removeChannel(ch); };
