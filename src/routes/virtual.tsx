@@ -34,6 +34,13 @@ function VirtualPage() {
   const [upcoming, setUpcoming] = useState<MatchRow[]>([]);
   const [recent, setRecent] = useState<MatchRow[]>([]);
   const [cycle, setCycle] = useState<{ running: boolean; animSec: number; durSec: number }>({ running: false, animSec: 30, durSec: 120 });
+  // Tick to re-evaluate which round/phase is active as lock_time passes,
+  // without waiting for a network round-trip.
+  const [, setClockTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setClockTick((n) => n + 1), 500);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -68,6 +75,47 @@ function VirtualPage() {
     return () => { clearInterval(t); clearInterval(ping); supabase.removeChannel(ch); };
   }, []);
 
+  // === Single-phase round selection ===
+  // Group all non-ended matches by virtual_round_id. Pick the most recent
+  // round and render it in exactly one phase (OPEN or PLAYING) so the UI
+  // never shows both sections at once while the server is mid-flip.
+  const active = (() => {
+    const all = [...upcoming, ...live].filter((m) => m.status !== "ended");
+    if (all.length === 0) return null;
+    const byRound = new Map<string, MatchRow[]>();
+    for (const m of all) {
+      const k = String((m as any).virtual_round_id ?? `solo-${m.id}`);
+      const arr = byRound.get(k) ?? [];
+      arr.push(m);
+      byRound.set(k, arr);
+    }
+    // Pick the round whose earliest lock_time is largest (newest batch).
+    let bestKey: string | null = null;
+    let bestStamp = -Infinity;
+    for (const [k, arr] of byRound) {
+      const stamp = Math.min(
+        ...arr.map((m) => {
+          const lt = (m as any).lock_time as string | null;
+          return lt ? new Date(lt).getTime() : 0;
+        }),
+      );
+      if (stamp > bestStamp) { bestStamp = stamp; bestKey = k; }
+    }
+    if (!bestKey) return null;
+    const matches = byRound.get(bestKey)!;
+    const earliestLock = Math.min(
+      ...matches.map((m) => {
+        const lt = (m as any).lock_time as string | null;
+        return lt ? new Date(lt).getTime() : 0;
+      }),
+    );
+    // Phase is decided purely by server-time vs lock_time. This stays
+    // stable even if individual match.status rows are flipped one-by-one
+    // by virtual_tick.
+    const phase: "open" | "playing" = serverNow() < earliestLock ? "open" : "playing";
+    return { matches, phase, lockMs: earliestLock };
+  })();
+
   return (
     <Layout>
       <PageShell tone="default">
@@ -86,32 +134,30 @@ function VirtualPage() {
             </div>
           </header>
 
-          {live.length === 0 && upcoming.length === 0 ? (
+          {!active ? (
             <Card className="glass p-8 text-center text-muted-foreground">
               <Dice5 className="h-10 w-10 mx-auto mb-3 opacity-50" />
               <p className="font-semibold">{cycle.running ? "Spinning up the next round…" : "No virtual rounds active right now."}</p>
               <p className="text-xs mt-1">{cycle.running ? "New round appears within seconds." : "Admin will start the cycle shortly."}</p>
             </Card>
           ) : (
-            <>
-              {upcoming.length > 0 && (
-                <section>
-                  <SectionTitle icon={Clock} label={`Open · stake before lock (${cycle.durSec / 60} min window)`} color="text-primary" />
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {upcoming.map((m) => <VirtualRoundCard key={m.id} match={m} animSec={cycle.animSec} />)}
-                  </div>
-                </section>
+            <section>
+              {active.phase === "open" ? (
+                <SectionTitle icon={Clock} label={`Open · stake before lock (${Math.round(cycle.durSec / 60)} min window)`} color="text-primary" />
+              ) : (
+                <SectionTitle icon={Flame} label="Playing out · watch live" color="text-destructive" />
               )}
-
-              {live.length > 0 && (
-                <section>
-                  <SectionTitle icon={Flame} label="Playing out · watch live" color="text-destructive" />
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {live.map((m) => <VirtualRoundCard key={m.id} match={m} animSec={cycle.animSec} />)}
-                  </div>
-                </section>
-              )}
-            </>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {active.matches.map((m) => (
+                  <VirtualRoundCard
+                    key={m.id}
+                    match={m}
+                    animSec={cycle.animSec}
+                    forcePhase={active.phase}
+                  />
+                ))}
+              </div>
+            </section>
           )}
 
           {recent.length > 0 && (
@@ -186,14 +232,17 @@ function useCountdown(target: string | null | undefined) {
   return { secs, mm, ss, done: secs <= 0 };
 }
 
-function VirtualRoundCard({ match, animSec }: { match: MatchRow & { lock_time?: string | null }; animSec: number }) {
+function VirtualRoundCard({ match, animSec, forcePhase }: { match: MatchRow & { lock_time?: string | null }; animSec: number; forcePhase?: "open" | "playing" }) {
   const { add, setOpen, selections } = useBetSlip();
   const home = match.home_team?.name ?? "Home";
   const away = match.away_team?.name ?? "Away";
   const lockTime = (match as any).lock_time as string | null;
   const cd = useCountdown(lockTime);
   const settled = match.status === "ended";
-  const playing = match.status === "live";
+  // Phase comes from the parent's round-wide decision so every card in a
+  // round flips together. This prevents the "OPEN + PLAYING shown at once"
+  // glitch while virtual_tick is mid-flipping individual match rows.
+  const playing = forcePhase ? forcePhase === "playing" && !settled : match.status === "live";
   const locked = settled || playing || cd.done;
   const isPicked = (oddId: string) => selections.some((s) => s.odd_id === oddId);
   const hasThisRound = selections.some((s) => s.match_id === match.id);
