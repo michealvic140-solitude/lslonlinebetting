@@ -974,6 +974,7 @@ export type Database = {
           status: Database["public"]["Enums"]["match_status"]
           updated_at: string
           virtual_first_blood_team_id: string | null
+          virtual_round_batch_id: string | null
           virtual_round_id: string | null
           winner_team_id: string | null
         }
@@ -1000,6 +1001,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["match_status"]
           updated_at?: string
           virtual_first_blood_team_id?: string | null
+          virtual_round_batch_id?: string | null
           virtual_round_id?: string | null
           winner_team_id?: string | null
         }
@@ -1026,6 +1028,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["match_status"]
           updated_at?: string
           virtual_first_blood_team_id?: string | null
+          virtual_round_batch_id?: string | null
           virtual_round_id?: string | null
           winner_team_id?: string | null
         }
@@ -2547,9 +2550,9 @@ export type Database = {
       redeem_promo_code: { Args: { _code: string }; Returns: Json }
       resolve_virtual_round: {
         Args: {
-          _away_score: number
-          _first_blood_team_id: string
-          _home_score: number
+          _away_score?: number
+          _first_blood_team_id?: string
+          _home_score?: number
           _match_id: string
         }
         Returns: Json
@@ -2562,6 +2565,7 @@ export type Database = {
         Args: { _approve: boolean; _id: string; _note?: string }
         Returns: undefined
       }
+      server_now: { Args: never; Returns: string }
       settle_pay_winning_bet: { Args: { _bet_id: string }; Returns: Json }
       user_cashout_bet: { Args: { _bet_id: string }; Returns: Json }
       verify_xp_consistency: { Args: { _user_id?: string }; Returns: Json }
@@ -2572,12 +2576,25 @@ export type Database = {
           home_score: number
         }[]
       }
-      virtual_score_for_match: {
-        Args: { _match_id: string; _max_score?: number }
-        Returns: {
-          away_score: number
-          home_score: number
-        }[]
+      virtual_score_for_match:
+        | {
+            Args: { _match_id: string }
+            Returns: {
+              away_score: number
+              first_blood_team_id: string
+              home_score: number
+            }[]
+          }
+        | {
+            Args: { _match_id: string; _max_score?: number }
+            Returns: {
+              away_score: number
+              home_score: number
+            }[]
+          }
+      virtual_seed_rand: {
+        Args: { _i: number; _seed: string }
+        Returns: number
       }
       virtual_tick: { Args: never; Returns: Json }
       virtual_wallet_admin_adjust: {
