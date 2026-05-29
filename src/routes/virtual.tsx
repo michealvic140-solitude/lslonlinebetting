@@ -232,14 +232,17 @@ function useCountdown(target: string | null | undefined) {
   return { secs, mm, ss, done: secs <= 0 };
 }
 
-function VirtualRoundCard({ match, animSec }: { match: MatchRow & { lock_time?: string | null }; animSec: number }) {
+function VirtualRoundCard({ match, animSec, forcePhase }: { match: MatchRow & { lock_time?: string | null }; animSec: number; forcePhase?: "open" | "playing" }) {
   const { add, setOpen, selections } = useBetSlip();
   const home = match.home_team?.name ?? "Home";
   const away = match.away_team?.name ?? "Away";
   const lockTime = (match as any).lock_time as string | null;
   const cd = useCountdown(lockTime);
   const settled = match.status === "ended";
-  const playing = match.status === "live";
+  // Phase comes from the parent's round-wide decision so every card in a
+  // round flips together. This prevents the "OPEN + PLAYING shown at once"
+  // glitch while virtual_tick is mid-flipping individual match rows.
+  const playing = forcePhase ? forcePhase === "playing" && !settled : match.status === "live";
   const locked = settled || playing || cd.done;
   const isPicked = (oddId: string) => selections.some((s) => s.odd_id === oddId);
   const hasThisRound = selections.some((s) => s.match_id === match.id);
