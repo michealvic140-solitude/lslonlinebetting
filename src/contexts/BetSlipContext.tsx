@@ -9,6 +9,7 @@ export interface SlipSelection {
   selection_label: string;
   odds: number;
   is_virtual?: boolean;
+  virtual_round_batch_id?: string | null;
 }
 
 interface Ctx {
