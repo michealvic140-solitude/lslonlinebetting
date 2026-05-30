@@ -767,7 +767,12 @@ function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: num
       const now = serverNow();
       const ratio = Math.min(1, Math.max(0, (now - lockMs) / Math.max(1, endMs - lockMs)));
       setProgress(ratio);
-      const { h: fh, a: fa } = progressiveScore(match.id, ratio);
+      const { h: fh, a: fa } = progressiveScore(
+        match.id,
+        ratio,
+        Math.max(0, Number(match.home_score ?? 0)),
+        Math.max(0, Number(match.away_score ?? 0)),
+      );
 
       // Move fighters through the block, exchange fire, and drop casualties as the simulated score climbs.
       setFighters((prev) => {
