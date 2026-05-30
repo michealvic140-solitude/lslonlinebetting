@@ -541,7 +541,9 @@ function useLiveScore(match: VirtualMatch, animSec: number) {
   }, []);
   const now = serverNow();
   const ratio = Math.min(1, Math.max(0, (now - lockMs) / Math.max(1, endMs - lockMs)));
-  const { h, a } = progressiveScore(match.id, ratio);
+  const targetH = Math.max(0, Number(match.home_score ?? 0));
+  const targetA = Math.max(0, Number(match.away_score ?? 0));
+  const { h, a } = progressiveScore(match.id, ratio, targetH, targetA);
   void tick;
   return { h, a, ratio };
 }
@@ -695,18 +697,20 @@ function seedRand(seed: string, i: number) {
   return (h % 10000) / 10000;
 }
 
-function progressiveScore(matchId: string, ratio: number) {
-  const eventCount = 3 + Math.floor(seedRand(matchId, 901) * 5);
+function progressiveScore(matchId: string, ratio: number, finalHome = 0, finalAway = 0) {
+  const eventCount = Math.max(1, finalHome + finalAway);
   let h = 0;
   let a = 0;
   for (let i = 0; i < eventCount; i++) {
-    const eventAt = 0.08 + seedRand(matchId, 920 + i) * 0.86;
+    const eventAt = 0.06 + ((i + 1) / (eventCount + 1)) * 0.88 + (seedRand(matchId, 920 + i) - 0.5) * 0.05;
     if (ratio >= eventAt) {
-      if (seedRand(matchId, 960 + i) > 0.48) h += 1;
-      else a += 1;
+      const homeQuota = finalHome / Math.max(1, eventCount);
+      const expectedHome = Math.round((i + 1) * homeQuota);
+      if (h < finalHome && (h < expectedHome || a >= finalAway)) h += 1;
+      else if (a < finalAway) a += 1;
     }
   }
-  return { h, a };
+  return { h: ratio >= 1 ? finalHome : h, a: ratio >= 1 ? finalAway : a };
 }
 
 type Fighter = {
