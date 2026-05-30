@@ -2576,22 +2576,14 @@ export type Database = {
           home_score: number
         }[]
       }
-      virtual_score_for_match:
-        | {
-            Args: { _match_id: string }
-            Returns: {
-              away_score: number
-              first_blood_team_id: string
-              home_score: number
-            }[]
-          }
-        | {
-            Args: { _match_id: string; _max_score?: number }
-            Returns: {
-              away_score: number
-              home_score: number
-            }[]
-          }
+      virtual_score_for_match: {
+        Args: { _match_id: string }
+        Returns: {
+          away_score: number
+          first_blood_team_id: string
+          home_score: number
+        }[]
+      }
       virtual_seed_rand: {
         Args: { _i: number; _seed: string }
         Returns: number

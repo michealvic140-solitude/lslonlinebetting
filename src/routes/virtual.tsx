@@ -34,7 +34,11 @@ type VirtualSettings = {
   virtual_cycle_running?: boolean | null;
   virtual_animation_seconds?: number | null;
   virtual_round_duration_seconds?: number | null;
+  virtual_matches_per_round?: number | null;
+  virtual_max_score?: number | null;
 };
+
+type CycleState = { running: boolean; animSec: number; durSec: number; perRound: number; maxScore: number };
 
 export const Route = createFileRoute("/virtual")({
   head: () => ({
@@ -61,10 +65,12 @@ function VirtualPage() {
   const [live, setLive] = useState<MatchRow[]>([]);
   const [upcoming, setUpcoming] = useState<MatchRow[]>([]);
   const [recent, setRecent] = useState<MatchRow[]>([]);
-  const [cycle, setCycle] = useState<{ running: boolean; animSec: number; durSec: number }>({
+  const [cycle, setCycle] = useState<CycleState>({
     running: false,
     animSec: 30,
     durSec: 120,
+    perRound: 5,
+    maxScore: 8,
   });
 
   useEffect(() => {
@@ -96,13 +102,16 @@ function VirtualPage() {
           supabase
             .from("app_settings")
             .select(
-              "virtual_cycle_running,virtual_animation_seconds,virtual_round_duration_seconds",
+              "virtual_cycle_running,virtual_animation_seconds,virtual_round_duration_seconds,virtual_matches_per_round,virtual_max_score",
             )
             .eq("id", 1)
             .maybeSingle(),
         ]);
-      setLive((liveRows ?? []) as unknown as VirtualMatch[]);
-      setUpcoming((upRows ?? []) as unknown as VirtualMatch[]);
+      const activeRows = [...((liveRows ?? []) as unknown as VirtualMatch[]), ...((upRows ?? []) as unknown as VirtualMatch[])];
+      const activeBatch = newestVirtualBatch(activeRows);
+      const batchIsLive = activeBatch.some((m) => m.status === "live");
+      setLive(batchIsLive ? activeBatch.map((m) => ({ ...m, status: "live" })) : []);
+      setUpcoming(batchIsLive ? [] : activeBatch.filter((m) => m.status === "scheduled"));
       setRecent((recRows ?? []) as unknown as VirtualMatch[]);
       if (cfg) {
         const settings = cfg as VirtualSettings;
@@ -110,6 +119,8 @@ function VirtualPage() {
           running: !!settings.virtual_cycle_running,
           animSec: Number(settings.virtual_animation_seconds ?? 30),
           durSec: Number(settings.virtual_round_duration_seconds ?? 120),
+          perRound: Number(settings.virtual_matches_per_round ?? 5),
+          maxScore: Number(settings.virtual_max_score ?? 8),
         });
       }
     };
@@ -205,7 +216,7 @@ function VirtualPage() {
                 <section>
                   <SectionTitle
                     icon={Clock}
-                    label={`Open · stake before lock (${cycle.durSec / 60} min window)`}
+                    label={`Open · stake before lock (${Math.round(cycle.durSec / 60)} min window · ${cycle.perRound} matches)`}
                     color="text-primary"
                   />
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -299,6 +310,20 @@ function SectionTitle({
       <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
     </div>
   );
+}
+
+function newestVirtualBatch(rows: VirtualMatch[]) {
+  if (rows.length === 0) return [];
+  const groups = new Map<string, VirtualMatch[]>();
+  rows.forEach((row) => {
+    const key = row.virtual_round_batch_id ?? row.id;
+    groups.set(key, [...(groups.get(key) ?? []), row]);
+  });
+  return [...groups.values()].sort((a, b) => {
+    const newestA = Math.max(...a.map((m) => new Date(m.lock_time ?? m.start_time).getTime()));
+    const newestB = Math.max(...b.map((m) => new Date(m.lock_time ?? m.start_time).getTime()));
+    return newestB - newestA;
+  })[0] ?? [];
 }
 
 // Server-time offset so every client agrees with the DB clock (not their local time).
@@ -516,7 +541,9 @@ function useLiveScore(match: VirtualMatch, animSec: number) {
   }, []);
   const now = serverNow();
   const ratio = Math.min(1, Math.max(0, (now - lockMs) / Math.max(1, endMs - lockMs)));
-  const { h, a } = progressiveScore(match.id, ratio);
+  const targetH = Math.max(0, Number(match.home_score ?? 0));
+  const targetA = Math.max(0, Number(match.away_score ?? 0));
+  const { h, a } = progressiveScore(match.id, ratio, targetH, targetA);
   void tick;
   return { h, a, ratio };
 }
@@ -670,18 +697,20 @@ function seedRand(seed: string, i: number) {
   return (h % 10000) / 10000;
 }
 
-function progressiveScore(matchId: string, ratio: number) {
-  const eventCount = 3 + Math.floor(seedRand(matchId, 901) * 5);
+function progressiveScore(matchId: string, ratio: number, finalHome = 0, finalAway = 0) {
+  const eventCount = Math.max(1, finalHome + finalAway);
   let h = 0;
   let a = 0;
   for (let i = 0; i < eventCount; i++) {
-    const eventAt = 0.08 + seedRand(matchId, 920 + i) * 0.86;
+    const eventAt = 0.06 + ((i + 1) / (eventCount + 1)) * 0.88 + (seedRand(matchId, 920 + i) - 0.5) * 0.05;
     if (ratio >= eventAt) {
-      if (seedRand(matchId, 960 + i) > 0.48) h += 1;
-      else a += 1;
+      const homeQuota = finalHome / Math.max(1, eventCount);
+      const expectedHome = Math.round((i + 1) * homeQuota);
+      if (h < finalHome && (h < expectedHome || a >= finalAway)) h += 1;
+      else if (a < finalAway) a += 1;
     }
   }
-  return { h, a };
+  return { h: ratio >= 1 ? finalHome : h, a: ratio >= 1 ? finalAway : a };
 }
 
 type Fighter = {
@@ -738,7 +767,12 @@ function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: num
       const now = serverNow();
       const ratio = Math.min(1, Math.max(0, (now - lockMs) / Math.max(1, endMs - lockMs)));
       setProgress(ratio);
-      const { h: fh, a: fa } = progressiveScore(match.id, ratio);
+      const { h: fh, a: fa } = progressiveScore(
+        match.id,
+        ratio,
+        Math.max(0, Number(match.home_score ?? 0)),
+        Math.max(0, Number(match.away_score ?? 0)),
+      );
 
       // Move fighters through the block, exchange fire, and drop casualties as the simulated score climbs.
       setFighters((prev) => {

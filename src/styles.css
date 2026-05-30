@@ -605,3 +605,30 @@
 @keyframes flash { 0% { opacity: 0; transform: scale(0.4); } 30% { opacity: 1; transform: scale(1.15); } 100% { opacity: 0; transform: scale(1.6); } }
 @keyframes fade-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
 .animate-fade-in { animation: fade-in 260ms ease-out both; }
+
+.virtual-hero-shell,
+.virtual-match-card,
+.virtual-live-list,
+.virtual-result-card {
+  border-color: oklch(0.82 0.17 90 / 0.48) !important;
+  background:
+    radial-gradient(120% 90% at 18% 8%, oklch(0.66 0.18 150 / 0.20), transparent 55%),
+    radial-gradient(110% 80% at 88% 12%, oklch(0.82 0.17 90 / 0.18), transparent 58%),
+    linear-gradient(145deg, oklch(0.15 0.05 145 / 0.92), oklch(0.09 0.04 115 / 0.96));
+  box-shadow:
+    inset 0 1px 0 oklch(0.95 0.10 92 / 0.18),
+    inset 0 -1px 0 oklch(0 0 0 / 0.55),
+    0 18px 46px -24px oklch(0 0 0 / 0.80),
+    0 0 34px -10px oklch(0.82 0.17 90 / 0.55);
+}
+
+.virtual-hero-shell::before,
+.virtual-match-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 20%, oklch(0.92 0.14 92 / 0.12) 48%, transparent 76%);
+  transform: translateX(-120%);
+  animation: shimmer 7s ease-in-out infinite;
+}
