@@ -311,6 +311,20 @@ function SectionTitle({
   );
 }
 
+function newestVirtualBatch(rows: VirtualMatch[]) {
+  if (rows.length === 0) return [];
+  const groups = new Map<string, VirtualMatch[]>();
+  rows.forEach((row) => {
+    const key = row.virtual_round_batch_id ?? row.id;
+    groups.set(key, [...(groups.get(key) ?? []), row]);
+  });
+  return [...groups.values()].sort((a, b) => {
+    const newestA = Math.max(...a.map((m) => new Date(m.lock_time ?? m.start_time).getTime()));
+    const newestB = Math.max(...b.map((m) => new Date(m.lock_time ?? m.start_time).getTime()));
+    return newestB - newestA;
+  })[0] ?? [];
+}
+
 // Server-time offset so every client agrees with the DB clock (not their local time).
 let __serverOffsetMs = 0;
 async function syncServerOffset() {
