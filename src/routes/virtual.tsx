@@ -109,8 +109,9 @@ function VirtualPage() {
         ]);
       const activeRows = [...((liveRows ?? []) as unknown as VirtualMatch[]), ...((upRows ?? []) as unknown as VirtualMatch[])];
       const activeBatch = newestVirtualBatch(activeRows);
-      setLive(activeBatch.filter((m) => m.status === "live"));
-      setUpcoming(activeBatch.filter((m) => m.status === "scheduled"));
+      const batchIsLive = activeBatch.some((m) => m.status === "live");
+      setLive(batchIsLive ? activeBatch.map((m) => ({ ...m, status: "live" })) : []);
+      setUpcoming(batchIsLive ? [] : activeBatch.filter((m) => m.status === "scheduled"));
       setRecent((recRows ?? []) as unknown as VirtualMatch[]);
       if (cfg) {
         const settings = cfg as VirtualSettings;
@@ -215,7 +216,7 @@ function VirtualPage() {
                 <section>
                   <SectionTitle
                     icon={Clock}
-                    label={`Open · stake before lock (${cycle.durSec / 60} min window)`}
+                    label={`Open · stake before lock (${Math.round(cycle.durSec / 60)} min window · ${cycle.perRound} matches)`}
                     color="text-primary"
                   />
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
