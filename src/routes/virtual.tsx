@@ -34,7 +34,11 @@ type VirtualSettings = {
   virtual_cycle_running?: boolean | null;
   virtual_animation_seconds?: number | null;
   virtual_round_duration_seconds?: number | null;
+  virtual_matches_per_round?: number | null;
+  virtual_max_score?: number | null;
 };
+
+type CycleState = { running: boolean; animSec: number; durSec: number; perRound: number; maxScore: number };
 
 export const Route = createFileRoute("/virtual")({
   head: () => ({
@@ -61,10 +65,12 @@ function VirtualPage() {
   const [live, setLive] = useState<MatchRow[]>([]);
   const [upcoming, setUpcoming] = useState<MatchRow[]>([]);
   const [recent, setRecent] = useState<MatchRow[]>([]);
-  const [cycle, setCycle] = useState<{ running: boolean; animSec: number; durSec: number }>({
+  const [cycle, setCycle] = useState<CycleState>({
     running: false,
     animSec: 30,
     durSec: 120,
+    perRound: 5,
+    maxScore: 8,
   });
 
   useEffect(() => {
@@ -96,13 +102,15 @@ function VirtualPage() {
           supabase
             .from("app_settings")
             .select(
-              "virtual_cycle_running,virtual_animation_seconds,virtual_round_duration_seconds",
+              "virtual_cycle_running,virtual_animation_seconds,virtual_round_duration_seconds,virtual_matches_per_round,virtual_max_score",
             )
             .eq("id", 1)
             .maybeSingle(),
         ]);
-      setLive((liveRows ?? []) as unknown as VirtualMatch[]);
-      setUpcoming((upRows ?? []) as unknown as VirtualMatch[]);
+      const activeRows = [...((liveRows ?? []) as unknown as VirtualMatch[]), ...((upRows ?? []) as unknown as VirtualMatch[])];
+      const activeBatch = newestVirtualBatch(activeRows);
+      setLive(activeBatch.filter((m) => m.status === "live"));
+      setUpcoming(activeBatch.filter((m) => m.status === "scheduled"));
       setRecent((recRows ?? []) as unknown as VirtualMatch[]);
       if (cfg) {
         const settings = cfg as VirtualSettings;
@@ -110,6 +118,8 @@ function VirtualPage() {
           running: !!settings.virtual_cycle_running,
           animSec: Number(settings.virtual_animation_seconds ?? 30),
           durSec: Number(settings.virtual_round_duration_seconds ?? 120),
+          perRound: Number(settings.virtual_matches_per_round ?? 5),
+          maxScore: Number(settings.virtual_max_score ?? 8),
         });
       }
     };
