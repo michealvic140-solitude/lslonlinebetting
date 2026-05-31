@@ -2640,7 +2640,7 @@ function WithdrawalsPanel() {
 /* ============================ LEADERBOARD ADMIN ============================ */
 function LeaderboardAdminPanel() {
   const [list, setList] = useState<any[]>([]);
-  const [draft, setDraft] = useState({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "" });
+  const [draft, setDraft] = useState({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "", is_hidden: false });
   const [editId, setEditId] = useState<string | null>(null);
   const confirm = useConfirm();
   async function load() { setList((await supabase.from("leaderboard_overrides").select("*").order("kind").order("manual_rank", { ascending: true, nullsFirst: false })).data ?? []); }
@@ -2653,7 +2653,7 @@ function LeaderboardAdminPanel() {
     if (error) { toast.error(error.message); return; }
     await logAudit(editId ? "leaderboard_override_edit" : "leaderboard_override_create", "leaderboard_overrides", editId ?? undefined, payload);
     toast.success(editId ? "Entry updated" : "Override saved");
-    setDraft({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "" });
+    setDraft({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "", is_hidden: false });
     setEditId(null);
     load();
   }
@@ -2663,6 +2663,24 @@ function LeaderboardAdminPanel() {
     await logAudit("leaderboard_override_delete", "leaderboard_overrides", id);
     load();
   }
+  async function toggleHide(o: any) {
+    const next = !o.is_hidden;
+    const { error } = await supabase.from("leaderboard_overrides").update({ is_hidden: next }).eq("id", o.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(next ? "leaderboard_hide" : "leaderboard_unhide", "leaderboard_overrides", o.id, { name: o.name, kind: o.kind });
+    toast.success(next ? `${o.name} hidden from leaderboard` : `${o.name} restored`);
+    load();
+  }
+  async function hideTeam() {
+    if (!draft.name) { toast.error("Enter the team or shooter name to hide"); return; }
+    const payload: any = { kind: draft.kind, name: draft.name, is_hidden: true, wins: 0, losses: 0, draws: 0, played: 0, points: 0 };
+    const { error } = await supabase.from("leaderboard_overrides").upsert(payload, { onConflict: "id" });
+    if (error) { toast.error(error.message); return; }
+    await logAudit("leaderboard_hide", "leaderboard_overrides", undefined, payload);
+    toast.success(`${draft.name} hidden from leaderboard`);
+    setDraft({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "", is_hidden: false });
+    load();
+  }
   function editEntry(o: any) {
     setEditId(o.id);
     setDraft({
@@ -2670,6 +2688,7 @@ function LeaderboardAdminPanel() {
       wins: Number(o.wins ?? 0), losses: Number(o.losses ?? 0), draws: Number(o.draws ?? 0),
       played: Number(o.played ?? 0), points: Number(o.points ?? 0),
       manual_rank: o.manual_rank ? String(o.manual_rank) : "",
+      is_hidden: !!o.is_hidden,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -2696,7 +2715,7 @@ function LeaderboardAdminPanel() {
       <Card className="glass-strong p-4 space-y-2">
         <div className="font-bold flex items-center gap-2">
           {editId ? <><Pencil className="h-4 w-4 text-primary" />Editing entry</> : "Manual override (auto-stats are computed from match results)"}
-          {editId && <button onClick={() => { setEditId(null); setDraft({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "" }); }} className="ml-auto text-xs text-muted-foreground hover:text-foreground underline">Cancel edit</button>}
+          {editId && <button onClick={() => { setEditId(null); setDraft({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "", is_hidden: false }); }} className="ml-auto text-xs text-muted-foreground hover:text-foreground underline">Cancel edit</button>}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <Select value={draft.kind} onValueChange={(v) => setDraft({ ...draft, kind: v })}>
@@ -2712,16 +2731,27 @@ function LeaderboardAdminPanel() {
           <Input type="number" placeholder="Played" value={draft.played} onChange={(e) => setDraft({ ...draft, played: Number(e.target.value) })} />
           <Input type="number" placeholder="Points" value={draft.points} onChange={(e) => setDraft({ ...draft, points: Number(e.target.value) })} />
         </div>
-        <Button className="btn-luxury" onClick={save}>
-          {editId ? <><Check className="h-4 w-4 mr-1" />Update entry</> : <><Plus className="h-4 w-4 mr-1" />Save override</>}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button className="btn-luxury" onClick={save}>
+            {editId ? <><Check className="h-4 w-4 mr-1" />Update entry</> : <><Plus className="h-4 w-4 mr-1" />Save override</>}
+          </Button>
+          {!editId && (
+            <Button variant="destructive" onClick={hideTeam} title="Hide this team/shooter from the public leaderboard without touching match history">
+              <Trash2 className="h-4 w-4 mr-1" />Remove from leaderboard
+            </Button>
+          )}
+        </div>
       </Card>
       <div className="space-y-1">
         {list.map((o) => (
-          <Card key={o.id} className="glass p-2 flex items-center gap-2 flex-wrap text-sm">
+          <Card key={o.id} className={`glass p-2 flex items-center gap-2 flex-wrap text-sm ${o.is_hidden ? "opacity-60 border-destructive/40" : ""}`}>
             <Badge variant="outline" className="capitalize">{o.kind}</Badge>
+            {o.is_hidden && <Badge variant="destructive" className="text-[10px]">Hidden</Badge>}
             <div className="font-bold flex-1 min-w-0 truncate">{o.name} {o.top_player && <span className="text-xs text-muted-foreground">· top: {o.top_player}</span>}</div>
             <span className="text-xs text-muted-foreground">W {o.wins} · L {o.losses} · D {o.draws} · PTS {o.points}{o.manual_rank ? ` · #${o.manual_rank}` : ""}</span>
+            <Button size="sm" variant="outline" onClick={() => toggleHide(o)} title={o.is_hidden ? "Show on leaderboard" : "Hide from leaderboard"}>
+              {o.is_hidden ? <Eye className="h-3 w-3" /> : <X className="h-3 w-3" />}
+            </Button>
             <Button size="sm" variant="outline" onClick={() => editEntry(o)}><Pencil className="h-3 w-3" /></Button>
             <Button size="sm" variant="destructive" onClick={() => del(o.id)}><Trash2 className="h-3 w-3" /></Button>
           </Card>
