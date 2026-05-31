@@ -28,6 +28,8 @@ import {
 } from "recharts";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { SpotlightsAdminPanel } from "@/components/Spotlight";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — LSL" }, { name: "description", content: "League administration dashboard." }] }),
@@ -75,18 +77,29 @@ function AdminPage() {
 
   return (
     <Layout>
-      <div className="container py-8 space-y-6">
-        <div className="relative overflow-hidden rounded-2xl p-5 border border-primary/30 shadow-luxury bg-gradient-to-br from-card/90 via-card/70 to-primary/10 backdrop-blur-xl">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
-          <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
-          <div className="relative flex items-center gap-3 flex-wrap">
+      <SidebarProvider>
+        <div className="flex w-full min-h-[calc(100vh-3.5rem)]">
+          <AdminSidebar
+            activeTab={activeTab}
+            onSelect={setActiveTab}
+            isAdmin={isAdmin}
+            isMod={isMod}
+            alerts={alerts}
+          />
+          <main className="flex-1 min-w-0 overflow-x-hidden">
+          <div className="mx-auto w-full max-w-[1080px] px-3 sm:px-4 py-4 sm:py-6 space-y-4">
+          <div className="relative overflow-hidden rounded-2xl p-4 border border-primary/30 shadow-luxury bg-gradient-to-br from-card/90 via-card/70 to-primary/10 backdrop-blur-xl">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
+            <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
+            <div className="relative flex items-center gap-3 flex-wrap">
+            <SidebarTrigger className="shrink-0" />
             <div className="h-12 w-12 rounded-2xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold overflow-hidden ring-2 ring-primary/40">
               <img src={lslLogo} alt="LSL" className="h-10 w-10 object-contain" />
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Command center</p>
-              <h1 className="text-3xl font-bold gradient-gold-text">Admin Console</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold gradient-gold-text">Admin Console</h1>
             </div>
             <Badge variant="outline" className={`ml-auto ${isAdmin ? "border-accent/50 text-accent" : "border-primary/50 text-primary"}`}>
               {isAdmin ? "Admin" : "Moderator"}
@@ -138,57 +151,11 @@ function AdminPage() {
                 </Button>
               </div>
             )}
+            </div>
           </div>
-        </div>
 
         {isAdmin && <Stats />}
-        <AdminSectionRail alerts={alerts} onOpen={setActiveTab} />
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList
-            className="flex w-full max-w-full overflow-x-auto h-auto justify-start gap-1 p-2 rounded-2xl md:flex-wrap backdrop-blur-xl shadow-luxury"
-            style={{
-              background:
-                "linear-gradient(135deg, oklch(0.32 0.08 70 / 0.85) 0%, oklch(0.22 0.06 60 / 0.78) 45%, oklch(0.18 0.05 55 / 0.85) 100%)",
-              border: "1px solid oklch(0.78 0.14 78 / 0.45)",
-              boxShadow:
-                "inset 0 1px 0 oklch(0.95 0.08 92 / 0.15), inset 0 -1px 0 oklch(0 0 0 / 0.4), 0 12px 40px -12px oklch(0.45 0.14 70 / 0.55), 0 0 0 1px oklch(0.62 0.14 80 / 0.25)",
-            }}
-          >
-            {(isAdmin || isMod) && <TabsTrigger value="analytics"><BarChart3 className="h-3 w-3 mr-1" />Analytics</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="activity"><Users className="h-3 w-3 mr-1" />Activity</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="adminai"><Sparkles className="h-3 w-3 mr-1" />Admin AI</TabsTrigger>}
-            <TabsTrigger value="appeals"><AdminTab icon={AlertTriangle} label="Appeals" count={alerts.appeals} /></TabsTrigger>
-            {isAdmin && <TabsTrigger value="audit"><History className="h-3 w-3 mr-1" />Audit</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="bettracker"><AdminTab icon={ClipboardList} label="Bet Tracker" count={alerts.bettracker} /></TabsTrigger>}
-            {isAdmin && <TabsTrigger value="broadcast"><Send className="h-3 w-3 mr-1" />Broadcast</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="challenges"><Sparkles className="h-3 w-3 mr-1" />Challenges</TabsTrigger>}
-            <TabsTrigger value="chat"><AdminTab icon={MessageSquare} label="Chat" count={alerts.chat} /></TabsTrigger>
-            {(isAdmin || isMod) && <TabsTrigger value="content"><Megaphone className="h-3 w-3 mr-1" />Content</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="emblems"><Trophy className="h-3 w-3 mr-1" />Emblems</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="events"><Calendar className="h-3 w-3 mr-1" />Events</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="housewallet"><Wallet className="h-3 w-3 mr-1" />House Wallet</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="leaderboard"><ListOrdered className="h-3 w-3 mr-1" />Leaderboard</TabsTrigger>}
-            {(isAdmin || isMod) && <TabsTrigger value="matches"><Trophy className="h-3 w-3 mr-1" />Matches</TabsTrigger>}
-            {(isAdmin || isMod) && <TabsTrigger value="notify"><Send className="h-3 w-3 mr-1" />Notify</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="pnl"><BarChart3 className="h-3 w-3 mr-1" />P&L</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="promos"><Tag className="h-3 w-3 mr-1" />Promo Codes</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="promoreqs"><AdminTab icon={Tag} label="Promo Requests" count={alerts.promoreqs} /></TabsTrigger>}
-            {isAdmin && <TabsTrigger value="referrals"><Users className="h-3 w-3 mr-1" />Referrals</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="reports"><BarChart3 className="h-3 w-3 mr-1" />Reports</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="risk"><AlertTriangle className="h-3 w-3 mr-1" />Risk</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="seasons"><Trophy className="h-3 w-3 mr-1" />Seasons</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="settings"><SettingsIcon className="h-3 w-3 mr-1" />Settings</TabsTrigger>}
-            {(isAdmin || isMod) && <TabsTrigger value="spotlights"><Sparkles className="h-3 w-3 mr-1" />Spotlights</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="streakpush"><Sparkles className="h-3 w-3 mr-1" />Streak & Push</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="tasks"><ClipboardList className="h-3 w-3 mr-1" />Tasks & Achievements</TabsTrigger>}
-            <TabsTrigger value="tickets"><AdminTab icon={Ticket} label="Tickets" count={alerts.tickets} /></TabsTrigger>
-            {(isAdmin || isMod) && <TabsTrigger value="tokens"><AdminTab icon={Coins} label="Tokens" count={alerts.tokens} /></TabsTrigger>}
-            {isAdmin && <TabsTrigger value="tokenrules"><Coins className="h-3 w-3 mr-1" />Token Rules</TabsTrigger>}
-            <TabsTrigger value="users"><AdminTab icon={Users} label="Users" count={alerts.users} /></TabsTrigger>
-            {isAdmin && <TabsTrigger value="virtual"><Dice5 className="h-3 w-3 mr-1" />Virtual</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="vip"><Trophy className="h-3 w-3 mr-1" />VIP</TabsTrigger>}
-            {(isAdmin || isMod) && <TabsTrigger value="withdrawals"><AdminTab icon={Wallet} label="Withdrawals" count={alerts.withdrawals} /></TabsTrigger>}
-          </TabsList>
           <TabsContent value="users" className="mt-4"><UsersPanel /></TabsContent>
             <TabsContent value="virtual" className="mt-4"><VirtualAdminPanel /></TabsContent>
           <TabsContent value="matches" className="mt-4"><MatchesPanel /></TabsContent>
@@ -224,7 +191,10 @@ function AdminPage() {
           <TabsContent value="vip" className="mt-4"><VipAdminPanel /></TabsContent>
           <TabsContent value="spotlights" className="mt-4"><SpotlightsAdminPanel /></TabsContent>
         </Tabs>
-      </div>
+          </div>
+          </main>
+        </div>
+      </SidebarProvider>
     </Layout>
   );
 }
@@ -2640,7 +2610,7 @@ function WithdrawalsPanel() {
 /* ============================ LEADERBOARD ADMIN ============================ */
 function LeaderboardAdminPanel() {
   const [list, setList] = useState<any[]>([]);
-  const [draft, setDraft] = useState({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "" });
+  const [draft, setDraft] = useState({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "", is_hidden: false });
   const [editId, setEditId] = useState<string | null>(null);
   const confirm = useConfirm();
   async function load() { setList((await supabase.from("leaderboard_overrides").select("*").order("kind").order("manual_rank", { ascending: true, nullsFirst: false })).data ?? []); }
@@ -2653,7 +2623,7 @@ function LeaderboardAdminPanel() {
     if (error) { toast.error(error.message); return; }
     await logAudit(editId ? "leaderboard_override_edit" : "leaderboard_override_create", "leaderboard_overrides", editId ?? undefined, payload);
     toast.success(editId ? "Entry updated" : "Override saved");
-    setDraft({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "" });
+    setDraft({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "", is_hidden: false });
     setEditId(null);
     load();
   }
@@ -2663,6 +2633,24 @@ function LeaderboardAdminPanel() {
     await logAudit("leaderboard_override_delete", "leaderboard_overrides", id);
     load();
   }
+  async function toggleHide(o: any) {
+    const next = !o.is_hidden;
+    const { error } = await supabase.from("leaderboard_overrides").update({ is_hidden: next }).eq("id", o.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(next ? "leaderboard_hide" : "leaderboard_unhide", "leaderboard_overrides", o.id, { name: o.name, kind: o.kind });
+    toast.success(next ? `${o.name} hidden from leaderboard` : `${o.name} restored`);
+    load();
+  }
+  async function hideTeam() {
+    if (!draft.name) { toast.error("Enter the team or shooter name to hide"); return; }
+    const payload: any = { kind: draft.kind, name: draft.name, is_hidden: true, wins: 0, losses: 0, draws: 0, played: 0, points: 0 };
+    const { error } = await supabase.from("leaderboard_overrides").upsert(payload, { onConflict: "id" });
+    if (error) { toast.error(error.message); return; }
+    await logAudit("leaderboard_hide", "leaderboard_overrides", undefined, payload);
+    toast.success(`${draft.name} hidden from leaderboard`);
+    setDraft({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "", is_hidden: false });
+    load();
+  }
   function editEntry(o: any) {
     setEditId(o.id);
     setDraft({
@@ -2670,6 +2658,7 @@ function LeaderboardAdminPanel() {
       wins: Number(o.wins ?? 0), losses: Number(o.losses ?? 0), draws: Number(o.draws ?? 0),
       played: Number(o.played ?? 0), points: Number(o.points ?? 0),
       manual_rank: o.manual_rank ? String(o.manual_rank) : "",
+      is_hidden: !!o.is_hidden,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -2696,7 +2685,7 @@ function LeaderboardAdminPanel() {
       <Card className="glass-strong p-4 space-y-2">
         <div className="font-bold flex items-center gap-2">
           {editId ? <><Pencil className="h-4 w-4 text-primary" />Editing entry</> : "Manual override (auto-stats are computed from match results)"}
-          {editId && <button onClick={() => { setEditId(null); setDraft({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "" }); }} className="ml-auto text-xs text-muted-foreground hover:text-foreground underline">Cancel edit</button>}
+          {editId && <button onClick={() => { setEditId(null); setDraft({ kind: "gang", name: "", top_player: "", wins: 0, losses: 0, draws: 0, played: 0, points: 0, manual_rank: "", is_hidden: false }); }} className="ml-auto text-xs text-muted-foreground hover:text-foreground underline">Cancel edit</button>}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <Select value={draft.kind} onValueChange={(v) => setDraft({ ...draft, kind: v })}>
@@ -2712,16 +2701,27 @@ function LeaderboardAdminPanel() {
           <Input type="number" placeholder="Played" value={draft.played} onChange={(e) => setDraft({ ...draft, played: Number(e.target.value) })} />
           <Input type="number" placeholder="Points" value={draft.points} onChange={(e) => setDraft({ ...draft, points: Number(e.target.value) })} />
         </div>
-        <Button className="btn-luxury" onClick={save}>
-          {editId ? <><Check className="h-4 w-4 mr-1" />Update entry</> : <><Plus className="h-4 w-4 mr-1" />Save override</>}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button className="btn-luxury" onClick={save}>
+            {editId ? <><Check className="h-4 w-4 mr-1" />Update entry</> : <><Plus className="h-4 w-4 mr-1" />Save override</>}
+          </Button>
+          {!editId && (
+            <Button variant="destructive" onClick={hideTeam} title="Hide this team/shooter from the public leaderboard without touching match history">
+              <Trash2 className="h-4 w-4 mr-1" />Remove from leaderboard
+            </Button>
+          )}
+        </div>
       </Card>
       <div className="space-y-1">
         {list.map((o) => (
-          <Card key={o.id} className="glass p-2 flex items-center gap-2 flex-wrap text-sm">
+          <Card key={o.id} className={`glass p-2 flex items-center gap-2 flex-wrap text-sm ${o.is_hidden ? "opacity-60 border-destructive/40" : ""}`}>
             <Badge variant="outline" className="capitalize">{o.kind}</Badge>
+            {o.is_hidden && <Badge variant="destructive" className="text-[10px]">Hidden</Badge>}
             <div className="font-bold flex-1 min-w-0 truncate">{o.name} {o.top_player && <span className="text-xs text-muted-foreground">· top: {o.top_player}</span>}</div>
             <span className="text-xs text-muted-foreground">W {o.wins} · L {o.losses} · D {o.draws} · PTS {o.points}{o.manual_rank ? ` · #${o.manual_rank}` : ""}</span>
+            <Button size="sm" variant="outline" onClick={() => toggleHide(o)} title={o.is_hidden ? "Show on leaderboard" : "Hide from leaderboard"}>
+              {o.is_hidden ? <Eye className="h-3 w-3" /> : <X className="h-3 w-3" />}
+            </Button>
             <Button size="sm" variant="outline" onClick={() => editEntry(o)}><Pencil className="h-3 w-3" /></Button>
             <Button size="sm" variant="destructive" onClick={() => del(o.id)}><Trash2 className="h-3 w-3" /></Button>
           </Card>

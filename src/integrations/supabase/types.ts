@@ -873,6 +873,7 @@ export type Database = {
         Row: {
           draws: number
           id: string
+          is_hidden: boolean
           kind: string
           losses: number
           manual_rank: number | null
@@ -886,6 +887,7 @@ export type Database = {
         Insert: {
           draws?: number
           id?: string
+          is_hidden?: boolean
           kind: string
           losses?: number
           manual_rank?: number | null
@@ -899,6 +901,7 @@ export type Database = {
         Update: {
           draws?: number
           id?: string
+          is_hidden?: boolean
           kind?: string
           losses?: number
           manual_rank?: number | null
