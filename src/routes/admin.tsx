@@ -19,6 +19,12 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import lslLogo from "@/assets/lsl-logo.png";
+import tileVirtual from "@/assets/tile-virtual.jpg";
+import tileVip from "@/assets/tile-vip.jpg";
+import tileChallenges from "@/assets/tile-challenges.jpg";
+import tileReferrals from "@/assets/tile-referrals.jpg";
+import tileHousewallet from "@/assets/tile-housewallet.jpg";
+import { Countdown } from "@/components/Countdown";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { fetchTeams } from "@/lib/queries";
@@ -72,129 +78,103 @@ function AdminPage() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [isAdmin]);
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (typeof detail === "string") setActiveTab(detail);
+    };
+    window.addEventListener("admin:set-tab", handler);
+    return () => window.removeEventListener("admin:set-tab", handler);
+  }, []);
   if (loading) return <Layout><div className="container py-10">Loading…</div></Layout>;
   if (!isAdmin && !isMod) return null;
 
   return (
     <Layout>
-      <SidebarProvider>
-        <div className="flex w-full min-h-[calc(100vh-3.5rem)]">
-          <AdminSidebar
-            activeTab={activeTab}
-            onSelect={setActiveTab}
-            isAdmin={isAdmin}
-            isMod={isMod}
-            alerts={alerts}
-          />
-          <main className="flex-1 min-w-0 overflow-x-hidden">
-          <div className="mx-auto w-full max-w-[1080px] px-3 sm:px-4 py-4 sm:py-6 space-y-4">
+      <main className="w-full min-h-[calc(100vh-3.5rem)]">
+        <div className={`mx-auto w-full ${activeTab === "analytics" ? "max-w-[1600px]" : "max-w-[1080px]"} px-3 sm:px-4 py-4 sm:py-6 space-y-4`}>
           <div className="relative overflow-hidden rounded-2xl p-4 border border-primary/30 shadow-luxury bg-gradient-to-br from-card/90 via-card/70 to-primary/10 backdrop-blur-xl">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
             <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
             <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
             <div className="relative flex items-center gap-3 flex-wrap">
-            <SidebarTrigger className="shrink-0" />
-            <div className="h-12 w-12 rounded-2xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold overflow-hidden ring-2 ring-primary/40">
-              <img src={lslLogo} alt="LSL" className="h-10 w-10 object-contain" />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Command center</p>
-              <h1 className="text-2xl sm:text-3xl font-bold gradient-gold-text">Admin Console</h1>
-            </div>
-            <Badge variant="outline" className={`ml-auto ${isAdmin ? "border-accent/50 text-accent" : "border-primary/50 text-primary"}`}>
-              {isAdmin ? "Admin" : "Moderator"}
-            </Badge>
-            {isAdmin && (
-              <div className="flex items-center gap-1 w-full sm:w-auto sm:ml-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-[11px]"
-                  onClick={() => { if (typeof window !== "undefined") window.location.reload(); }}
-                  title="Reload this admin page"
-                >
-                  ⟳ Reload
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-[11px]"
-                  onClick={async () => {
+              <button
+                type="button"
+                onClick={() => setActiveTab("analytics")}
+                className="h-12 w-12 rounded-2xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold overflow-hidden ring-2 ring-primary/40 shrink-0 hover:ring-primary/70 transition"
+                title="Open analytics"
+              >
+                <img src={lslLogo} alt="LSL" className="h-10 w-10 object-contain" />
+              </button>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Command center</p>
+                <h1 className="text-2xl sm:text-3xl font-bold gradient-gold-text">Admin Console</h1>
+              </div>
+              <Badge variant="outline" className={`ml-auto ${isAdmin ? "border-accent/50 text-accent" : "border-primary/50 text-primary"}`}>
+                {isAdmin ? "Admin" : "Moderator"}
+              </Badge>
+              {isAdmin && (
+                <div className="flex items-center gap-1 w-full sm:w-auto sm:ml-2">
+                  <Button size="sm" variant="outline" className="text-[11px]" onClick={() => { if (typeof window !== "undefined") window.location.reload(); }} title="Reload this admin page">⟳ Reload</Button>
+                  <Button size="sm" variant="outline" className="text-[11px]" onClick={async () => {
                     try {
-                      if ("serviceWorker" in navigator) {
-                        const regs = await navigator.serviceWorker.getRegistrations();
-                        await Promise.all(regs.map((r) => r.unregister()));
-                      }
-                      if (typeof caches !== "undefined") {
-                        const keys = await caches.keys();
-                        await Promise.all(keys.map((k) => caches.delete(k)));
-                      }
+                      if ("serviceWorker" in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map((r) => r.unregister())); }
+                      if (typeof caches !== "undefined") { const keys = await caches.keys(); await Promise.all(keys.map((k) => caches.delete(k))); }
                     } catch {}
                     if (typeof window !== "undefined") window.location.reload();
-                  }}
-                  title="Clear caches & service workers, then reload"
-                >
-                  ⚡ Hard refresh
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="text-[11px]"
-                  onClick={async () => {
-                    const { error } = await supabase.from("app_settings").update({ force_reload_at: new Date().toISOString() }).eq("id", 1);
+                  }} title="Clear caches & service workers, then reload">⚡ Hard refresh</Button>
+                  <Button size="sm" variant="destructive" className="text-[11px]" onClick={async () => {
+                    const { error } = await (supabase as any).from("app_settings").update({ force_reload_at: new Date().toISOString() }).eq("id", 1);
                     if (error) { (await import("sonner")).toast.error(error.message); return; }
                     (await import("sonner")).toast.success("Reload broadcast sent to every active browser.");
-                  }}
-                  title="Force every logged-in browser to reload right now"
-                >
-                  📣 Broadcast reload
-                </Button>
-              </div>
-            )}
+                  }} title="Force every logged-in browser to reload right now">📣 Broadcast reload</Button>
+                </div>
+              )}
             </div>
           </div>
 
-        {isAdmin && <Stats />}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsContent value="users" className="mt-4"><UsersPanel /></TabsContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsContent value="users" className="mt-4"><UsersPanel /></TabsContent>
+            <TabsContent value="bannedusers" className="mt-4"><BannedUsersPanel /></TabsContent>
             <TabsContent value="virtual" className="mt-4"><VirtualAdminPanel /></TabsContent>
-          <TabsContent value="matches" className="mt-4"><MatchesPanel /></TabsContent>
-          <TabsContent value="events" className="mt-4"><EventsPanel /></TabsContent>
-          <TabsContent value="tokens" className="mt-4"><TokensPanel /></TabsContent>
-          <TabsContent value="withdrawals" className="mt-4"><WithdrawalsPanel /></TabsContent>
-          <TabsContent value="housewallet" className="mt-4"><HouseWalletPanel /></TabsContent>
-          <TabsContent value="leaderboard" className="mt-4"><LeaderboardAdminPanel /></TabsContent>
-          <TabsContent value="promos" className="mt-4"><PromoPanel /></TabsContent>
-          <TabsContent value="content" className="mt-4"><ContentPanel /></TabsContent>
-          <TabsContent value="tickets" className="mt-4"><TicketsPanel /></TabsContent>
-          <TabsContent value="tasks" className="mt-4"><TasksAchievementsPanel /></TabsContent>
-          <TabsContent value="challenges" className="mt-4"><ChallengesAdminPanel /></TabsContent>
-          <TabsContent value="seasons" className="mt-4"><SeasonsAdminPanel /></TabsContent>
-          <TabsContent value="bettracker" className="mt-4"><BetTrackerPanel /></TabsContent>
-          <TabsContent value="promoreqs" className="mt-4"><PromoRequestsPanel /></TabsContent>
-          <TabsContent value="appeals" className="mt-4"><AppealsPanel /></TabsContent>
-          <TabsContent value="chat" className="mt-4"><ChatMonitorPanel /></TabsContent>
-          <TabsContent value="notify" className="mt-4"><NotifyPanel /></TabsContent>
-          <TabsContent value="audit" className="mt-4"><AuditPanel /></TabsContent>
-          <TabsContent value="analytics" className="mt-4"><AnalyticsPanel /></TabsContent>
-          <TabsContent value="settings" className="mt-4"><SettingsPanel /></TabsContent>
-          <TabsContent value="adminai" className="mt-4"><AdminAILivePanel /></TabsContent>
-          <TabsContent value="risk" className="mt-4"><RiskPanel /></TabsContent>
-          <TabsContent value="pnl" className="mt-4"><PnLPanel /></TabsContent>
-          <TabsContent value="reports" className="mt-4"><ReportsPanel /></TabsContent>
-          <TabsContent value="tokenrules" className="mt-4"><TokenRulesPanel /></TabsContent>
-          <TabsContent value="broadcast" className="mt-4"><BroadcastPanel /></TabsContent>
-          <TabsContent value="activity" className="mt-4"><ActivityPanel /></TabsContent>
-          <TabsContent value="streakpush" className="mt-4"><StreakAndPushPanel /></TabsContent>
-          <TabsContent value="referrals" className="mt-4"><ReferralsAdminPanel /></TabsContent>
-          <TabsContent value="emblems" className="mt-4"><EmblemModerationPanel /></TabsContent>
-          <TabsContent value="vip" className="mt-4"><VipAdminPanel /></TabsContent>
-          <TabsContent value="spotlights" className="mt-4"><SpotlightsAdminPanel /></TabsContent>
-        </Tabs>
-          </div>
-          </main>
+            <TabsContent value="matches" className="mt-4"><MatchesPanel /></TabsContent>
+            <TabsContent value="events" className="mt-4"><EventsPanel /></TabsContent>
+            <TabsContent value="tokens" className="mt-4"><TokensPanel /></TabsContent>
+            <TabsContent value="tokenmovement" className="mt-4"><TokenMovementPanel /></TabsContent>
+            <TabsContent value="wonbets" className="mt-4"><BetsByStatusPanel status="won" /></TabsContent>
+            <TabsContent value="lostbets" className="mt-4"><BetsByStatusPanel status="lost" /></TabsContent>
+            <TabsContent value="withdrawals" className="mt-4"><WithdrawalsPanel /></TabsContent>
+            <TabsContent value="housewallet" className="mt-4"><HouseWalletPanel /></TabsContent>
+            <TabsContent value="leaderboard" className="mt-4"><LeaderboardAdminPanel /></TabsContent>
+            <TabsContent value="promos" className="mt-4"><PromoPanel /></TabsContent>
+            <TabsContent value="content" className="mt-4"><ContentPanel /></TabsContent>
+            <TabsContent value="tickets" className="mt-4"><TicketsPanel /></TabsContent>
+            <TabsContent value="tasks" className="mt-4"><TasksAchievementsPanel /></TabsContent>
+            <TabsContent value="challenges" className="mt-4"><ChallengesAdminPanel /></TabsContent>
+            <TabsContent value="seasons" className="mt-4"><SeasonsAdminPanel /></TabsContent>
+            <TabsContent value="bettracker" className="mt-4"><BetTrackerPanel /></TabsContent>
+            <TabsContent value="promoreqs" className="mt-4"><PromoRequestsPanel /></TabsContent>
+            <TabsContent value="appeals" className="mt-4"><AppealsPanel /></TabsContent>
+            <TabsContent value="chat" className="mt-4"><ChatMonitorPanel /></TabsContent>
+            <TabsContent value="notify" className="mt-4"><NotifyPanel /></TabsContent>
+            <TabsContent value="audit" className="mt-4"><AuditPanel /></TabsContent>
+            <TabsContent value="analytics" className="mt-4"><AnalyticsPanel /></TabsContent>
+            <TabsContent value="settings" className="mt-4"><SettingsPanel /></TabsContent>
+            <TabsContent value="adminai" className="mt-4"><AdminAILivePanel /></TabsContent>
+            <TabsContent value="risk" className="mt-4"><RiskPanel /></TabsContent>
+            <TabsContent value="pnl" className="mt-4"><PnLPanel /></TabsContent>
+            <TabsContent value="reports" className="mt-4"><ReportsPanel /></TabsContent>
+            <TabsContent value="tokenrules" className="mt-4"><TokenRulesPanel /></TabsContent>
+            <TabsContent value="broadcast" className="mt-4"><BroadcastPanel /></TabsContent>
+            <TabsContent value="activity" className="mt-4"><ActivityPanel /></TabsContent>
+            <TabsContent value="streakpush" className="mt-4"><StreakAndPushPanel /></TabsContent>
+            <TabsContent value="referrals" className="mt-4"><ReferralsAdminPanel /></TabsContent>
+            <TabsContent value="emblems" className="mt-4"><EmblemModerationPanel /></TabsContent>
+            <TabsContent value="vip" className="mt-4"><VipAdminPanel /></TabsContent>
+            <TabsContent value="spotlights" className="mt-4"><SpotlightsAdminPanel /></TabsContent>
+          </Tabs>
         </div>
-      </SidebarProvider>
+      </main>
     </Layout>
   );
 }
@@ -2324,15 +2304,31 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 /* ============================ ANALYTICS ============================ */
 function AnalyticsPanel() {
+  const nav = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [series, setSeries] = useState<any[]>([]);
+  const [counts, setCounts] = useState<any>({});
+  const [activity, setActivity] = useState<any[]>([]);
+  const [liveMatches, setLiveMatches] = useState<any[]>([]);
+  const [broadcasts, setBroadcasts] = useState<any[]>([]);
+  const [event, setEvent] = useState<any>(null);
+  const [highlights, setHighlights] = useState<any[]>([]);
+
   useEffect(() => {
     (async () => {
-      const [u, b, t, r] = await Promise.all([
+      const [u, b, t, r, m, tr, wr, pr, ap, ti, br, ev] = await Promise.all([
         supabase.from("profiles").select("created_at, token_balance, is_banned"),
         supabase.from("bets").select("status, stake, potential_payout, created_at"),
         supabase.from("token_transactions").select("amount, kind, created_at"),
         supabase.from("token_requests").select("status, amount"),
+        supabase.from("matches").select("id,name,status,created_at").in("status", ["live", "scheduled"]).limit(5),
+        supabase.from("token_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("withdrawal_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("promo_code_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("ban_appeals").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("support_tickets").select("id", { count: "exact", head: true }).neq("status", "closed"),
+        supabase.from("broadcasts").select("*").order("created_at", { ascending: false }).limit(3),
+        supabase.from("events").select("*").eq("is_active", true).order("starts_at", { ascending: true }).limit(1).maybeSingle(),
       ]);
       const users = u.data ?? [];
       const bets = b.data ?? [];
@@ -2353,7 +2349,20 @@ function AnalyticsPanel() {
         debits: txs.filter((x: any) => x.amount < 0).reduce((a, x: any) => a + Math.abs(x.amount), 0),
         credits: txs.filter((x: any) => x.amount > 0).reduce((a, x: any) => a + x.amount, 0),
       });
-      // Build last 14 day series
+      setCounts({
+        gangWars: m.data?.length ?? 0,
+        pendingTokens: tr.count ?? 0,
+        pendingWithdrawals: wr.count ?? 0,
+        pendingPromos: pr.count ?? 0,
+        pendingAppeals: ap.count ?? 0,
+        openTickets: ti.count ?? 0,
+        bookedTickets: bets.length,
+        pendingTotal: (tr.count ?? 0) + (wr.count ?? 0) + (pr.count ?? 0),
+      });
+      setLiveMatches(m.data ?? []);
+      setBroadcasts(br.data ?? []);
+      setEvent(ev.data ?? null);
+
       const days: Record<string, { day: string; bets: number; staked: number; users: number }> = {};
       const today = new Date(); today.setHours(0,0,0,0);
       for (let i = 13; i >= 0; i--) {
@@ -2370,70 +2379,327 @@ function AnalyticsPanel() {
         if (days[k]) days[k].users += 1;
       });
       setSeries(Object.values(days));
+
+      const { data: aud } = await supabase.from("audit_logs").select("action,target_type,created_at,metadata").order("created_at", { ascending: false }).limit(6);
+      setActivity(aud ?? []);
+      const { data: hl } = await supabase.from("highlights").select("id,title,media_url,media_type,created_at").eq("is_active", true).order("created_at", { ascending: false }).limit(4);
+      setHighlights(hl ?? []);
     })();
   }, []);
-  if (!stats) return <div>Loading…</div>;
-  const items = [
-    { label: "Total users", value: stats.totalUsers },
-    { label: "Banned users", value: stats.bannedUsers },
-    { label: "Tokens circulating", value: stats.circulating.toLocaleString() },
-    { label: "Total bets", value: stats.totalBets },
-    { label: "Won bets", value: stats.wonBets },
-    { label: "Lost bets", value: stats.lostBets },
-    { label: "Open bets", value: stats.openBets },
-    { label: "Total staked", value: stats.totalStaked.toLocaleString() },
-    { label: "Total paid out", value: stats.totalPaid.toLocaleString() },
-    { label: "Net (house)", value: stats.houseEdge.toLocaleString() },
-    { label: "Tokens approved", value: stats.approvedRequests.toLocaleString() },
-    { label: "Token credits", value: stats.credits.toLocaleString() },
-    { label: "Token debits", value: stats.debits.toLocaleString() },
+
+  if (!stats) return <div className="text-sm text-muted-foreground">Loading analytics…</div>;
+
+  const fmt = (n: number) => n.toLocaleString();
+  const short = (n: number) => {
+    const a = Math.abs(n);
+    if (a >= 1e9) return (n / 1e9).toFixed(2) + "B";
+    if (a >= 1e6) return (n / 1e6).toFixed(2) + "M";
+    if (a >= 1e3) return (n / 1e3).toFixed(1) + "K";
+    return String(n);
+  };
+
+  const goTab = (t: string) => setActiveTabFromAnalytics(nav, t);
+  const row1 = [
+    { icon: Users, value: stats.totalUsers, title: "USERS", sub: "TOTAL USERS", tone: "gold", onClick: () => goTab("users") },
+    { icon: Trophy, value: counts.gangWars ?? 0, title: "GANG WARS", sub: "LIVE & UPCOMING", tone: "gold", onClick: () => goTab("matches") },
+    { icon: AlertTriangle, value: counts.pendingTotal ?? 0, title: "PENDING REQUESTS", sub: "AWAITING ACTION", tone: "amber", onClick: () => goTab("tokens") },
+    { icon: Coins, value: short(stats.circulating), title: "TOTAL VOLUME", sub: "IN CIRCULATION", tone: "gold-lg" },
+    { icon: Calendar, value: counts.openTickets ?? 0, title: "OPEN REPORTS", sub: "REPORTED ITEMS", tone: "gold", onClick: () => goTab("tickets") },
   ];
+  const row2 = [
+    { icon: Ticket, value: counts.bookedTickets ?? 0, title: "TICKETS BOOKED", sub: "TOTAL BOOKED", onClick: () => goTab("bettracker") },
+    { icon: Coins, value: counts.pendingTokens ?? 0, title: "TOKEN REQUESTS", sub: "REQUESTED TOKENS", onClick: () => goTab("tokens") },
+    { icon: Wallet, value: counts.pendingWithdrawals ?? 0, title: "WITHDRAWALS", sub: "PENDING PAYOUTS", onClick: () => goTab("withdrawals") },
+    { icon: Tag, value: counts.pendingPromos ?? 0, title: "PROMO REQUESTS", sub: "PENDING PROMOS", onClick: () => goTab("promoreqs") },
+    { icon: AlertTriangle, value: counts.pendingAppeals ?? 0, title: "BAN APPEALS", sub: "PENDING APPEALS", onClick: () => goTab("appeals") },
+  ];
+  const row4 = [
+    { icon: Users, value: stats.totalUsers, title: "TOTAL USERS", onClick: () => goTab("users") },
+    { icon: Shield, value: stats.bannedUsers, title: "BANNED USERS", onClick: () => goTab("bannedusers") },
+    { icon: Coins, value: short(stats.circulating), title: "TOKENS CIRCULATING", onClick: () => goTab("pnl") },
+    { icon: Ticket, value: stats.totalBets, title: "TOTAL BETS", onClick: () => goTab("bettracker") },
+    { icon: Trophy, value: stats.wonBets, title: "WON BETS", onClick: () => goTab("wonbets") },
+  ];
+  const row5 = [
+    { icon: X, value: stats.lostBets, title: "LOST BETS", onClick: () => goTab("lostbets") },
+    { icon: Eye, value: stats.openBets, title: "OPEN BETS", onClick: () => goTab("bettracker") },
+    { icon: Coins, value: short(stats.totalStaked), title: "TOTAL STAKED", onClick: () => goTab("pnl") },
+    { icon: Wallet, value: short(stats.totalPaid), title: "TOTAL PAID OUT", onClick: () => goTab("pnl") },
+    { icon: BarChart3, value: short(stats.houseEdge), title: "NET (HOUSE)", onClick: () => goTab("pnl") },
+  ];
+  const row6 = [
+    { icon: Check, value: short(stats.approvedRequests), title: "TOKENS APPROVED", onClick: () => goTab("tokens") },
+    { icon: Coins, value: short(stats.credits), title: "TOKEN CREDITS", onClick: () => goTab("tokenmovement") },
+    { icon: Coins, value: short(stats.debits), title: "TOKEN DEBITS", onClick: () => goTab("tokenmovement") },
+  ];
+
+  const ts = (ts: string) => {
+    const diff = (Date.now() - +new Date(ts)) / 1000;
+    if (diff < 60) return `${Math.floor(diff)}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    return `${Math.floor(diff / 86400)} days ago`;
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {items.map((x) => (
-          <Card key={x.label} className="glass p-4">
-            <div className="text-2xl font-bold gradient-gold-text">{x.value}</div>
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{x.label}</div>
+    <div className="space-y-3">
+      {/* ROW 1 — 5 metric squares */}
+      <div className="grid grid-cols-5 gap-2 sm:gap-3">
+        {row1.map((x) => <MetricSquare key={x.title} {...x} />)}
+      </div>
+
+      {/* ROW 2 — 5 metric squares */}
+      <div className="grid grid-cols-5 gap-2 sm:gap-3">
+        {row2.map((x) => <MetricSquare key={x.title} {...x} />)}
+      </div>
+
+      {/* ROW 3 — 2 charts side-by-side */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+        <Card className="glass p-2 sm:p-4 border-primary/20 bg-card/60">
+          <div className="text-[9px] sm:text-xs font-bold tracking-widest text-primary mb-1">VOLUME OVER TIME <span className="text-muted-foreground font-normal">(LAST 14 DAYS)</span></div>
+          <ResponsiveContainer width="100%" height={160}>
+            <AreaChart data={series} margin={{ top: 5, right: 4, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="gStake" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(45 96% 56%)" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="hsl(45 96% 56%)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(45 30% 20%)" />
+              <XAxis dataKey="day" stroke="hsl(45 50% 60%)" fontSize={8} />
+              <YAxis stroke="hsl(45 50% 60%)" fontSize={8} tickFormatter={short} />
+              <RTooltip contentStyle={{ background: "hsl(45 20% 8%)", border: "1px solid hsl(45 60% 40%)", borderRadius: 8, fontSize: 11 }} />
+              <Area type="monotone" dataKey="staked" stroke="hsl(45 96% 56%)" fill="url(#gStake)" strokeWidth={2} dot={{ r: 2, fill: "hsl(45 96% 56%)" }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </Card>
+        <Card className="glass p-2 sm:p-4 border-primary/20 bg-card/60">
+          <div className="text-[9px] sm:text-xs font-bold tracking-widest text-primary mb-1">NEW USERS PER DAY</div>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={series} margin={{ top: 5, right: 4, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(45 30% 20%)" />
+              <XAxis dataKey="day" stroke="hsl(45 50% 60%)" fontSize={8} />
+              <YAxis stroke="hsl(45 50% 60%)" fontSize={8} />
+              <RTooltip contentStyle={{ background: "hsl(45 20% 8%)", border: "1px solid hsl(45 60% 40%)", borderRadius: 8, fontSize: 11 }} />
+              <Bar dataKey="users" fill="hsl(45 96% 56%)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
+
+      {/* ROW 4 — 5 metric squares */}
+      <div className="grid grid-cols-5 gap-2 sm:gap-3">
+        {row4.map((x) => <MetricSquare key={x.title} {...x} compact />)}
+      </div>
+
+      {/* ROW 5 — 5 metric squares */}
+      <div className="grid grid-cols-5 gap-2 sm:gap-3">
+        {row5.map((x) => <MetricSquare key={x.title} {...x} compact />)}
+      </div>
+
+      {/* ROW 6 — 3 wider squares + image cell */}
+      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+        {row6.map((x) => <MetricSquare key={x.title} {...x} compact />)}
+        <Card className="overflow-hidden border-primary/20 bg-card/60 relative min-h-[80px]">
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,hsl(45_30%_15%),hsl(0_50%_15%))] opacity-80" />
+          <div className="absolute inset-0 grid place-items-center text-[10px] uppercase tracking-widest text-primary/80 font-bold">League</div>
+        </Card>
+      </div>
+
+      {/* ROW 7 — Recent Activity | Live Gang Wars | Highlights Hub */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <PanelBlock title="RECENT ACTIVITY" onView={() => setActiveTabFromAnalytics(nav, "activity")}>
+          {activity.length === 0 && <div className="text-[10px] text-muted-foreground">No activity yet</div>}
+          {activity.map((a, i) => (
+            <button key={i} onClick={() => setActiveTabFromAnalytics(nav, "audit")} className="w-full text-left flex items-start gap-1.5 text-[9px] sm:text-xs py-1 border-b border-primary/10 last:border-0 hover:bg-primary/5 rounded transition">
+              <Sparkles className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <div className="text-foreground truncate">{a.action?.replace(/_/g, " ")}</div>
+                <div className="text-muted-foreground text-[8px] sm:text-[10px]">{ts(a.created_at)}</div>
+              </div>
+            </button>
+          ))}
+        </PanelBlock>
+        <PanelBlock title="LIVE GANG WARS" onView={() => nav({ to: "/matches" })}>
+          {liveMatches.length === 0 && <div className="text-[10px] text-muted-foreground">No live wars</div>}
+          {liveMatches.map((m) => (
+            <button key={m.id} onClick={() => nav({ to: "/matches/$matchId", params: { matchId: m.id } })} className="w-full flex items-center justify-between text-[9px] sm:text-xs py-1 border-b border-primary/10 last:border-0 hover:bg-primary/5 rounded px-1 transition">
+              <span className="truncate text-foreground text-left">{m.name}</span>
+              <Badge variant="outline" className="text-[8px] border-primary/40 text-primary px-1 py-0">{m.status}</Badge>
+            </button>
+          ))}
+        </PanelBlock>
+        <PanelBlock title="HIGHLIGHTS HUB" onView={() => setActiveTabFromAnalytics(nav, "content")}>
+          {highlights.length === 0 && <div className="text-[10px] text-muted-foreground">No highlights yet</div>}
+          {highlights.map((h) => (
+            <button key={h.id} onClick={() => setActiveTabFromAnalytics(nav, "content")} className="w-full flex items-center gap-1.5 text-[9px] sm:text-xs py-1 border-b border-primary/10 last:border-0 hover:bg-primary/5 rounded px-1 transition">
+              {h.media_type === "video" ? <Play className="h-3 w-3 text-primary shrink-0" /> : <ImageIcon className="h-3 w-3 text-primary shrink-0" />}
+              <div className="min-w-0 flex-1 truncate text-left">{h.title}</div>
+            </button>
+          ))}
+        </PanelBlock>
+      </div>
+
+      {/* ROW 8 — Event Countdown | Broadcast Center | Quick Actions */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <PanelBlock title="EVENT COUNTDOWN" onView={() => setActiveTabFromAnalytics(nav, "events")}>
+          {event ? (
+            <button onClick={() => setActiveTabFromAnalytics(nav, "events")} className="w-full text-left hover:bg-primary/5 rounded p-1 transition space-y-1">
+              <div className="text-[9px] sm:text-xs font-bold text-primary truncate">{event.title}</div>
+              <div className="text-[10px] sm:text-sm font-mono text-amber-300"><Countdown target={event.ends_at ?? event.starts_at} /></div>
+              <div className="text-[7px] sm:text-[9px] text-muted-foreground">{new Date(event.starts_at ?? event.ends_at).toLocaleString()}</div>
+            </button>
+          ) : (
+            <div className="text-[10px] text-muted-foreground">No active event</div>
+          )}
+        </PanelBlock>
+        <PanelBlock title="BROADCAST CENTER" onView={() => setActiveTabFromAnalytics(nav, "broadcast")}>
+          {broadcasts.length === 0 && <div className="text-[10px] text-muted-foreground">No broadcasts</div>}
+          {broadcasts.map((b) => (
+            <button key={b.id} onClick={() => setActiveTabFromAnalytics(nav, "broadcast")} className="w-full text-left text-[9px] sm:text-xs py-1 border-b border-primary/10 last:border-0 hover:bg-primary/5 rounded px-1 transition">
+              <div className="flex items-center gap-1"><Megaphone className="h-2.5 w-2.5 text-primary shrink-0" /><div className="truncate text-foreground font-semibold">{b.title || "Broadcast"}</div></div>
+              {b.body && <div className="text-[8px] sm:text-[10px] text-muted-foreground truncate pl-3.5">{b.body}</div>}
+              <div className="text-[7px] sm:text-[9px] text-muted-foreground pl-3.5">{ts(b.created_at)}</div>
+            </button>
+          ))}
+        </PanelBlock>
+        <PanelBlock title="QUICK ACTIONS">
+          <div className="max-h-[260px] sm:max-h-[320px] overflow-y-auto pr-1 -mr-1">
+            <div className="grid grid-cols-3 gap-1">
+              {[
+                { i: BarChart3, l: "Analytics", t: "analytics" },
+                { i: Users, l: "Users", t: "users" },
+                { i: Shield, l: "Banned", t: "bannedusers" },
+                { i: Sparkles, l: "Admin AI", t: "adminai" },
+                { i: AlertTriangle, l: "Appeals", t: "appeals" },
+                { i: History, l: "Audit", t: "audit" },
+                { i: ClipboardList, l: "Bet Tracker", t: "bettracker" },
+                { i: Send, l: "Broadcast", t: "broadcast" },
+                { i: Sparkles, l: "Challenges", t: "challenges" },
+                { i: MessageSquare, l: "Chat", t: "chat" },
+                { i: Megaphone, l: "Content", t: "content" },
+                { i: Trophy, l: "Emblems", t: "emblems" },
+                { i: Calendar, l: "Events", t: "events" },
+                { i: Wallet, l: "House Wallet", t: "housewallet" },
+                { i: ListOrdered, l: "Leaderboard", t: "leaderboard" },
+                { i: Trophy, l: "Matches", t: "matches" },
+                { i: Send, l: "Notify", t: "notify" },
+                { i: BarChart3, l: "P&L", t: "pnl" },
+                { i: Tag, l: "Promo Codes", t: "promos" },
+                { i: Tag, l: "Promo Reqs", t: "promoreqs" },
+                { i: Users, l: "Referrals", t: "referrals" },
+                { i: BarChart3, l: "Reports", t: "reports" },
+                { i: AlertTriangle, l: "Risk", t: "risk" },
+                { i: Trophy, l: "Seasons", t: "seasons" },
+                { i: SettingsIcon, l: "Settings", t: "settings" },
+                { i: Sparkles, l: "Spotlights", t: "spotlights" },
+                { i: Sparkles, l: "Streak/Push", t: "streakpush" },
+                { i: ClipboardList, l: "Tasks", t: "tasks" },
+                { i: Ticket, l: "Tickets", t: "tickets" },
+                { i: Coins, l: "Tokens", t: "tokens" },
+                { i: Coins, l: "Token Rules", t: "tokenrules" },
+                { i: Coins, l: "Token Move", t: "tokenmovement" },
+                { i: Users, l: "Activity", t: "activity" },
+                { i: Dice5, l: "Virtual", t: "virtual" },
+                { i: Trophy, l: "VIP", t: "vip" },
+                { i: Wallet, l: "Withdrawals", t: "withdrawals" },
+                { i: Trophy, l: "Won Bets", t: "wonbets" },
+                { i: X, l: "Lost Bets", t: "lostbets" },
+              ].map((q) => (
+                <button key={q.l} onClick={() => setActiveTabFromAnalytics(nav, q.t)} className="flex flex-col items-center gap-0.5 p-1 rounded border border-primary/20 hover:border-primary/50 hover:bg-primary/10 active:scale-95 transition">
+                  <q.i className="h-3 w-3 text-primary" />
+                  <span className="text-[7px] sm:text-[9px] text-foreground text-center leading-tight">{q.l}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </PanelBlock>
+      </div>
+
+      {/* ROW 9 — 5 module tiles */}
+      <div className="grid grid-cols-5 gap-2 sm:gap-3">
+        {[
+          { l: "VIRTUAL", s: "Manage virtual matches and rounds", t: "virtual", img: tileVirtual },
+          { l: "VIP PROGRAM", s: "Manage VIP tiers and rewards", t: "vip", img: tileVip },
+          { l: "CHALLENGES", s: "Create and manage gang challenges", t: "challenges", img: tileChallenges },
+          { l: "REFERRALS", s: "Manage referrals and commissions", t: "referrals", img: tileReferrals },
+          { l: "HOUSE WALLET", s: "Manage platform funds", t: "housewallet", img: tileHousewallet },
+        ].map((m) => (
+          <Card key={m.l} className="border-primary/20 bg-card/60 p-2 sm:p-3 flex flex-col">
+            <button type="button" onClick={() => setActiveTabFromAnalytics(nav, m.t)} className="aspect-square w-full mb-1 rounded overflow-hidden border border-primary/20 hover:border-primary/60 transition active:scale-95">
+              <img src={m.img} alt={m.l} loading="lazy" width={512} height={512} className="w-full h-full object-cover" />
+            </button>
+            <div className="text-[8px] sm:text-[10px] font-bold text-primary leading-tight">{m.l}</div>
+            <div className="text-[6px] sm:text-[8px] text-muted-foreground leading-tight mt-0.5 line-clamp-2">{m.s}</div>
+            <Button size="sm" variant="outline" className="mt-1 h-5 sm:h-6 text-[7px] sm:text-[9px] border-primary/40 text-primary px-1" onClick={() => setActiveTabFromAnalytics(nav, m.t)}>Manage</Button>
           </Card>
         ))}
       </div>
-      <Card className="glass p-4">
-        <div className="text-sm font-bold mb-3">Last 14 days · Bets & Stake</div>
-        <ResponsiveContainer width="100%" height={240}>
-          <AreaChart data={series}>
-            <defs>
-              <linearGradient id="gStake" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="gBets" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={10} />
-            <YAxis stroke="var(--muted-foreground)" fontSize={10} />
-            <RTooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} />
-            <Area type="monotone" dataKey="staked" stroke="var(--primary)" fill="url(#gStake)" name="Staked" />
-            <Area type="monotone" dataKey="bets" stroke="var(--accent)" fill="url(#gBets)" name="Bets" />
-          </AreaChart>
-        </ResponsiveContainer>
-      </Card>
-      <Card className="glass p-4">
-        <div className="text-sm font-bold mb-3">New users per day</div>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={series}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={10} />
-            <YAxis stroke="var(--muted-foreground)" fontSize={10} />
-            <RTooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} />
-            <Bar dataKey="users" fill="var(--primary)" radius={[6,6,0,0]} />
-          </BarChart>
-        </ResponsiveContainer>
+
+      {/* ROW 10 — System Status */}
+      <Card className="border-primary/20 bg-card/60 p-3">
+        <div className="text-[10px] sm:text-xs font-bold tracking-widest text-primary mb-2">SYSTEM STATUS <span className="text-muted-foreground font-normal">(COMING SOON)</span></div>
+        <div className="grid grid-cols-5 gap-1 sm:gap-2">
+          {["Platform", "Database", "Payments", "Broadcast", "AI Engine"].map((s) => (
+            <div key={s} className="flex items-center justify-between gap-1 text-[8px] sm:text-[10px] px-1.5 py-1 rounded bg-background/40 border border-primary/10">
+              <span className="text-foreground truncate">{s}</span>
+              <span className="text-emerald-400 font-bold">●</span>
+            </div>
+          ))}
+        </div>
       </Card>
     </div>
+  );
+}
+
+function setActiveTabFromAnalytics(_nav: any, _tab: string) {
+  // Dispatch a custom event the parent listens to, or fallback: store and reload
+  const ev = new CustomEvent("admin:set-tab", { detail: _tab });
+  window.dispatchEvent(ev);
+}
+
+function MetricSquare({ icon: Icon, value, title, sub, tone, compact, onClick }: { icon: any; value: any; title: string; sub?: string; tone?: string; compact?: boolean; onClick?: () => void }) {
+  const valueClass = tone === "gold-lg"
+    ? "text-[10px] sm:text-base font-black text-primary leading-tight"
+    : tone === "amber"
+    ? "text-base sm:text-xl font-black text-amber-400 leading-none"
+    : compact
+    ? "text-xs sm:text-lg font-black text-primary leading-none"
+    : "text-base sm:text-2xl font-black text-primary leading-none";
+  const content = (
+    <>
+      <Icon className="h-2.5 w-2.5 sm:h-4 sm:w-4 text-primary/70 mb-0.5" />
+      <div className={valueClass}>{value}</div>
+      <div className="mt-0.5">
+        <div className="text-[6px] sm:text-[9px] uppercase tracking-wider text-muted-foreground leading-tight font-semibold">{title}</div>
+        {sub && <div className="text-[5px] sm:text-[8px] uppercase tracking-wider text-muted-foreground/70 leading-tight">{sub}</div>}
+      </div>
+    </>
+  );
+  const baseCls = "border-primary/20 bg-card/60 p-1.5 sm:p-3 flex flex-col justify-between min-h-[68px] sm:min-h-[100px] hover:border-primary/50 hover:bg-primary/10 active:scale-95 transition cursor-pointer text-left w-full";
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={`rounded-xl border shadow ${baseCls}`}>
+        {content}
+      </button>
+    );
+  }
+  return (
+    <Card className={baseCls}>{content}</Card>
+  );
+}
+
+function PanelBlock({ title, onView, children }: { title: string; onView?: () => void; children: React.ReactNode }) {
+  return (
+    <Card className="border-primary/20 bg-card/60 p-2 sm:p-3 flex flex-col min-h-[140px]">
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="text-[8px] sm:text-[11px] font-bold tracking-widest text-primary">{title}</div>
+        {onView && (
+          <button onClick={onView} className="text-[7px] sm:text-[9px] text-primary/70 hover:text-primary">View all</button>
+        )}
+      </div>
+      <div className="space-y-0.5 flex-1 overflow-hidden">{children}</div>
+    </Card>
   );
 }
 
@@ -3540,6 +3806,166 @@ function SeasonsAdminPanel() {
           </Card>
         ))}
         {list.length === 0 && <p className="text-muted-foreground text-sm">No seasons yet.</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ============================ BANNED USERS ============================ */
+function BannedUsersPanel() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [q, setQ] = useState("");
+  async function load() {
+    const { data } = await supabase.from("profiles").select("id,full_name,email,gang_name,is_banned,ban_reason,updated_at").eq("is_banned", true).order("updated_at", { ascending: false });
+    setUsers(data ?? []);
+  }
+  useEffect(() => { load(); }, []);
+  async function unban(id: string) {
+    const { error } = await supabase.from("profiles").update({ is_banned: false, ban_reason: null }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("User unbanned");
+    logAudit("user_unban", "user", id);
+    load();
+  }
+  const filtered = users.filter((u) => !q || (u.full_name ?? "").toLowerCase().includes(q.toLowerCase()) || (u.email ?? "").toLowerCase().includes(q.toLowerCase()));
+  return (
+    <div className="space-y-3">
+      <Card className="glass-strong p-4 flex items-center gap-3 backdrop-blur-2xl border-destructive/30">
+        <Shield className="h-5 w-5 text-destructive" />
+        <div className="flex-1">
+          <div className="font-bold">Banned Users</div>
+          <div className="text-xs text-muted-foreground">{filtered.length} banned · click Unban to restore access.</div>
+        </div>
+        <Input placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
+      </Card>
+      {filtered.length === 0 && <p className="text-muted-foreground text-sm">No banned users.</p>}
+      {filtered.map((u) => (
+        <Card key={u.id} className="glass-strong p-4 flex items-center justify-between gap-3 flex-wrap backdrop-blur-2xl border-destructive/20">
+          <div className="min-w-0 flex-1">
+            <div className="font-bold">{u.full_name || "—"} <span className="text-xs text-muted-foreground font-normal">{u.email}</span></div>
+            <div className="text-xs text-muted-foreground">{u.gang_name ?? "Independent"} · banned {new Date(u.updated_at).toLocaleDateString()}</div>
+            {u.ban_reason && <div className="text-xs mt-1 text-destructive/80">Reason: {u.ban_reason}</div>}
+          </div>
+          <Button size="sm" variant="outline" className="border-emerald-500/40 text-emerald-300" onClick={() => unban(u.id)}>Unban</Button>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+/* ============================ BETS BY STATUS (won / lost) ============================ */
+function BetsByStatusPanel({ status }: { status: "won" | "lost" }) {
+  const [rows, setRows] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, any>>({});
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any).from("bets")
+        .select("id,user_id,tracking_id,stake,potential_payout,settled_at,created_at,bet_selections(selection_label,matches:match_id(name))")
+        .eq("status", status)
+        .order("settled_at", { ascending: false, nullsFirst: false })
+        .limit(200);
+      const list = data ?? [];
+      setRows(list);
+      const ids = Array.from(new Set(list.map((b: any) => b.user_id).filter(Boolean)));
+      if (ids.length) {
+        const { data: p } = await supabase.from("profiles").select("id,full_name,email,gang_name").in("id", ids as string[]);
+        const map: Record<string, any> = {}; (p ?? []).forEach((x: any) => { map[x.id] = x; }); setProfiles(map);
+      }
+    })();
+  }, [status]);
+  const tone = status === "won" ? "emerald" : "destructive";
+  const label = status === "won" ? "Won Bets" : "Lost Bets";
+  return (
+    <div className="space-y-3">
+      <Card className={`glass-strong p-4 flex items-center gap-3 backdrop-blur-2xl border-${tone}-500/30`}>
+        {status === "won" ? <Trophy className="h-5 w-5 text-emerald-400" /> : <X className="h-5 w-5 text-destructive" />}
+        <div>
+          <div className="font-bold">{label}</div>
+          <div className="text-xs text-muted-foreground">{rows.length} ticket(s)</div>
+        </div>
+      </Card>
+      {rows.length === 0 && <p className="text-muted-foreground text-sm">No {status} bets yet.</p>}
+      <div className="grid gap-2">
+        {rows.map((b) => {
+          const u = profiles[b.user_id];
+          const matches = (b.bet_selections ?? []).map((s: any) => s.matches?.name || s.selection_label).filter(Boolean).join(" · ");
+          return (
+            <Card key={b.id} className="backdrop-blur-2xl bg-card/85 border-primary/25 p-4 shadow-luxury">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold">{u?.full_name ?? "—"}</span>
+                    <span className="text-xs text-muted-foreground">{u?.email}</span>
+                    <span className="font-mono text-[10px] text-primary">{b.tracking_id}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5 truncate">{matches || "—"}</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(b.settled_at ?? b.created_at).toLocaleString()}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{status === "won" ? "Amount Won" : "Stake Lost"}</div>
+                  <div className={`text-lg font-black ${status === "won" ? "text-emerald-300" : "text-destructive"}`}>
+                    {(status === "won" ? b.potential_payout : b.stake)?.toLocaleString?.() ?? 0}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ============================ TOKEN MOVEMENT (credits + debits) ============================ */
+function TokenMovementPanel() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [filter, setFilter] = useState<"all" | "credit" | "debit">("all");
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("token_transactions").select("id,user_id,amount,kind,description,balance_after,created_at").order("created_at", { ascending: false }).limit(300);
+      setRows(data ?? []);
+    })();
+  }, []);
+  const filtered = rows.filter((r) => filter === "all" || (filter === "credit" ? r.amount > 0 : r.amount < 0));
+  const credits = rows.filter((r) => r.amount > 0).reduce((a, r) => a + r.amount, 0);
+  const debits = rows.filter((r) => r.amount < 0).reduce((a, r) => a + Math.abs(r.amount), 0);
+  return (
+    <div className="space-y-3">
+      <Card className="glass-strong p-4 backdrop-blur-2xl border-primary/30">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Coins className="h-5 w-5 text-primary" />
+          <div>
+            <div className="font-bold">Token Movement</div>
+            <div className="text-xs text-muted-foreground">Credits and debits across the platform</div>
+          </div>
+          <div className="ml-auto flex items-center gap-3 text-xs">
+            <span className="text-emerald-300 font-bold">+ {credits.toLocaleString()}</span>
+            <span className="text-destructive font-bold">− {debits.toLocaleString()}</span>
+          </div>
+        </div>
+        <div className="flex gap-1 mt-3">
+          {(["all", "credit", "debit"] as const).map((f) => (
+            <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} className="text-[10px] capitalize" onClick={() => setFilter(f)}>{f}</Button>
+          ))}
+        </div>
+      </Card>
+      {filtered.length === 0 && <p className="text-muted-foreground text-sm">No token movements.</p>}
+      <div className="grid gap-2">
+        {filtered.map((r) => (
+          <Card key={r.id} className="backdrop-blur-2xl bg-card/85 border-primary/20 p-3 flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold uppercase tracking-wider text-primary">{r.kind}</div>
+              <div className="text-xs text-muted-foreground truncate">{r.description ?? "—"}</div>
+              <div className="text-[10px] text-muted-foreground">{new Date(r.created_at).toLocaleString()}</div>
+            </div>
+            <div className="text-right">
+              <div className={`text-base font-black ${r.amount > 0 ? "text-emerald-300" : "text-destructive"}`}>
+                {r.amount > 0 ? "+" : "−"}{Math.abs(r.amount).toLocaleString()}
+              </div>
+              <div className="text-[10px] text-muted-foreground">bal {Number(r.balance_after ?? 0).toLocaleString()}</div>
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
   );
