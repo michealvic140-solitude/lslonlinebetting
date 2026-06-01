@@ -212,7 +212,7 @@ function VirtualPage() {
             </Card>
           ) : (
             <>
-              {upcoming.length > 0 && (
+              {live.length === 0 && upcoming.length > 0 && (
                 <section>
                   <SectionTitle
                     icon={Clock}
