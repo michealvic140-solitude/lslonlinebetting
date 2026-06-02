@@ -24,6 +24,7 @@ import tileVip from "@/assets/tile-vip.jpg";
 import tileChallenges from "@/assets/tile-challenges.jpg";
 import tileReferrals from "@/assets/tile-referrals.jpg";
 import tileHousewallet from "@/assets/tile-housewallet.jpg";
+import leagueSkullFire from "@/assets/league-skull-fire.jpg";
 import { Countdown } from "@/components/Countdown";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -46,7 +47,13 @@ function AdminPage() {
   const { isAdmin, isMod, loading } = useAuth();
   const nav = useNavigate();
   const [alerts, setAlerts] = useState<Record<string, number>>({});
-  const [activeTab, setActiveTab] = useState(isAdmin ? "analytics" : "tickets");
+  // Default to analytics for admins; re-sync once auth resolves so a reload
+  // never lands on the Tickets tab when an admin refreshes the page.
+  const [activeTab, setActiveTab] = useState<string>("analytics");
+  useEffect(() => {
+    if (loading) return;
+    setActiveTab((prev) => (isAdmin ? (prev === "tickets" ? "analytics" : prev) : "tickets"));
+  }, [loading, isAdmin]);
   useEffect(() => { if (!loading && !isAdmin && !isMod) nav({ to: "/" }); }, [isAdmin, isMod, loading, nav]);
   useEffect(() => {
     if (!isAdmin) return;
@@ -2321,7 +2328,7 @@ function AnalyticsPanel() {
         supabase.from("bets").select("status, stake, potential_payout, created_at"),
         supabase.from("token_transactions").select("amount, kind, created_at"),
         supabase.from("token_requests").select("status, amount"),
-        supabase.from("matches").select("id,name,status,created_at").in("status", ["live", "scheduled"]).limit(5),
+        supabase.from("matches").select("id,name,status,created_at,home_team:teams!home_team_id(name,logo_url),away_team:teams!away_team_id(name,logo_url)").eq("is_virtual", false).in("status", ["live", "scheduled"]).limit(5),
         supabase.from("token_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("withdrawal_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("promo_code_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
@@ -2500,19 +2507,21 @@ function AnalyticsPanel() {
       {/* ROW 6 — 3 wider squares + image cell */}
       <div className="grid grid-cols-4 gap-2 sm:gap-3">
         {row6.map((x) => <MetricSquare key={x.title} {...x} compact />)}
-        <Card className="overflow-hidden border-primary/20 bg-card/60 relative min-h-[80px]">
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,hsl(45_30%_15%),hsl(0_50%_15%))] opacity-80" />
-          <div className="absolute inset-0 grid place-items-center text-[10px] uppercase tracking-widest text-primary/80 font-bold">League</div>
+        <Card className="overflow-hidden border-primary/20 bg-card/60 relative min-h-[80px] group">
+          <img src={leagueSkullFire} alt="League" loading="lazy" width={512} height={512}
+               className="absolute inset-0 h-full w-full object-cover scale-110 animate-pulse-glow group-hover:scale-125 transition-transform duration-[3000ms]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          <div className="absolute inset-x-0 bottom-1 text-center text-[10px] uppercase tracking-widest text-white font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">League</div>
         </Card>
       </div>
 
       {/* ROW 7 — Recent Activity | Live Gang Wars | Highlights Hub */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <PanelBlock title="RECENT ACTIVITY" onView={() => setActiveTabFromAnalytics(nav, "activity")}>
+        <PanelBlock title="RECENT ACTIVITY" accent="sky" onView={() => setActiveTabFromAnalytics(nav, "activity")}>
           {activity.length === 0 && <div className="text-[10px] text-muted-foreground">No activity yet</div>}
-          {activity.map((a, i) => (
-            <button key={i} onClick={() => setActiveTabFromAnalytics(nav, "audit")} className="w-full text-left flex items-start gap-1.5 text-[9px] sm:text-xs py-1 border-b border-primary/10 last:border-0 hover:bg-primary/5 rounded transition">
-              <Sparkles className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+          {activity.slice(0, 3).map((a, i) => (
+            <button key={i} onClick={() => setActiveTabFromAnalytics(nav, "audit")} className="w-full text-left flex items-start gap-1.5 text-[9px] sm:text-xs py-1 border-b border-border/40 last:border-0 hover:bg-sky-500/10 rounded transition">
+              <Sparkles className="h-3 w-3 text-sky-400 shrink-0 mt-0.5" />
               <div className="min-w-0 flex-1">
                 <div className="text-foreground truncate">{a.action?.replace(/_/g, " ")}</div>
                 <div className="text-muted-foreground text-[8px] sm:text-[10px]">{ts(a.created_at)}</div>
@@ -2520,20 +2529,25 @@ function AnalyticsPanel() {
             </button>
           ))}
         </PanelBlock>
-        <PanelBlock title="LIVE GANG WARS" onView={() => nav({ to: "/matches" })}>
+        <PanelBlock title="LIVE GANG WARS" accent="rose" onView={() => nav({ to: "/matches" })}>
           {liveMatches.length === 0 && <div className="text-[10px] text-muted-foreground">No live wars</div>}
-          {liveMatches.map((m) => (
-            <button key={m.id} onClick={() => nav({ to: "/matches/$matchId", params: { matchId: m.id } })} className="w-full flex items-center justify-between text-[9px] sm:text-xs py-1 border-b border-primary/10 last:border-0 hover:bg-primary/5 rounded px-1 transition">
-              <span className="truncate text-foreground text-left">{m.name}</span>
-              <Badge variant="outline" className="text-[8px] border-primary/40 text-primary px-1 py-0">{m.status}</Badge>
-            </button>
-          ))}
+          {liveMatches.slice(0, 3).map((m: any) => {
+            const home = m.home_team; const away = m.away_team;
+            const initial = (n?: string) => (n ? n.charAt(0).toUpperCase() : "?");
+            return (
+              <button key={m.id} onClick={() => nav({ to: "/matches/$matchId", params: { matchId: m.id } })} className="w-full flex items-center gap-1.5 text-[9px] sm:text-xs py-1 border-b border-border/40 last:border-0 hover:bg-rose-500/10 rounded px-1 transition">
+                {home?.logo_url ? <img src={home.logo_url} alt="" className="h-5 w-5 rounded-full object-cover border border-rose-500/40" /> : <div className="h-5 w-5 rounded-full bg-rose-500/20 grid place-items-center text-[8px] font-bold text-rose-300 border border-rose-500/40">{initial(home?.name)}</div>}
+                <div className="flex-1 min-w-0 text-center text-foreground font-semibold truncate">{home?.name ?? "Home"} <span className="text-muted-foreground">vs</span> {away?.name ?? "Away"}</div>
+                {away?.logo_url ? <img src={away.logo_url} alt="" className="h-5 w-5 rounded-full object-cover border border-rose-500/40" /> : <div className="h-5 w-5 rounded-full bg-rose-500/20 grid place-items-center text-[8px] font-bold text-rose-300 border border-rose-500/40">{initial(away?.name)}</div>}
+              </button>
+            );
+          })}
         </PanelBlock>
-        <PanelBlock title="HIGHLIGHTS HUB" onView={() => setActiveTabFromAnalytics(nav, "content")}>
+        <PanelBlock title="HIGHLIGHTS HUB" accent="violet" onView={() => setActiveTabFromAnalytics(nav, "content")}>
           {highlights.length === 0 && <div className="text-[10px] text-muted-foreground">No highlights yet</div>}
-          {highlights.map((h) => (
-            <button key={h.id} onClick={() => setActiveTabFromAnalytics(nav, "content")} className="w-full flex items-center gap-1.5 text-[9px] sm:text-xs py-1 border-b border-primary/10 last:border-0 hover:bg-primary/5 rounded px-1 transition">
-              {h.media_type === "video" ? <Play className="h-3 w-3 text-primary shrink-0" /> : <ImageIcon className="h-3 w-3 text-primary shrink-0" />}
+          {highlights.slice(0, 3).map((h) => (
+            <button key={h.id} onClick={() => setActiveTabFromAnalytics(nav, "content")} className="w-full flex items-center gap-1.5 text-[9px] sm:text-xs py-1 border-b border-border/40 last:border-0 hover:bg-violet-500/10 rounded px-1 transition">
+              {h.media_type === "video" ? <Play className="h-3 w-3 text-violet-400 shrink-0" /> : <ImageIcon className="h-3 w-3 text-violet-400 shrink-0" />}
               <div className="min-w-0 flex-1 truncate text-left">{h.title}</div>
             </button>
           ))}
@@ -2689,16 +2703,25 @@ function MetricSquare({ icon: Icon, value, title, sub, tone, compact, onClick }:
   );
 }
 
-function PanelBlock({ title, onView, children }: { title: string; onView?: () => void; children: React.ReactNode }) {
+function PanelBlock({ title, onView, children, accent }: { title: string; onView?: () => void; children: React.ReactNode; accent?: "sky" | "rose" | "violet" | "amber" | "emerald" }) {
+  const accents: Record<string, { ring: string; title: string; link: string; glow: string }> = {
+    sky:     { ring: "border-sky-500/30",     title: "text-sky-300",     link: "text-sky-300/80 hover:text-sky-200",     glow: "shadow-[0_0_30px_-12px_rgba(56,189,248,0.5)]" },
+    rose:    { ring: "border-rose-500/30",    title: "text-rose-300",    link: "text-rose-300/80 hover:text-rose-200",    glow: "shadow-[0_0_30px_-12px_rgba(244,63,94,0.5)]" },
+    violet:  { ring: "border-violet-500/30",  title: "text-violet-300",  link: "text-violet-300/80 hover:text-violet-200",  glow: "shadow-[0_0_30px_-12px_rgba(167,139,250,0.5)]" },
+    amber:   { ring: "border-amber-500/30",   title: "text-amber-300",   link: "text-amber-300/80 hover:text-amber-200",   glow: "shadow-[0_0_30px_-12px_rgba(251,191,36,0.5)]" },
+    emerald: { ring: "border-emerald-500/30", title: "text-emerald-300", link: "text-emerald-300/80 hover:text-emerald-200", glow: "shadow-[0_0_30px_-12px_rgba(52,211,153,0.5)]" },
+    primary: { ring: "border-primary/20",     title: "text-primary",     link: "text-primary/70 hover:text-primary",     glow: "" },
+  };
+  const a = accents[accent ?? "primary"];
   return (
-    <Card className="border-primary/20 bg-card/60 p-2 sm:p-3 flex flex-col min-h-[140px]">
-      <div className="flex items-center justify-between mb-1.5">
-        <div className="text-[8px] sm:text-[11px] font-bold tracking-widest text-primary">{title}</div>
+    <Card className={`bg-card/60 p-2 sm:p-3 flex flex-col min-h-[140px] ${a.ring} ${a.glow}`}>
+      <div className="relative flex items-center justify-between mb-1.5">
+        <div className={`text-[8px] sm:text-[11px] font-bold tracking-widest ${a.title}`}>{title}</div>
         {onView && (
-          <button onClick={onView} className="text-[7px] sm:text-[9px] text-primary/70 hover:text-primary">View all</button>
+          <button onClick={onView} className={`text-[7px] sm:text-[9px] ${a.link}`}>View all</button>
         )}
       </div>
-      <div className="space-y-0.5 flex-1 overflow-hidden">{children}</div>
+      <div className="relative space-y-0.5 flex-1 overflow-y-auto pr-0.5">{children}</div>
     </Card>
   );
 }
