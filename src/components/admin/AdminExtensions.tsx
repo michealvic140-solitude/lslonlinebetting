@@ -742,8 +742,13 @@ export function ReferralsAdminPanel() {
   const [profiles, setProfiles] = useState<Record<string, any>>({});
 
   async function load() {
-    const { data: settings } = await supabase.from("app_settings").select("referral_enabled, referral_bonus_referrer, referral_bonus_referee").eq("id", 1).maybeSingle();
-    setS(settings);
+    const { data: settings } = await supabase
+      .from("app_settings")
+      .select("referral_bonus_referrer, referral_bonus_referee, xp_per_referral")
+      .eq("id", 1)
+      .maybeSingle();
+    // Always seed local state so the panel renders even if the row is missing.
+    setS(settings ?? { referral_bonus_referrer: 0, referral_bonus_referee: 0, xp_per_referral: 0 });
     const { data } = await supabase.from("referrals").select("*").order("created_at", { ascending: false }).limit(200);
     setList(data ?? []);
     const ids = Array.from(new Set((data ?? []).flatMap((r: any) => [r.referrer_id, r.referee_id])));
@@ -755,7 +760,12 @@ export function ReferralsAdminPanel() {
   useEffect(() => { load(); }, []);
 
   async function save() {
-    const { error } = await supabase.from("app_settings").update(s).eq("id", 1);
+    const payload = {
+      referral_bonus_referrer: Number(s.referral_bonus_referrer ?? 0),
+      referral_bonus_referee: Number(s.referral_bonus_referee ?? 0),
+      xp_per_referral: Number(s.xp_per_referral ?? 0),
+    };
+    const { error } = await supabase.from("app_settings").update(payload).eq("id", 1);
     if (error) toast.error(error.message); else toast.success("Saved");
   }
 
@@ -767,18 +777,19 @@ export function ReferralsAdminPanel() {
     <div className="space-y-4">
       <Card className="p-5 space-y-3">
         <div className="flex items-center gap-2 mb-2"><Gift className="h-5 w-5 text-primary" /><div className="font-bold">Referral system</div></div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm">Enabled globally</span>
-          <Switch checked={!!s.referral_enabled} onCheckedChange={(v) => setS({ ...s, referral_enabled: v })} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
+        <p className="text-xs text-muted-foreground">Admin-only controls. Set the token amount granted to the referrer and the new user (referee) when a referral code is redeemed.</p>
+        <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="text-[10px] uppercase text-muted-foreground">Referrer bonus</label>
-            <Input type="number" value={s.referral_bonus_referrer} onChange={(e) => setS({ ...s, referral_bonus_referrer: Number(e.target.value) })} />
+            <label className="text-[10px] uppercase text-muted-foreground">Referrer bonus (tokens)</label>
+            <Input type="number" value={s.referral_bonus_referrer ?? 0} onChange={(e) => setS({ ...s, referral_bonus_referrer: Number(e.target.value) })} />
           </div>
           <div>
-            <label className="text-[10px] uppercase text-muted-foreground">Referee bonus</label>
-            <Input type="number" value={s.referral_bonus_referee} onChange={(e) => setS({ ...s, referral_bonus_referee: Number(e.target.value) })} />
+            <label className="text-[10px] uppercase text-muted-foreground">Referee bonus (tokens)</label>
+            <Input type="number" value={s.referral_bonus_referee ?? 0} onChange={(e) => setS({ ...s, referral_bonus_referee: Number(e.target.value) })} />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase text-muted-foreground">XP per referral</label>
+            <Input type="number" value={s.xp_per_referral ?? 0} onChange={(e) => setS({ ...s, xp_per_referral: Number(e.target.value) })} />
           </div>
         </div>
         <Button onClick={save} className="btn-luxury">Save</Button>
