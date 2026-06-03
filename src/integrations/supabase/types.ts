@@ -2593,6 +2593,7 @@ export type Database = {
         Returns: undefined
       }
       fix_pending_virtual_bets: { Args: never; Returns: Json }
+      fix_stuck_bets: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
