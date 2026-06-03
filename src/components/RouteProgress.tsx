@@ -2,43 +2,40 @@ import { useEffect, useState } from "react";
 import { useRouterState } from "@tanstack/react-router";
 
 /**
- * Top-of-page progress bar that shows while TanStack Router is loading
- * the next route (preloading data + lazy chunks). Gives every click a
- * clear "loading the next page" beat instead of a silent jump.
+ * Centered spinner overlay that shows while TanStack Router is loading
+ * the next route. Has a safety timeout so it can never get stuck on
+ * screen if a navigation signal is missed.
  */
 export function RouteProgress() {
   const status = useRouterState({ select: (s) => s.status });
-  const [width, setWidth] = useState(0);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    let raf = 0;
-    let timeout: ReturnType<typeof setTimeout> | null = null;
+    let hide: ReturnType<typeof setTimeout> | null = null;
+    let safety: ReturnType<typeof setTimeout> | null = null;
     if (status === "pending") {
       setVisible(true);
-      setWidth(8);
-      const grow = () => {
-        setWidth((w) => (w < 88 ? w + (90 - w) * 0.05 : w));
-        raf = requestAnimationFrame(grow);
-      };
-      raf = requestAnimationFrame(grow);
+      // Hard cap so the spinner can never stick on screen.
+      safety = setTimeout(() => setVisible(false), 6000);
     } else {
-      setWidth(100);
-      timeout = setTimeout(() => { setVisible(false); setWidth(0); }, 220);
+      hide = setTimeout(() => setVisible(false), 160);
     }
     return () => {
-      if (raf) cancelAnimationFrame(raf);
-      if (timeout) clearTimeout(timeout);
+      if (hide) clearTimeout(hide);
+      if (safety) clearTimeout(safety);
     };
   }, [status]);
 
   if (!visible) return null;
   return (
-    <div className="fixed inset-x-0 top-0 z-[200] h-[3px] bg-transparent pointer-events-none">
-      <div
-        className="h-full bg-gradient-to-r from-primary via-amber-300 to-primary shadow-[0_0_10px_oklch(0.82_0.22_88/0.7)]"
-        style={{ width: `${width}%`, transition: "width 180ms ease-out, opacity 200ms" }}
-      />
+    <div className="fixed inset-0 z-[200] pointer-events-none grid place-items-center">
+      <div className="relative h-12 w-12">
+        <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
+        <div
+          className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary border-r-amber-300 animate-spin"
+          style={{ boxShadow: "0 0 18px oklch(0.82 0.22 88 / 0.55)" }}
+        />
+      </div>
     </div>
   );
 }

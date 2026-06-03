@@ -417,13 +417,6 @@ function SupportTicketView({ ticket, userId, isMod }: { ticket: any; userId: str
     const content = text.trim(); setText(""); setSending(true);
     const { error } = await supabase.from("ticket_messages").insert({ ticket_id: ticket.id, user_id: userId, content });
     if (error) { toast.error(error.message); setSending(false); return; }
-    // AI only auto-replies to a non-mod user. Admin replies are human.
-    if (!isMod) {
-      try {
-        const { data: ai } = await supabase.functions.invoke("ai-support", { body: { subject: ticket.subject, message: content } });
-        if (ai?.reply) await supabase.from("ticket_messages").insert({ ticket_id: ticket.id, user_id: userId, content: ai.reply, is_ai: true });
-      } catch {/*ignore*/}
-    }
     setSending(false);
   }
 
