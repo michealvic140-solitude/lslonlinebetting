@@ -380,7 +380,10 @@ function VirtualRoundCard({ match, animSec }: { match: VirtualMatch; animSec: nu
           : /correct\s*score/i.test(n)
             ? 3
             : 4;
-  const markets = [...(match.markets ?? [])].sort((a, b) => order(a.name) - order(b.name));
+  // Hide Total Kills and Correct Score markets from the virtual marketing UI.
+  const markets = [...(match.markets ?? [])]
+    .filter((mk) => !/total\s*kills?/i.test(mk.name) && !/correct\s*score/i.test(mk.name))
+    .sort((a, b) => order(a.name) - order(b.name));
 
   function pick(mk: MarketRow, o: OddRow) {
     if (locked) return;
@@ -429,7 +432,7 @@ function VirtualRoundCard({ match, animSec }: { match: VirtualMatch; animSec: nu
         ) : locked ? (
           <span className="text-destructive font-bold flex items-center justify-center gap-1">
             <Lock className="h-3 w-3" />
-            Locking…
+            Starting…
           </span>
         ) : (
           <div className="flex items-center justify-center gap-2">
