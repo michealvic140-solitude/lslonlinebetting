@@ -527,7 +527,7 @@ export function ActivityPanel() {
   const [rows, setRows] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
   async function load() {
-    const { data } = await supabase.from("user_sessions").select("*").order("last_seen", { ascending: false }).limit(100);
+    const { data } = await supabase.from("user_sessions").select("*").order("last_seen", { ascending: false }).limit(150);
     setRows(data ?? []);
     const ids = (data ?? []).map((r:any)=>r.user_id);
     if (ids.length) {
@@ -542,22 +542,33 @@ export function ActivityPanel() {
     <div className="space-y-4">
       <Card className="p-5 flex items-center gap-3">
         <Activity className="h-5 w-5 text-emerald-400" />
-        <div><div className="font-bold">Live user activity</div><div className="text-xs text-muted-foreground">Updates every 15s · {online.length} online now / {rows.length} tracked</div></div>
-        <Button size="sm" variant="outline" className="ml-auto" onClick={load}><RefreshCw className="h-3 w-3 mr-1" />Refresh</Button>
+        <div className="flex-1"><div className="font-bold">Live user activity</div><div className="text-xs text-muted-foreground">Updates every 15s · <span className="text-emerald-400 font-bold">{online.length} online</span> · {rows.length - online.length} offline · {rows.length} tracked</div></div>
+        <Button size="sm" variant="outline" onClick={load}><RefreshCw className="h-3 w-3 mr-1" />Refresh</Button>
       </Card>
       <Card className="p-3">
         <div className="space-y-1 max-h-[600px] overflow-y-auto">
           {rows.map((r) => {
             const p = profiles[r.user_id]; const isOn = new Date(r.last_seen).getTime() > onlineThreshold;
+            const device = r.device_type || (/(mobile|android|iphone|ipad)/i.test(r.user_agent || "") ? "Mobile" : "Desktop");
+            const browser = r.browser || (r.user_agent?.match(/Chrome|Firefox|Safari|Edge|Opera/)?.[0] ?? "—");
+            const os = r.os || (r.user_agent?.match(/Windows|Mac OS X|Linux|Android|iOS|iPhone OS/)?.[0] ?? "—");
             return (
               <div key={r.user_id} className="flex items-center gap-3 py-2 border-b border-border/50">
-                <span className={`h-2.5 w-2.5 rounded-full ${isOn ? "bg-emerald-400 animate-pulse" : "bg-muted"}`} />
+                <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${isOn ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-muted"}`} title={isOn ? "Online" : "Offline"} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-bold truncate">{p?.full_name ?? "—"} <span className="text-xs text-muted-foreground">{p?.email}</span></div>
-                  <div className="text-[11px] text-muted-foreground truncate">{r.route ?? "—"} · {r.user_agent?.slice(0,60) ?? "—"}</div>
+                  <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1.5 flex-wrap">
+                    <span className="text-foreground">{r.route ?? "—"}</span>
+                    <span className="opacity-50">·</span>
+                    <span className="px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30 text-[9px] uppercase">{device}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/30 text-[9px]">{browser}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[9px]">{os}</span>
+                    {r.ip_address && <><span className="opacity-50">·</span><span className="font-mono text-[9px]">{r.ip_address}</span></>}
+                  </div>
                 </div>
-                <Badge variant="outline" className="capitalize">{p?.vip_tier ?? "bronze"}</Badge>
-                <div className="text-[10px] text-muted-foreground w-24 text-right">{new Date(r.last_seen).toLocaleTimeString()}</div>
+                <Badge variant="outline" className={`capitalize ${isOn ? "border-emerald-500/40 text-emerald-300" : ""}`}>{isOn ? "Online" : "Offline"}</Badge>
+                <Badge variant="outline" className="capitalize hidden sm:inline-flex">{p?.vip_tier ?? "bronze"}</Badge>
+                <div className="text-[10px] text-muted-foreground w-24 text-right shrink-0">{new Date(r.last_seen).toLocaleTimeString()}</div>
               </div>
             );
           })}
