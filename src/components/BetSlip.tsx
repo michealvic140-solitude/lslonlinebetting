@@ -57,18 +57,22 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
   const [realMaxPayout, setRealMaxPayout] = useState(100_000_000);
   const [virtMinStake, setVirtMinStake] = useState(100_000);
   const [virtMaxPayout, setVirtMaxPayout] = useState(100_000_000);
+  const [maxSelReal, setMaxSelReal] = useState(20);
+  const [maxSelVirt, setMaxSelVirt] = useState(20);
   const [submitting, setSubmitting] = useState(false);
   const [placed, setPlaced] = useState<any>(null);
   const confirm = useConfirm();
   const nav = useNavigate();
 
   useEffect(() => {
-    supabase.from("app_settings").select("min_stake,max_payout,virtual_min_stake,virtual_max_payout").eq("id", 1).maybeSingle()
+    supabase.from("app_settings").select("min_stake,max_payout,virtual_min_stake,virtual_max_payout,max_selections_per_ticket,virtual_max_selections").eq("id", 1).maybeSingle()
       .then(({ data }) => {
         if (data?.min_stake) setRealMinStake(Number(data.min_stake));
         if ((data as any)?.max_payout) setRealMaxPayout(Number((data as any).max_payout));
         if ((data as any)?.virtual_min_stake) setVirtMinStake(Number((data as any).virtual_min_stake));
         if ((data as any)?.virtual_max_payout) setVirtMaxPayout(Number((data as any).virtual_max_payout));
+        if ((data as any)?.max_selections_per_ticket) setMaxSelReal(Number((data as any).max_selections_per_ticket));
+        if ((data as any)?.virtual_max_selections) setMaxSelVirt(Number((data as any).virtual_max_selections));
       });
   }, [open]);
 
@@ -76,6 +80,7 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
   const isMixedTicket = selections.some((s) => s.is_virtual) && selections.some((s) => !s.is_virtual);
   const minStake = isVirtualTicket ? virtMinStake : realMinStake;
   const maxPayout = isVirtualTicket ? virtMaxPayout : realMaxPayout;
+  const maxSel = isVirtualTicket ? maxSelVirt : maxSelReal;
   const rawPayout = Math.floor(stake * totalOdds);
   const payout = Math.min(rawPayout, maxPayout);
   const capped = rawPayout > maxPayout;
@@ -89,6 +94,10 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
     }
     if (!isVirtualTicket && selections.length < 2) {
       toast.error(`Add at least 2 selections to place a bet (you have ${selections.length}).`);
+      return;
+    }
+    if (selections.length > maxSel) {
+      toast.error(`Maximum ${maxSel} selections per ticket (you have ${selections.length}).`);
       return;
     }
     if (profile.is_restricted) { toast.error("Your account is restricted from betting."); return; }
