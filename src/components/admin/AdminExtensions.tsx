@@ -751,6 +751,7 @@ export function ReferralsAdminPanel() {
   const [s, setS] = useState<any>(null);
   const [list, setList] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
+  const [myCode, setMyCode] = useState<string>("");
 
   async function load() {
     const { data: settings } = await supabase
@@ -766,6 +767,11 @@ export function ReferralsAdminPanel() {
     if (ids.length) {
       const { data: p } = await supabase.from("profiles").select("id, full_name, ingame_name").in("id", ids);
       const map: any = {}; (p ?? []).forEach((x: any) => { map[x.id] = x; }); setProfiles(map);
+    }
+    const { data: auth } = await supabase.auth.getUser();
+    if (auth?.user) {
+      const { data: me } = await supabase.from("profiles").select("referral_code").eq("id", auth.user.id).maybeSingle();
+      setMyCode((me as any)?.referral_code ?? "");
     }
   }
   useEffect(() => { load(); }, []);
@@ -783,9 +789,42 @@ export function ReferralsAdminPanel() {
   if (!s) return null;
   const totalReferrals = list.length;
   const totalPaid = list.reduce((a, b) => a + Number(b.referrer_bonus || 0) + Number(b.referee_bonus || 0), 0);
+  const shareLink = typeof window !== "undefined" && myCode ? `${window.location.origin}/register?ref=${myCode}` : "";
+  async function shareCode() {
+    if (!shareLink) return;
+    if (typeof navigator !== "undefined" && (navigator as any).share) {
+      try { await (navigator as any).share({ title: "Join LSL", text: `Use my referral code ${myCode}`, url: shareLink }); return; } catch {}
+    }
+    navigator.clipboard.writeText(shareLink);
+    toast.success("Share link copied");
+  }
 
   return (
     <div className="space-y-4">
+      {myCode && (
+        <Card className="p-5 space-y-3 border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 via-card/80 to-primary/5">
+          <div className="flex items-center gap-2"><Share2 className="h-5 w-5 text-emerald-400" /><div className="font-bold">Your admin referral link</div></div>
+          <p className="text-xs text-muted-foreground">Share this link or code with users. New sign-ups crediting it will pay both bonuses below.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] uppercase text-muted-foreground">Your code</label>
+              <div className="flex gap-2 mt-1">
+                <Input readOnly value={myCode} className="font-mono font-bold" />
+                <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(myCode); toast.success("Code copied"); }} title="Copy code"><Copy className="h-4 w-4" /></Button>
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] uppercase text-muted-foreground">Share link</label>
+              <div className="flex gap-2 mt-1">
+                <Input readOnly value={shareLink} className="text-xs" />
+                <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(shareLink); toast.success("Link copied"); }} title="Copy link"><Copy className="h-4 w-4" /></Button>
+                <Button size="icon" onClick={shareCode} title="Share"><Share2 className="h-4 w-4" /></Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card className="p-5 space-y-3">
         <div className="flex items-center gap-2 mb-2"><Gift className="h-5 w-5 text-primary" /><div className="font-bold">Referral system</div></div>
         <p className="text-xs text-muted-foreground">Admin-only controls. Set the token amount granted to the referrer and the new user (referee) when a referral code is redeemed.</p>
