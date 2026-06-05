@@ -2965,13 +2965,37 @@ function LeaderboardAdminPanel() {
     toast.success("Leaderboard cleared");
     load();
   }
+  async function wipeKind(kind: "gang" | "shooter", label: string) {
+    const rows = list.filter((o) => o.kind === kind);
+    if (rows.length === 0) { toast.info(`No ${label} entries to wipe`); return; }
+    if (!await confirm({
+      title: `Wipe ${label}?`,
+      description: `This permanently removes every manual ${label} override (${rows.length} entr${rows.length === 1 ? "y" : "ies"}). Auto-computed stats from match results are unaffected.`,
+      tone: "danger", confirmText: `Wipe ${label}`,
+    })) return;
+    const { error } = await supabase.from("leaderboard_overrides").delete().eq("kind", kind);
+    if (error) { toast.error(error.message); return; }
+    await logAudit("leaderboard_wipe_kind", "leaderboard_overrides", undefined, { kind, previous_count: rows.length });
+    toast.success(`${label} wiped`);
+    load();
+  }
   return (
     <div className="space-y-3">
+      <Card className="glass-strong p-3 flex flex-wrap items-center gap-2 border-destructive/40">
+        <div className="text-xs font-bold tracking-widest text-destructive mr-1">DANGER ZONE</div>
+        <Button variant="destructive" size="sm" onClick={clearAll} disabled={list.length === 0}>
+          <Trash2 className="h-3 w-3 mr-1" />Wipe Leaderboard
+        </Button>
+        <Button variant="destructive" size="sm" onClick={() => wipeKind("shooter", "Shooters")}>
+          <Trash2 className="h-3 w-3 mr-1" />Wipe Shooters
+        </Button>
+        <Button variant="destructive" size="sm" onClick={() => wipeKind("gang", "Hall of Fame")}>
+          <Trash2 className="h-3 w-3 mr-1" />Wipe Hall of Fame
+        </Button>
+        <span className="text-[10px] text-muted-foreground ml-auto">Only clears manual overrides — match history is preserved.</span>
+      </Card>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="text-xs text-muted-foreground">{list.length} manual override{list.length === 1 ? "" : "s"}</div>
-        <Button variant="destructive" size="sm" onClick={clearAll} disabled={list.length === 0}>
-          <Trash2 className="h-3 w-3 mr-1" />Clear Leaderboard
-        </Button>
       </div>
       <Card className="glass-strong p-4 space-y-2">
         <div className="font-bold flex items-center gap-2">

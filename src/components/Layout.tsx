@@ -148,35 +148,33 @@ export const Layout = ({ children }: { children: ReactNode }) => {
       <main className="relative">{children}</main>
       <LevelUpModal />
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-2xl border-t safe-bottom"
+        className="lg:hidden fixed left-0 top-16 bottom-0 z-40 w-14 backdrop-blur-2xl border-r overflow-y-auto"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.22 0.06 70 / 0.78) 0%, oklch(0.16 0.05 90 / 0.92) 55%, oklch(0.14 0.06 158 / 0.95) 100%)",
-          borderColor: "oklch(0.62 0.14 80 / 0.45)",
+            "linear-gradient(180deg, oklch(0.18 0.08 158 / 0.98) 0%, oklch(0.16 0.07 140 / 0.98) 45%, oklch(0.26 0.10 80 / 0.98) 100%)",
+          borderColor: "oklch(0.62 0.14 80 / 0.55)",
           boxShadow:
-            "0 -10px 32px -10px oklch(0 0 0 / 0.7), inset 0 1px 0 oklch(0.95 0.08 92 / 0.10), 0 -1px 24px -6px oklch(0.55 0.14 158 / 0.35)",
+            "8px 0 32px -10px oklch(0 0 0 / 0.7), inset -1px 0 0 oklch(0.95 0.08 92 / 0.10), 4px 0 24px -6px oklch(0.55 0.14 158 / 0.35)",
         }}
       >
-        <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary to-emerald/70" />
+        <div className="pointer-events-none absolute inset-y-0 -right-px w-px bg-gradient-to-b from-transparent via-primary to-emerald/70" />
         <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_top,oklch(0.65_0.17_158/0.18),transparent_65%)]" />
-        <div className="overflow-x-auto scrollbar-none">
-          <div className="flex items-stretch justify-around gap-0.5 px-1.5 py-1.5 w-full min-w-max">
-            <MobLink to="/" icon={Home} label="Home" />
-            <MobLink to="/matches" icon={MatchIcon} label="Matches" />
-            <MobLink to="/virtual" icon={Dice5} label="Virtual" />
-            <MobLink to="/leaderboard" icon={Trophy} label="Top" />
-            {user && <>
-              <MobLink to="/dashboard" icon={Ticket} label="Bets" />
-              <MobLink to="/chat" icon={MessageSquare} label="Chat" badge={chatUnread} />
-              <MobLink to="/profile" icon={UserIcon} label="Profile" />
-              <MobLink to="/settings" icon={SettingsIcon} label="Settings" />
-              <MobLink to="/support" icon={LifeBuoy} label="Help" />
-            </>}
-            {(isAdmin || isMod) && <MobLink to="/admin" icon={Shield} label={isAdmin ? "Admin" : "Mod"} />}
-          </div>
+        <div className="flex flex-col items-stretch gap-0.5 py-2 px-1">
+          <MobLink to="/" icon={Home} label="Home" />
+          <MobLink to="/matches" icon={MatchIcon} label="Matches" />
+          <MobLink to="/virtual" icon={Dice5} label="Virtual" />
+          <MobLink to="/leaderboard" icon={Trophy} label="Top" />
+          {user && <>
+            <MobLink to="/dashboard" icon={Ticket} label="Bets" />
+            <MobLink to="/chat" icon={MessageSquare} label="Chat" badge={chatUnread} />
+            <MobLink to="/profile" icon={UserIcon} label="Profile" />
+            <MobLink to="/settings" icon={SettingsIcon} label="Settings" />
+            <MobLink to="/support" icon={LifeBuoy} label="Help" />
+          </>}
+          {(isAdmin || isMod) && <MobLink to="/admin" icon={Shield} label={isAdmin ? "Admin" : "Mod"} />}
         </div>
       </nav>
-      <div className="lg:hidden h-20" />
+      <div className="lg:hidden h-0" />
       <SiteFooter />
     </div>
   );
