@@ -1,87 +1,54 @@
-# Full platform update from `betting-bliss` reference repo
+## Scope
 
-After a deep diff against `michealvic140-solitude/betting-bliss`, only its 5th migration (watchlist + profile customization) is brand-new SQL — but its **app code references a much larger backend** (referrals, VIP/XP, push notifications, live activity, broadcasts, gang emblems, risk/P&L dashboards, AI copilot, daily-spin and token-gift rules, friend system, watchlist). To "make sure everything is up to date" I need to port both the missing schema *and* the matching app surfaces.
+Seven user-facing changes, grouped so each commit is verifiable on its own.
 
-## What's new in the reference (currently missing here)
+### 1. Tile images (DONE — verify only)
+- Re-pointed `tile-virtual / tile-vip / tile-challenges / tile-referrals / tile-housewallet` `.asset.json` files to the new uploads (VR headset, sapphire crown, runed shield + swords, chrome link, vault). No code changes — imports are unchanged.
+- Add a subtle LSL skull-logo overlay (~12% opacity, blend-mode screen, centered) on each Manage tile so the logo "slightly shows" through, matching the reference screenshot.
 
-**Routes**
-- `src/routes/settings.tsx` — push notification & account hub
-- `src/routes/watchlist.tsx` — saved matches / teams / players
+### 2. Mobile navbar → vertical left rail
+- Current state: desktop already has a top horizontal nav; the screenshot you sent is the **mobile** bottom bar.
+- Replace `Layout`'s `lg:hidden fixed bottom-0` mobile nav with a `lg:hidden fixed left-0 top-16 bottom-0 w-14` vertical rail, anchored under the logo and ending at the footer.
+- Background: `linear-gradient(180deg, dark-green 0%, dark-gold 100%)` (no transparency).
+- Add `lg:hidden pl-14` to `<main>` so content shifts right and never sits under the rail.
+- Remove the `h-20` bottom spacer.
+- Desktop top nav stays as-is.
 
-**Components**
-- `src/components/UserHubSections.tsx` (~740 lines): `ReferralCard`, `VipCard`, `PushNotifSettings`, `UserAnalyticsDashboard`, `BetHistoryAdvanced`, `GangEmblemUpload`
-- `src/components/WatchlistStar.tsx` — toggleable ★ widget for any match/team/player
-- `src/components/admin/AdminExtensions.tsx` (~880 lines): `StreakAndPushPanel`, `RiskPanel`, `PnLPanel`, `TokenRulesPanel`, `BroadcastPanel`, `ActivityPanel`, `ReportsPanel`, `AdminAILivePanel`, `ReferralsAdminPanel`, `EmblemModerationPanel`, `VipAdminPanel`
+### 3. Compact tiles: Event Countdown / Broadcast Center / Quick Actions
+- Constrain `PanelBlock` for these 3 to `aspect-square max-w-[260px]` with `overflow-hidden` and a "View all →" chevron — same square footprint as the stat tiles above.
+- Quick Actions: collapse 6 buttons into a 3×2 icon grid (no labels, tooltip on hover).
 
-**Server**
-- `src/routes/api/public/hooks/send-push.ts` — Web Push delivery (uses `web-push`)
-- `src/lib/admin-ai.functions.ts` — server fn calling Lovable AI gateway, grounded with live platform snapshot
+### 4. Leaderboard admin: 3 wipe buttons
+- In `LeaderboardAdminPanel`, add a destructive action row with 3 buttons:
+  - **Wipe Leaderboard** → `delete from leaderboard_overrides` + reset aggregated points (no-op since aggregation reads from matches; this just clears manual overrides).
+  - **Wipe Shooters** → clear player-scoped overrides only (`where kind = 'player'`).
+  - **Wipe Hall of Fame** → `delete from hall_of_fame` (table exists per types).
+- Each button gated by `useConfirm` dialog.
 
-**Static**
-- `public/sw.js` — service worker for push notifications
+### 5. Countdown `/` → `:`
+- Audit shows `Countdown.tsx` already uses `h … m … s` separators, no `/`. The `/` likely refers to the **date** rendering in EventBanner / event cards (`MM/DD/YYYY`). Switch those to `MM:DD:YYYY` per request, or — more likely intent — switch any HH/MM/SS displays to use `:`.
+- I'll grep and convert any `/` separator in date/time display strings under `Event*` and `Countdown*` components.
 
-**Admin tabs added**: tokenrules, broadcast, activity, reports, adminai, risk, pnl, streakpush, referrals, emblems, vip
+### 6. Glassmorphism: thicker, less transparent
+- In `src/styles.css`, raise opacity on:
+  - `--glass-bg` from `0.06 / 0.02` → `0.22 / 0.14`
+  - `--glass-border` from `0.12` → `0.28`
+  - `.glass-strong` alphas from `0.92` (already strong, keep)
+- Increase blur from `14px` → `20px` on `.glass` for thicker frost.
 
-## Database changes required
+### 7. Image-URL inputs → file uploads
+- Create one private bucket `admin-uploads` (RLS: admins/mods upload + read, public read on objects).
+- Replace text URL `<Input>` for: Events banner, Announcements image, Advertisements image, Seasons banner, Spotlights image.
+- Each becomes an `<input type="file" accept="image/*">` that uploads via `supabase.storage.from('admin-uploads').upload()` and stores the resulting public URL.
+- Keep a small "or paste URL" link as fallback so admins can still use external CDN URLs if they prefer.
 
-Single new migration that adds everything the reference code expects:
+---
 
-### New tables
-- `watchlist` (already specified in ref migration 5)
-- `referrals` (referrer_id, referee_id, referrer_bonus, referee_bonus, created_at)
-- `notification_prefs` (user_id PK, push_enabled + per-channel booleans for match_starting, bet_results, rewards, daily_streak, referrals, vip_tier_up, withdrawals, promotions, chat_mentions, ticket_replies)
-- `push_subscriptions` (user_id, endpoint UNIQUE, p256dh, auth_key, user_agent, enabled)
-- `user_sessions` (user_id, last_seen, route, user_agent) — for live activity
-- `broadcasts` (title, body, link, segment, sent_count, created_by, created_at)
-- `gang_emblems` (user_id, image_url, status pending/approved/declined, reviewed_by, reviewed_at)
-- `friends` / follow edges (follower_id, followee_id, created_at)
-- `spins` (user_id, amount, created_at) and `gifts` (sender_id, recipient_id, amount, fee, created_at) for cooldown/limit tracking
+## Order of operations
 
-### `profiles` column additions
-`referral_code` (text UNIQUE, auto-gen on insert), `referred_by` uuid, `xp` bigint, `vip_tier` text, `gang_emblem_url`, `emblem_status`, `chat_color`, `profile_banner_url`, `profile_title`, `showcase_achievement_ids uuid[]`.
+1. Commit 1: Items **1, 3, 5, 6** (pure presentation — tiles + glass + countdown + compact panels). Safest, no DB.
+2. Commit 2: Item **2** (left rail). Mobile-only layout change.
+3. Commit 3: Item **4** (leaderboard wipes) — needs `useConfirm` wiring.
+4. Commit 4: Item **7** (storage bucket migration + form rewrites). Biggest blast radius — last.
 
-### `app_settings` column additions
-VAPID: `vapid_public_key`, `vapid_subject`, `push_endpoint_url`.
-Daily login: `daily_login_enabled`, `daily_login_base_reward`, `daily_login_bonus_per_day`, `daily_login_max_streak`.
-XP rules: `xp_per_bet`, `xp_per_win`, `xp_per_login`, `xp_per_referral`.
-Referrals: `referral_bonus_referrer`, `referral_bonus_referee`.
-VIP: `vip_token_multipliers jsonb`, `challenge_reward_multiplier numeric`.
-Spin: `spin_enabled`, `spin_min_reward`, `spin_max_reward`, `spin_cooldown_hours`.
-Gifts: `gift_enabled`, `gift_daily_limit`, `gift_min_amount`, `gift_max_per_tx`, `gift_fee_pct`.
-Friends/AI/limits: `friends_enabled`, `admin_ai_enabled`, `admin_ai_model`, `exposure_warn_pct`, `house_low_balance`, `min_selections_per_ticket`, `max_selections_per_ticket`.
-
-### New RPCs (SECURITY DEFINER)
-`apply_referral_code(_code)`, `verify_xp_consistency(_user_id)`, `admin_risk_summary()`, `admin_exposure_per_match()`, `admin_pnl_summary(_days)`, `admin_broadcast(_title,_body,_link,_segment)`. All admin RPCs gated by `is_admin(auth.uid())`.
-
-### Triggers
-- Auto-generate `profiles.referral_code` on insert.
-- On bet placed/won → add XP, recompute `vip_tier`.
-- On `notifications` insert → optional HTTP post to `app_settings.push_endpoint_url` (best-effort, ignore failure).
-
-RLS on every new table — user-owned where applicable, admin-managed for broadcasts/emblems/sessions.
-
-## Dependencies
-- `bun add web-push` (used only inside `/api/public/hooks/send-push.ts`).
-
-## Wiring
-- Extend `Profile` type in `src/contexts/AuthContext.tsx` with the new optional fields.
-- Mount `WatchlistStar` on match cards, team rows, and player avatars.
-- Add `/settings` and `/watchlist` to the side/bottom nav in `Layout.tsx`.
-- Register service worker once from `Layout` (or root) if `'serviceWorker' in navigator`.
-- Slot the new admin panels into `src/routes/admin.tsx` as additional tabs.
-- Add a tiny ping helper that POSTs to `user_sessions` upsert on route change so `ActivityPanel` has data.
-
-## Implementation order
-
-1. Migration (tables + columns + RPCs + triggers + RLS) → wait for approval.
-2. `bun add web-push`; copy `public/sw.js`.
-3. Drop in the new component/route files verbatim from the reference, then adjust imports if any local path differs.
-4. Update `AuthContext` profile type + nav links + service-worker registration.
-5. Wire the new admin tabs.
-6. Manual smoke test: open /settings, /watchlist, each new admin tab; check console for RPC/column 404s and patch any gaps.
-7. Run the security linter and fix any new warnings introduced by the migration.
-
-## Out of scope (call out explicitly)
-- I will NOT add real VAPID keys — admin must paste them in the new Streak/Push panel, and set `VAPID_PRIVATE_KEY` as a secret.
-- I will NOT enable the AI copilot button until `LOVABLE_API_KEY` is confirmed present (it already is in this project's secret list).
-- Existing features (ticket UI, promo codes, hot bets, seasons, challenges) stay untouched — this is purely additive.
+Reply "go" and I'll execute commit 1 immediately, then proceed through the rest. Or tell me to reorder/skip any item.

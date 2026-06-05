@@ -96,7 +96,7 @@
   --shadow-gold: 0 10px 48px -10px oklch(0.84 0.18 90 / 0.55);
   --shadow-luxury: 0 28px 80px -24px oklch(0 0 0 / 0.85);
   --glass-bg: linear-gradient(160deg, oklch(1 0 0 / 0.06), oklch(1 0 0 / 0.02));
-  --glass-border: oklch(1 0 0 / 0.12);
+  --glass-border: oklch(1 0 0 / 0.28);
 }
 
 .dark { color-scheme: dark; }
@@ -140,15 +140,14 @@
   .safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem); }
 
   .glass {
-    background: var(--glass-bg);
+    background: linear-gradient(160deg, oklch(0.16 0.04 168 / 0.78), oklch(0.12 0.04 200 / 0.72));
     border: 1px solid var(--glass-border);
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(22px) saturate(160%);
   }
   .glass-strong {
-    background: linear-gradient(160deg, oklch(0.16 0.03 168 / 0.92), oklch(0.12 0.03 200 / 0.92));
+    background: linear-gradient(160deg, oklch(0.18 0.04 168 / 0.96), oklch(0.13 0.04 200 / 0.96));
     border: 1px solid var(--glass-border);
-    backdrop-filter: blur(22px) saturate(150%);
+    backdrop-filter: blur(28px) saturate(160%);
   }
   .gradient-gold-text {
     background: var(--gradient-gold);

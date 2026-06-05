@@ -145,38 +145,36 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           </div>
         )}
       </header>
-      <main className="relative">{children}</main>
+      <main className="relative lg:pl-0 pl-14">{children}</main>
       <LevelUpModal />
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-2xl border-t safe-bottom"
+        className="lg:hidden fixed left-0 top-16 bottom-0 z-40 w-14 backdrop-blur-2xl border-r overflow-y-auto"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.22 0.06 70 / 0.78) 0%, oklch(0.16 0.05 90 / 0.92) 55%, oklch(0.14 0.06 158 / 0.95) 100%)",
-          borderColor: "oklch(0.62 0.14 80 / 0.45)",
+            "linear-gradient(180deg, oklch(0.18 0.08 158 / 0.98) 0%, oklch(0.16 0.07 140 / 0.98) 45%, oklch(0.26 0.10 80 / 0.98) 100%)",
+          borderColor: "oklch(0.62 0.14 80 / 0.55)",
           boxShadow:
-            "0 -10px 32px -10px oklch(0 0 0 / 0.7), inset 0 1px 0 oklch(0.95 0.08 92 / 0.10), 0 -1px 24px -6px oklch(0.55 0.14 158 / 0.35)",
+            "8px 0 32px -10px oklch(0 0 0 / 0.7), inset -1px 0 0 oklch(0.95 0.08 92 / 0.10), 4px 0 24px -6px oklch(0.55 0.14 158 / 0.35)",
         }}
       >
-        <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary to-emerald/70" />
+        <div className="pointer-events-none absolute inset-y-0 -right-px w-px bg-gradient-to-b from-transparent via-primary to-emerald/70" />
         <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_top,oklch(0.65_0.17_158/0.18),transparent_65%)]" />
-        <div className="overflow-x-auto scrollbar-none">
-          <div className="flex items-stretch justify-around gap-0.5 px-1.5 py-1.5 w-full min-w-max">
-            <MobLink to="/" icon={Home} label="Home" />
-            <MobLink to="/matches" icon={MatchIcon} label="Matches" />
-            <MobLink to="/virtual" icon={Dice5} label="Virtual" />
-            <MobLink to="/leaderboard" icon={Trophy} label="Top" />
-            {user && <>
-              <MobLink to="/dashboard" icon={Ticket} label="Bets" />
-              <MobLink to="/chat" icon={MessageSquare} label="Chat" badge={chatUnread} />
-              <MobLink to="/profile" icon={UserIcon} label="Profile" />
-              <MobLink to="/settings" icon={SettingsIcon} label="Settings" />
-              <MobLink to="/support" icon={LifeBuoy} label="Help" />
-            </>}
-            {(isAdmin || isMod) && <MobLink to="/admin" icon={Shield} label={isAdmin ? "Admin" : "Mod"} />}
-          </div>
+        <div className="flex flex-col items-stretch gap-0.5 py-2 px-1">
+          <MobLink to="/" icon={Home} label="Home" />
+          <MobLink to="/matches" icon={MatchIcon} label="Matches" />
+          <MobLink to="/virtual" icon={Dice5} label="Virtual" />
+          <MobLink to="/leaderboard" icon={Trophy} label="Top" />
+          {user && <>
+            <MobLink to="/dashboard" icon={Ticket} label="Bets" />
+            <MobLink to="/chat" icon={MessageSquare} label="Chat" badge={chatUnread} />
+            <MobLink to="/profile" icon={UserIcon} label="Profile" />
+            <MobLink to="/settings" icon={SettingsIcon} label="Settings" />
+            <MobLink to="/support" icon={LifeBuoy} label="Help" />
+          </>}
+          {(isAdmin || isMod) && <MobLink to="/admin" icon={Shield} label={isAdmin ? "Admin" : "Mod"} />}
         </div>
       </nav>
-      <div className="lg:hidden h-20" />
+      <div className="lg:hidden h-0" />
       <SiteFooter />
     </div>
   );
@@ -189,7 +187,7 @@ function SiteFooter() {
   const [open, setOpen] = useState<"terms" | "about" | null>(null);
   useEffect(() => { supabase.from("app_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => setS(data)); }, []);
   return (
-    <footer className="border-t border-border mt-20 backdrop-blur-xl bg-card/40">
+    <footer className="border-t border-border mt-20 backdrop-blur-xl bg-card/40 lg:pl-0 pl-14">
       <div className="container mx-auto px-4 py-10 grid md:grid-cols-3 gap-6 text-sm">
         <div>
           <div className="flex items-center gap-2 mb-2"><GangLogo size={28} withGlow={false} /><span className="font-bold tracking-widest gradient-gold-text">LOMITA SHOOTERS LEAGUE</span></div>
@@ -230,9 +228,10 @@ function MobLink({ to, icon: Icon, label, badge }: { to: string; icon: any; labe
     <Link
       to={to}
       activeProps={{ className: "active" }}
-      className="group relative flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl min-w-[58px] text-[10px] font-semibold tracking-wide text-muted-foreground transition-all duration-200 hover:text-foreground active:scale-95 [&.active]:text-primary"
+      className="group relative flex flex-col items-center justify-center gap-0.5 px-0 py-2 rounded-xl text-[9px] font-semibold tracking-wide text-muted-foreground transition-all duration-200 hover:text-foreground active:scale-95 [&.active]:text-primary"
+      title={label}
     >
-      <span className="pointer-events-none absolute inset-x-2 top-0 h-[2px] rounded-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-[.active]:opacity-100 transition-opacity" />
+      <span className="pointer-events-none absolute left-0 inset-y-2 w-[2px] rounded-full bg-gradient-to-b from-transparent via-primary to-transparent opacity-0 group-[.active]:opacity-100 transition-opacity" />
       <span className="relative grid place-items-center h-9 w-9 rounded-xl transition-all group-[.active]:bg-gradient-to-br group-[.active]:from-primary/25 group-[.active]:to-primary/5 group-[.active]:shadow-[0_0_18px_-4px_rgba(212,175,55,0.55)]">
         <Icon className="h-[18px] w-[18px] transition-transform group-[.active]:scale-110" />
         {badge && badge > 0 ? (
@@ -241,7 +240,7 @@ function MobLink({ to, icon: Icon, label, badge }: { to: string; icon: any; labe
           </span>
         ) : null}
       </span>
-      <span className="leading-none">{label}</span>
+      <span className="leading-none text-[8px] truncate max-w-[52px]">{label}</span>
     </Link>
   );
 }
