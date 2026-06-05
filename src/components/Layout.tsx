@@ -145,7 +145,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           </div>
         )}
       </header>
-      <main className="relative">{children}</main>
+      <main className="relative lg:pl-0 pl-14">{children}</main>
       <LevelUpModal />
       <nav
         className="lg:hidden fixed left-0 top-16 bottom-0 z-40 w-14 backdrop-blur-2xl border-r overflow-y-auto"
@@ -187,7 +187,7 @@ function SiteFooter() {
   const [open, setOpen] = useState<"terms" | "about" | null>(null);
   useEffect(() => { supabase.from("app_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => setS(data)); }, []);
   return (
-    <footer className="border-t border-border mt-20 backdrop-blur-xl bg-card/40">
+    <footer className="border-t border-border mt-20 backdrop-blur-xl bg-card/40 lg:pl-0 pl-14">
       <div className="container mx-auto px-4 py-10 grid md:grid-cols-3 gap-6 text-sm">
         <div>
           <div className="flex items-center gap-2 mb-2"><GangLogo size={28} withGlow={false} /><span className="font-bold tracking-widest gradient-gold-text">LOMITA SHOOTERS LEAGUE</span></div>
@@ -228,9 +228,10 @@ function MobLink({ to, icon: Icon, label, badge }: { to: string; icon: any; labe
     <Link
       to={to}
       activeProps={{ className: "active" }}
-      className="group relative flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl min-w-[58px] text-[10px] font-semibold tracking-wide text-muted-foreground transition-all duration-200 hover:text-foreground active:scale-95 [&.active]:text-primary"
+      className="group relative flex flex-col items-center justify-center gap-0.5 px-0 py-2 rounded-xl text-[9px] font-semibold tracking-wide text-muted-foreground transition-all duration-200 hover:text-foreground active:scale-95 [&.active]:text-primary"
+      title={label}
     >
-      <span className="pointer-events-none absolute inset-x-2 top-0 h-[2px] rounded-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-[.active]:opacity-100 transition-opacity" />
+      <span className="pointer-events-none absolute left-0 inset-y-2 w-[2px] rounded-full bg-gradient-to-b from-transparent via-primary to-transparent opacity-0 group-[.active]:opacity-100 transition-opacity" />
       <span className="relative grid place-items-center h-9 w-9 rounded-xl transition-all group-[.active]:bg-gradient-to-br group-[.active]:from-primary/25 group-[.active]:to-primary/5 group-[.active]:shadow-[0_0_18px_-4px_rgba(212,175,55,0.55)]">
         <Icon className="h-[18px] w-[18px] transition-transform group-[.active]:scale-110" />
         {badge && badge > 0 ? (
@@ -239,7 +240,7 @@ function MobLink({ to, icon: Icon, label, badge }: { to: string; icon: any; labe
           </span>
         ) : null}
       </span>
-      <span className="leading-none">{label}</span>
+      <span className="leading-none text-[8px] truncate max-w-[52px]">{label}</span>
     </Link>
   );
 }
