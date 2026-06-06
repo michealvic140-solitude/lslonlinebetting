@@ -24,11 +24,19 @@ export function GrandPrizeWinners() {
   const [loading, setLoading] = useState(true);
 
   async function load() {
+    const { data: settings } = await supabase
+      .from("app_settings")
+      .select("hall_of_fame_reset_at")
+      .eq("id", 1)
+      .maybeSingle();
+    const resetAt = (settings as any)?.hall_of_fame_reset_at ?? null;
     // Pull all winning bets and aggregate client-side (small dataset; RLS-friendly)
-    const { data: wins } = await supabase
+    let q = supabase
       .from("bets")
-      .select("user_id, potential_payout, cashout_amount, status")
+      .select("user_id, potential_payout, cashout_amount, status, settled_at, cashed_out_at, created_at")
       .in("status", ["won", "cashed_out"]);
+    if (resetAt) q = q.or(`settled_at.gte.${resetAt},cashed_out_at.gte.${resetAt}`);
+    const { data: wins } = await q;
     const totals = new Map<string, { total: number; count: number }>();
     (wins ?? []).forEach((b: any) => {
       const credit = Number(b.cashout_amount ?? b.potential_payout ?? 0);
