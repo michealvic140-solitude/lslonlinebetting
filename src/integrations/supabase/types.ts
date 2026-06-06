@@ -90,9 +90,12 @@ export type Database = {
           gift_fee_pct: number
           gift_max_per_tx: number
           gift_min_amount: number
+          hall_of_fame_reset_at: string | null
           hero_tagline: string | null
           house_low_balance: number
           id: number
+          leaderboard_gangs_reset_at: string | null
+          leaderboard_shooters_reset_at: string | null
           maintenance_message: string | null
           maintenance_mode: boolean
           max_payout: number
@@ -161,9 +164,12 @@ export type Database = {
           gift_fee_pct?: number
           gift_max_per_tx?: number
           gift_min_amount?: number
+          hall_of_fame_reset_at?: string | null
           hero_tagline?: string | null
           house_low_balance?: number
           id?: number
+          leaderboard_gangs_reset_at?: string | null
+          leaderboard_shooters_reset_at?: string | null
           maintenance_message?: string | null
           maintenance_mode?: boolean
           max_payout?: number
@@ -232,9 +238,12 @@ export type Database = {
           gift_fee_pct?: number
           gift_max_per_tx?: number
           gift_min_amount?: number
+          hall_of_fame_reset_at?: string | null
           hero_tagline?: string | null
           house_low_balance?: number
           id?: number
+          leaderboard_gangs_reset_at?: string | null
+          leaderboard_shooters_reset_at?: string | null
           maintenance_message?: string | null
           maintenance_mode?: boolean
           max_payout?: number
