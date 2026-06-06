@@ -2955,27 +2955,39 @@ function LeaderboardAdminPanel() {
   }
   async function clearAll() {
     if (!await confirm({
-      title: `Clear ALL ${list.length} leaderboard entries?`,
-      description: "This permanently removes every manual leaderboard override. Auto-computed stats from match results are unaffected.",
+      title: `Wipe entire Leaderboard?`,
+      description: "Hides every manual override AND every auto-computed gang/shooter row generated from past match results. Match history itself is preserved — new finished matches after this moment will start a fresh leaderboard.",
       tone: "danger", confirmText: "Clear leaderboard",
     })) return;
-    const { error } = await supabase.from("leaderboard_overrides").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-    if (error) { toast.error(error.message); return; }
-    await logAudit("leaderboard_clear_all", "leaderboard_overrides", undefined, { previous_count: list.length });
+    const now = new Date().toISOString();
+    const { error: delErr } = await supabase.from("leaderboard_overrides").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (delErr) { toast.error(delErr.message); return; }
+    const { error: setErr } = await supabase.from("app_settings").update({
+      leaderboard_gangs_reset_at: now,
+      leaderboard_shooters_reset_at: now,
+    }).eq("id", 1);
+    if (setErr) { toast.error(setErr.message); return; }
+    await logAudit("leaderboard_clear_all", "leaderboard_overrides", undefined, { previous_count: list.length, reset_at: now });
     toast.success("Leaderboard cleared");
     load();
   }
   async function wipeKind(kind: "gang" | "shooter", label: string) {
     const rows = list.filter((o) => o.kind === kind);
-    if (rows.length === 0) { toast.info(`No ${label} entries to wipe`); return; }
     if (!await confirm({
       title: `Wipe ${label}?`,
-      description: `This permanently removes every manual ${label} override (${rows.length} entr${rows.length === 1 ? "y" : "ies"}). Auto-computed stats from match results are unaffected.`,
+      description: `Hides every ${label} row — both manual overrides (${rows.length}) and the auto-computed rows from past matches/bets. New activity after this moment starts a fresh list.`,
       tone: "danger", confirmText: `Wipe ${label}`,
     })) return;
+    const now = new Date().toISOString();
     const { error } = await supabase.from("leaderboard_overrides").delete().eq("kind", kind);
     if (error) { toast.error(error.message); return; }
-    await logAudit("leaderboard_wipe_kind", "leaderboard_overrides", undefined, { kind, previous_count: rows.length });
+    const patch: Record<string, string> =
+      kind === "gang"
+        ? { leaderboard_gangs_reset_at: now, hall_of_fame_reset_at: now }
+        : { leaderboard_shooters_reset_at: now };
+    const { error: setErr } = await supabase.from("app_settings").update(patch).eq("id", 1);
+    if (setErr) { toast.error(setErr.message); return; }
+    await logAudit("leaderboard_wipe_kind", "leaderboard_overrides", undefined, { kind, previous_count: rows.length, reset_at: now });
     toast.success(`${label} wiped`);
     load();
   }
