@@ -358,25 +358,25 @@
 @layer utilities {
   .admin-user-bg {
     background:
-      radial-gradient(ellipse at top left, oklch(0.38 0.10 70 / 0.45), transparent 60%),
-      radial-gradient(ellipse at bottom right, oklch(0.32 0.09 158 / 0.40), transparent 65%),
-      linear-gradient(160deg, oklch(0.22 0.06 70) 0%, oklch(0.18 0.05 95) 45%, oklch(0.16 0.06 158) 100%);
-    backdrop-filter: blur(16px) saturate(130%);
-    -webkit-backdrop-filter: blur(16px) saturate(130%);
+      radial-gradient(ellipse at top left, oklch(0.20 0.10 158 / 0.92), transparent 62%),
+      radial-gradient(ellipse at bottom right, oklch(0.32 0.14 85 / 0.78), transparent 65%),
+      linear-gradient(160deg, oklch(0.14 0.08 158) 0%, oklch(0.13 0.07 150) 45%, oklch(0.22 0.12 82) 100%);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
   }
   .admin-user-frame {
     box-shadow:
-      0 0 0 1px oklch(0.62 0.12 80 / 0.55),
-      0 0 0 2px oklch(0.14 0.04 70 / 0.85),
-      0 0 18px -6px oklch(0.55 0.12 90 / 0.35),
-      0 0 30px -12px oklch(0.55 0.14 158 / 0.30),
-      inset 0 1px 0 oklch(0.92 0.08 92 / 0.10);
+      0 0 0 1px oklch(0.62 0.16 85 / 0.75),
+      0 0 0 2px oklch(0.10 0.06 158 / 0.95),
+      0 0 22px -6px oklch(0.55 0.16 90 / 0.55),
+      0 0 36px -10px oklch(0.45 0.18 158 / 0.55),
+      inset 0 1px 0 oklch(0.92 0.10 92 / 0.18);
   }
   .admin-user-inner {
-    background: linear-gradient(180deg, oklch(0.22 0.06 80 / 0.45), oklch(0.16 0.05 140 / 0.55));
-    border: 1px solid oklch(0.62 0.12 90 / 0.25);
-    backdrop-filter: blur(10px);
-    box-shadow: inset 0 1px 0 oklch(0.92 0.08 92 / 0.06);
+    background: linear-gradient(180deg, oklch(0.16 0.09 158 / 0.92), oklch(0.20 0.11 82 / 0.82));
+    border: 1px solid oklch(0.62 0.16 88 / 0.55);
+    backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: inset 0 1px 0 oklch(0.92 0.10 92 / 0.12), 0 1px 0 oklch(0 0 0 / 0.35);
   }
   .admin-user-foil {
     background: linear-gradient(135deg,

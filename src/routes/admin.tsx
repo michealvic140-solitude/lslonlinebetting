@@ -2556,7 +2556,7 @@ function AnalyticsPanel() {
 
       {/* ROW 8 — Event Countdown | Broadcast Center | Quick Actions */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <PanelBlock title="EVENT COUNTDOWN" onView={() => setActiveTabFromAnalytics(nav, "events")}>
+        <PanelBlock title="EVENT COUNTDOWN" compact onView={() => setActiveTabFromAnalytics(nav, "events")}>
           {event ? (
             <button onClick={() => setActiveTabFromAnalytics(nav, "events")} className="w-full text-left hover:bg-primary/5 rounded p-1 transition space-y-1">
               <div className="text-[9px] sm:text-xs font-bold text-primary truncate">{event.title}</div>
@@ -2567,7 +2567,7 @@ function AnalyticsPanel() {
             <div className="text-[10px] text-muted-foreground">No active event</div>
           )}
         </PanelBlock>
-        <PanelBlock title="BROADCAST CENTER" onView={() => setActiveTabFromAnalytics(nav, "broadcast")}>
+        <PanelBlock title="BROADCAST CENTER" compact onView={() => setActiveTabFromAnalytics(nav, "broadcast")}>
           {broadcasts.length === 0 && <div className="text-[10px] text-muted-foreground">No broadcasts</div>}
           {broadcasts.map((b) => (
             <button key={b.id} onClick={() => setActiveTabFromAnalytics(nav, "broadcast")} className="w-full text-left text-[9px] sm:text-xs py-1 border-b border-primary/10 last:border-0 hover:bg-primary/5 rounded px-1 transition">
@@ -2577,8 +2577,8 @@ function AnalyticsPanel() {
             </button>
           ))}
         </PanelBlock>
-        <PanelBlock title="QUICK ACTIONS">
-          <div className="max-h-[260px] sm:max-h-[320px] overflow-y-auto pr-1 -mr-1">
+        <PanelBlock title="QUICK ACTIONS" compact>
+          <div className="max-h-[120px] sm:max-h-[140px] overflow-y-auto pr-1 -mr-1">
             <div className="grid grid-cols-3 gap-1">
               {[
                 { i: BarChart3, l: "Analytics", t: "analytics" },
@@ -2705,7 +2705,7 @@ function MetricSquare({ icon: Icon, value, title, sub, tone, compact, onClick }:
   );
 }
 
-function PanelBlock({ title, onView, children, accent }: { title: string; onView?: () => void; children: React.ReactNode; accent?: "sky" | "rose" | "violet" | "amber" | "emerald" }) {
+function PanelBlock({ title, onView, children, accent, compact }: { title: string; onView?: () => void; children: React.ReactNode; accent?: "sky" | "rose" | "violet" | "amber" | "emerald"; compact?: boolean }) {
   const accents: Record<string, { ring: string; title: string; link: string; glow: string }> = {
     sky:     { ring: "border-sky-500/30",     title: "text-sky-300",     link: "text-sky-300/80 hover:text-sky-200",     glow: "shadow-[0_0_30px_-12px_rgba(56,189,248,0.5)]" },
     rose:    { ring: "border-rose-500/30",    title: "text-rose-300",    link: "text-rose-300/80 hover:text-rose-200",    glow: "shadow-[0_0_30px_-12px_rgba(244,63,94,0.5)]" },
@@ -2716,7 +2716,7 @@ function PanelBlock({ title, onView, children, accent }: { title: string; onView
   };
   const a = accents[accent ?? "primary"];
   return (
-    <Card className={`bg-card/60 p-2 sm:p-3 flex flex-col min-h-[140px] ${a.ring} ${a.glow}`}>
+    <Card className={`bg-card/60 p-2 sm:p-3 flex flex-col ${compact ? "min-h-0 max-h-[170px]" : "min-h-[140px]"} ${a.ring} ${a.glow}`}>
       <div className="relative flex items-center justify-between mb-1.5">
         <div className={`text-[8px] sm:text-[11px] font-bold tracking-widest ${a.title}`}>{title}</div>
         {onView && (
