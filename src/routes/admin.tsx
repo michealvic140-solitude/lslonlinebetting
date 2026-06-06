@@ -2558,10 +2558,16 @@ function AnalyticsPanel() {
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <PanelBlock title="EVENT COUNTDOWN" compact onView={() => setActiveTabFromAnalytics(nav, "events")}>
           {event ? (
-            <button onClick={() => setActiveTabFromAnalytics(nav, "events")} className="w-full text-left hover:bg-primary/5 rounded p-1 transition space-y-1">
-              <div className="text-[9px] sm:text-xs font-bold text-primary truncate">{event.title}</div>
-              <div className="text-[10px] sm:text-sm font-mono text-amber-300"><Countdown target={event.ends_at ?? event.starts_at} /></div>
-              <div className="text-[7px] sm:text-[9px] text-muted-foreground tabular-nums">{(() => { const d = new Date(event.starts_at ?? event.ends_at); const p = (n: number) => String(n).padStart(2, "0"); return `${d.getFullYear()}:${p(d.getMonth()+1)}:${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; })()}</div>
+            <button onClick={() => setActiveTabFromAnalytics(nav, "events")} className="relative w-full text-left rounded p-1 transition space-y-1 overflow-hidden">
+              {event.banner_url && (
+                <>
+                  <img src={event.banner_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70 rounded" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/40 to-background/20 rounded" />
+                </>
+              )}
+              <div className="relative text-[9px] sm:text-xs font-bold text-primary truncate drop-shadow">{event.title}</div>
+              <div className="relative text-[10px] sm:text-sm font-mono text-amber-300 drop-shadow"><Countdown target={event.ends_at ?? event.starts_at} /></div>
+              <div className="relative text-[7px] sm:text-[9px] text-muted-foreground tabular-nums">{(() => { const d = new Date(event.starts_at ?? event.ends_at); const p = (n: number) => String(n).padStart(2, "0"); return `${d.getFullYear()}:${p(d.getMonth()+1)}:${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; })()}</div>
             </button>
           ) : (
             <div className="text-[10px] text-muted-foreground">No active event</div>
@@ -2995,7 +3001,7 @@ function LeaderboardAdminPanel() {
     <div className="space-y-3">
       <Card className="glass-strong p-3 flex flex-wrap items-center gap-2 border-destructive/40">
         <div className="text-xs font-bold tracking-widest text-destructive mr-1">DANGER ZONE</div>
-        <Button variant="destructive" size="sm" onClick={clearAll} disabled={list.length === 0}>
+        <Button variant="destructive" size="sm" onClick={clearAll}>
           <Trash2 className="h-3 w-3 mr-1" />Wipe Leaderboard
         </Button>
         <Button variant="destructive" size="sm" onClick={() => wipeKind("shooter", "Shooters")}>
@@ -3004,7 +3010,7 @@ function LeaderboardAdminPanel() {
         <Button variant="destructive" size="sm" onClick={() => wipeKind("gang", "Hall of Fame")}>
           <Trash2 className="h-3 w-3 mr-1" />Wipe Hall of Fame
         </Button>
-        <span className="text-[10px] text-muted-foreground ml-auto">Only clears manual overrides — match history is preserved.</span>
+        <span className="text-[10px] text-muted-foreground ml-auto">Wipes auto-computed rows AND manual overrides. Match history is preserved.</span>
       </Card>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="text-xs text-muted-foreground">{list.length} manual override{list.length === 1 ? "" : "s"}</div>
