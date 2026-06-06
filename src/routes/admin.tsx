@@ -2965,7 +2965,7 @@ function LeaderboardAdminPanel() {
     const { error: setErr } = await supabase.from("app_settings").update({
       leaderboard_gangs_reset_at: now,
       leaderboard_shooters_reset_at: now,
-    }).eq("id", 1);
+    } as any).eq("id", 1);
     if (setErr) { toast.error(setErr.message); return; }
     await logAudit("leaderboard_clear_all", "leaderboard_overrides", undefined, { previous_count: list.length, reset_at: now });
     toast.success("Leaderboard cleared");
@@ -2985,7 +2985,7 @@ function LeaderboardAdminPanel() {
       kind === "gang"
         ? { leaderboard_gangs_reset_at: now, hall_of_fame_reset_at: now }
         : { leaderboard_shooters_reset_at: now };
-    const { error: setErr } = await supabase.from("app_settings").update(patch).eq("id", 1);
+    const { error: setErr } = await supabase.from("app_settings").update(patch as any).eq("id", 1);
     if (setErr) { toast.error(setErr.message); return; }
     await logAudit("leaderboard_wipe_kind", "leaderboard_overrides", undefined, { kind, previous_count: rows.length, reset_at: now });
     toast.success(`${label} wiped`);
