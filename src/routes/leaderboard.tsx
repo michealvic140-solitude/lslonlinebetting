@@ -43,10 +43,21 @@ function Page() {
 
   useEffect(() => {
     (async () => {
+      const { data: settings } = await supabase
+        .from("app_settings")
+        .select("leaderboard_gangs_reset_at, leaderboard_shooters_reset_at")
+        .eq("id", 1)
+        .maybeSingle();
+      const gangsReset = (settings as any)?.leaderboard_gangs_reset_at
+        ? new Date((settings as any).leaderboard_gangs_reset_at).getTime()
+        : 0;
+      const shootersReset = (settings as any)?.leaderboard_shooters_reset_at
+        ? new Date((settings as any).leaderboard_shooters_reset_at).getTime()
+        : 0;
       // Real (non-virtual) finished matches only — virtual rounds never count.
       const { data: matches } = await supabase
         .from("matches")
-        .select("home_team_id,away_team_id,home_score,away_score,winner_team_id,status,is_virtual")
+        .select("home_team_id,away_team_id,home_score,away_score,winner_team_id,status,is_virtual,settled_at,created_at")
         .eq("status", "ended")
         .eq("is_virtual", false);
       const { data: teams } = await supabase.from("teams").select("id,name");
@@ -61,26 +72,33 @@ function Page() {
       const playerAgg = new Map<string, Stats>();
 
       (matches ?? []).forEach((m: any) => {
+        const ts = new Date(m.settled_at ?? m.created_at ?? 0).getTime();
+        const countForGangs = ts >= gangsReset;
+        const countForShooters = ts >= shootersReset;
+        if (!countForGangs && !countForShooters) return;
         for (const side of ["home", "away"] as const) {
           const tid = side === "home" ? m.home_team_id : m.away_team_id;
           const tname = teamMap.get(tid) || "Team";
           const won = m.winner_team_id === tid;
           const draw = m.winner_team_id == null;
-          const cur = gangAgg.get(tname) ?? { name: tname, top_player: (teamPlayers.get(tid) ?? [])[0], W: 0, L: 0, D: 0, PTS: 0, P: 0 };
-          cur.P += 1;
-          if (draw) { cur.D += 1; cur.PTS += 1; }
-          else if (won) { cur.W += 1; cur.PTS += 3; }
-          else { cur.L += 1; }
-          gangAgg.set(tname, cur);
-          // shooters: each player on team
-          (teamPlayers.get(tid) ?? []).forEach((pname) => {
-            const pc = playerAgg.get(pname) ?? { name: pname, W: 0, L: 0, D: 0, PTS: 0, P: 0 };
-            pc.P += 1;
-            if (draw) { pc.D += 1; pc.PTS += 1; }
-            else if (won) { pc.W += 1; pc.PTS += 3; }
-            else { pc.L += 1; }
-            playerAgg.set(pname, pc);
-          });
+          if (countForGangs) {
+            const cur = gangAgg.get(tname) ?? { name: tname, top_player: (teamPlayers.get(tid) ?? [])[0], W: 0, L: 0, D: 0, PTS: 0, P: 0 };
+            cur.P += 1;
+            if (draw) { cur.D += 1; cur.PTS += 1; }
+            else if (won) { cur.W += 1; cur.PTS += 3; }
+            else { cur.L += 1; }
+            gangAgg.set(tname, cur);
+          }
+          if (countForShooters) {
+            (teamPlayers.get(tid) ?? []).forEach((pname) => {
+              const pc = playerAgg.get(pname) ?? { name: pname, W: 0, L: 0, D: 0, PTS: 0, P: 0 };
+              pc.P += 1;
+              if (draw) { pc.D += 1; pc.PTS += 1; }
+              else if (won) { pc.W += 1; pc.PTS += 3; }
+              else { pc.L += 1; }
+              playerAgg.set(pname, pc);
+            });
+          }
         }
       });
 
