@@ -163,5 +163,5 @@ export const ROLE_COLORS: Record<AppRole, string> = {
 };
 export const ROLE_LABELS: Record<AppRole, string> = {
   viewer: "Viewer", shooter: "Shooter", gang_leader: "Gang Leader",
-  registered: "Registered", sponsor: "Sponsor", moderator: "Moderator", admin: "Admin",
+  registered: "Registered", sponsor: "Sponsor", moderator: "Admin", admin: "Super Admin",
 };
