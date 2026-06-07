@@ -115,10 +115,10 @@ function AdminPage() {
               </button>
               <div>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Command center</p>
-                <h1 className="text-2xl sm:text-3xl font-bold gradient-gold-text">Admin Console</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold gradient-gold-text">{isAdmin ? "Super Admin Console" : "Admin Panel"}</h1>
               </div>
               <Badge variant="outline" className={`ml-auto ${isAdmin ? "border-accent/50 text-accent" : "border-primary/50 text-primary"}`}>
-                {isAdmin ? "Admin" : "Moderator"}
+                {isAdmin ? "Super Admin" : "Admin"}
               </Badge>
               {isAdmin && (
                 <div className="flex items-center gap-1 w-full sm:w-auto sm:ml-2">
@@ -689,13 +689,12 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
 
           <Tabs value={tab} onValueChange={setTab} className="mt-4">
             <TabsList className="bg-transparent w-full justify-start gap-4 border-b border-border rounded-none p-0 h-auto">
-              {[
+              {([
                 ["profile", "Profile"],
-                ["tokens", "Tokens"],
-                ["roles", "Roles"],
+                ...(isAdmin ? [["tokens", "Tokens"], ["roles", "Roles"]] as const : [] as const),
                 ["actions", "Actions"],
                 ["history", "History"],
-              ].map(([v, l]) => (
+              ] as ReadonlyArray<readonly [string, string]>).map(([v, l]) => (
                 <TabsTrigger
                   key={v}
                   value={v}
@@ -1469,6 +1468,7 @@ function EventsPanel() {
 
 /* ============================ TOKENS ============================ */
 function TokensPanel() {
+  const { isAdmin } = useAuth();
   const [reqs, setReqs] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
   const confirm = useConfirm();
@@ -1517,10 +1517,14 @@ function TokensPanel() {
           </div>
           <Badge variant="outline" className="capitalize">{r.status}</Badge>
           {r.status === "pending" && (
-            <div className="flex gap-1">
-              <Button size="sm" variant="outline" onClick={() => reject(r)}>Deny</Button>
-              <Button size="sm" className="btn-luxury" onClick={() => approve(r)}>Approve</Button>
-            </div>
+            isAdmin ? (
+              <div className="flex gap-1">
+                <Button size="sm" variant="outline" onClick={() => reject(r)}>Deny</Button>
+                <Button size="sm" className="btn-luxury" onClick={() => approve(r)}>Approve</Button>
+              </div>
+            ) : (
+              <Badge variant="outline" className="text-muted-foreground">Super Admin only</Badge>
+            )
           )}
         </Card>
       ))}
