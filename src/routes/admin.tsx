@@ -235,7 +235,7 @@ function AdminSectionRail({ alerts, onOpen }: { alerts: Record<string, number>; 
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-gold" />
           <item.icon className="h-4 w-4 text-primary mb-2" />
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.label}</div>
-          <div className="mt-1 text-2xl font-black gradient-gold-text">{item.count}</div>
+          <div className={`mt-1 text-2xl font-black ${item.count > 0 ? "text-emerald-400" : item.count < 0 ? "text-red-400" : "text-foreground"}`}>{item.count}</div>
           {item.count > 0 && <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background" />}
         </button>
       ))}
@@ -310,7 +310,7 @@ function Stats() {
       {items.map((x) => (
         <Card key={x.label} className="glass p-4">
           <x.icon className="h-5 w-5 text-primary mb-2" />
-          <div className="text-2xl font-bold gradient-gold-text">{x.value}</div>
+          <div className="text-2xl font-bold text-emerald-400">{x.value}</div>
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{x.label}</div>
         </Card>
       ))}
@@ -2629,12 +2629,29 @@ function AnalyticsPanel() {
                 { i: Wallet, l: "Withdrawals", t: "withdrawals" },
                 { i: Trophy, l: "Won Bets", t: "wonbets" },
                 { i: X, l: "Lost Bets", t: "lostbets" },
-              ].map((q) => (
-                <button key={q.l} onClick={() => setActiveTabFromAnalytics(nav, q.t)} className="flex flex-col items-center gap-0.5 p-1 rounded border border-primary/20 hover:border-primary/50 hover:bg-primary/10 active:scale-95 transition">
-                  <q.i className="h-3 w-3 text-primary" />
-                  <span className="text-[7px] sm:text-[9px] text-foreground text-center leading-tight">{q.l}</span>
-                </button>
-              ))}
+              ].map((q, idx) => {
+                const palette = [
+                  { ic: "text-emerald-400", bd: "border-emerald-500/30 hover:border-emerald-400/70 hover:bg-emerald-500/10" },
+                  { ic: "text-sky-400",     bd: "border-sky-500/30 hover:border-sky-400/70 hover:bg-sky-500/10" },
+                  { ic: "text-rose-400",    bd: "border-rose-500/30 hover:border-rose-400/70 hover:bg-rose-500/10" },
+                  { ic: "text-amber-400",   bd: "border-amber-500/30 hover:border-amber-400/70 hover:bg-amber-500/10" },
+                  { ic: "text-violet-400",  bd: "border-violet-500/30 hover:border-violet-400/70 hover:bg-violet-500/10" },
+                  { ic: "text-fuchsia-400", bd: "border-fuchsia-500/30 hover:border-fuchsia-400/70 hover:bg-fuchsia-500/10" },
+                  { ic: "text-cyan-400",    bd: "border-cyan-500/30 hover:border-cyan-400/70 hover:bg-cyan-500/10" },
+                  { ic: "text-lime-400",    bd: "border-lime-500/30 hover:border-lime-400/70 hover:bg-lime-500/10" },
+                  { ic: "text-orange-400",  bd: "border-orange-500/30 hover:border-orange-400/70 hover:bg-orange-500/10" },
+                  { ic: "text-pink-400",    bd: "border-pink-500/30 hover:border-pink-400/70 hover:bg-pink-500/10" },
+                  { ic: "text-teal-400",    bd: "border-teal-500/30 hover:border-teal-400/70 hover:bg-teal-500/10" },
+                  { ic: "text-indigo-400",  bd: "border-indigo-500/30 hover:border-indigo-400/70 hover:bg-indigo-500/10" },
+                ];
+                const c = palette[idx % palette.length];
+                return (
+                  <button key={q.l} onClick={() => setActiveTabFromAnalytics(nav, q.t)} className={`flex flex-col items-center gap-0.5 p-1 rounded border active:scale-95 transition ${c.bd}`}>
+                    <q.i className={`h-3 w-3 ${c.ic}`} />
+                    <span className="text-[7px] sm:text-[9px] text-foreground text-center leading-tight">{q.l}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </PanelBlock>
@@ -2685,13 +2702,24 @@ function setActiveTabFromAnalytics(_nav: any, _tab: string) {
 }
 
 function MetricSquare({ icon: Icon, value, title, sub, tone, compact, onClick }: { icon: any; value: any; title: string; sub?: string; tone?: string; compact?: boolean; onClick?: () => void }) {
-  const valueClass = tone === "gold-lg"
-    ? "text-[10px] sm:text-base font-black text-primary leading-tight"
-    : tone === "amber"
-    ? "text-base sm:text-xl font-black text-amber-400 leading-none"
+  // Parse the raw value to decide colour: positive => green, negative => red, otherwise white.
+  const numeric = (() => {
+    if (typeof value === "number") return value;
+    if (typeof value === "string") {
+      const cleaned = value.replace(/[, _]/g, "").replace(/[a-zA-Z%$₦]/g, "");
+      const n = parseFloat(cleaned);
+      return Number.isFinite(n) ? n : null;
+    }
+    return null;
+  })();
+  const toneColor =
+    numeric == null ? "text-foreground" : numeric > 0 ? "text-emerald-400" : numeric < 0 ? "text-red-400" : "text-foreground";
+  const sizeCls = tone === "gold-lg"
+    ? "text-[10px] sm:text-base leading-tight"
     : compact
-    ? "text-xs sm:text-lg font-black text-primary leading-none"
-    : "text-base sm:text-2xl font-black text-primary leading-none";
+    ? "text-xs sm:text-lg leading-none"
+    : "text-base sm:text-2xl leading-none";
+  const valueClass = `${sizeCls} font-black ${toneColor}`;
   const content = (
     <>
       <Icon className="h-2.5 w-2.5 sm:h-4 sm:w-4 text-primary/70 mb-0.5" />
