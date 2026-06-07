@@ -115,10 +115,10 @@ function AdminPage() {
               </button>
               <div>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Command center</p>
-                <h1 className="text-2xl sm:text-3xl font-bold gradient-gold-text">Admin Console</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold gradient-gold-text">{isAdmin ? "Super Admin Console" : "Admin Panel"}</h1>
               </div>
               <Badge variant="outline" className={`ml-auto ${isAdmin ? "border-accent/50 text-accent" : "border-primary/50 text-primary"}`}>
-                {isAdmin ? "Admin" : "Moderator"}
+                {isAdmin ? "Super Admin" : "Admin"}
               </Badge>
               {isAdmin && (
                 <div className="flex items-center gap-1 w-full sm:w-auto sm:ml-2">
