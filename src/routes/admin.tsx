@@ -689,13 +689,12 @@ function UserEditDialog({ user, roles, onClose }: { user: any; roles: string[]; 
 
           <Tabs value={tab} onValueChange={setTab} className="mt-4">
             <TabsList className="bg-transparent w-full justify-start gap-4 border-b border-border rounded-none p-0 h-auto">
-              {[
+              {([
                 ["profile", "Profile"],
-                ["tokens", "Tokens"],
-                ["roles", "Roles"],
+                ...(isAdmin ? [["tokens", "Tokens"], ["roles", "Roles"]] as const : [] as const),
                 ["actions", "Actions"],
                 ["history", "History"],
-              ].map(([v, l]) => (
+              ] as ReadonlyArray<readonly [string, string]>).map(([v, l]) => (
                 <TabsTrigger
                   key={v}
                   value={v}
