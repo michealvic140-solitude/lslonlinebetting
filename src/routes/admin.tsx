@@ -310,7 +310,7 @@ function Stats() {
       {items.map((x) => (
         <Card key={x.label} className="glass p-4">
           <x.icon className="h-5 w-5 text-primary mb-2" />
-          <div className="text-2xl font-bold gradient-gold-text">{x.value}</div>
+          <div className="text-2xl font-bold text-emerald-400">{x.value}</div>
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{x.label}</div>
         </Card>
       ))}
