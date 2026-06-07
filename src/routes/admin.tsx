@@ -2685,13 +2685,24 @@ function setActiveTabFromAnalytics(_nav: any, _tab: string) {
 }
 
 function MetricSquare({ icon: Icon, value, title, sub, tone, compact, onClick }: { icon: any; value: any; title: string; sub?: string; tone?: string; compact?: boolean; onClick?: () => void }) {
-  const valueClass = tone === "gold-lg"
-    ? "text-[10px] sm:text-base font-black text-primary leading-tight"
-    : tone === "amber"
-    ? "text-base sm:text-xl font-black text-amber-400 leading-none"
+  // Parse the raw value to decide colour: positive => green, negative => red, otherwise white.
+  const numeric = (() => {
+    if (typeof value === "number") return value;
+    if (typeof value === "string") {
+      const cleaned = value.replace(/[, _]/g, "").replace(/[a-zA-Z%$₦]/g, "");
+      const n = parseFloat(cleaned);
+      return Number.isFinite(n) ? n : null;
+    }
+    return null;
+  })();
+  const toneColor =
+    numeric == null ? "text-foreground" : numeric > 0 ? "text-emerald-400" : numeric < 0 ? "text-red-400" : "text-foreground";
+  const sizeCls = tone === "gold-lg"
+    ? "text-[10px] sm:text-base leading-tight"
     : compact
-    ? "text-xs sm:text-lg font-black text-primary leading-none"
-    : "text-base sm:text-2xl font-black text-primary leading-none";
+    ? "text-xs sm:text-lg leading-none"
+    : "text-base sm:text-2xl leading-none";
+  const valueClass = `${sizeCls} font-black ${toneColor}`;
   const content = (
     <>
       <Icon className="h-2.5 w-2.5 sm:h-4 sm:w-4 text-primary/70 mb-0.5" />
