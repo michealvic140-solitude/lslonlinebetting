@@ -235,7 +235,7 @@ function AdminSectionRail({ alerts, onOpen }: { alerts: Record<string, number>; 
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-gold" />
           <item.icon className="h-4 w-4 text-primary mb-2" />
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.label}</div>
-          <div className="mt-1 text-2xl font-black gradient-gold-text">{item.count}</div>
+          <div className={`mt-1 text-2xl font-black ${item.count > 0 ? "text-emerald-400" : item.count < 0 ? "text-red-400" : "text-foreground"}`}>{item.count}</div>
           {item.count > 0 && <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background" />}
         </button>
       ))}
