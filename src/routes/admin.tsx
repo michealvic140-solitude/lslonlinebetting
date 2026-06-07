@@ -1468,6 +1468,7 @@ function EventsPanel() {
 
 /* ============================ TOKENS ============================ */
 function TokensPanel() {
+  const { isAdmin } = useAuth();
   const [reqs, setReqs] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
   const confirm = useConfirm();
@@ -1516,10 +1517,14 @@ function TokensPanel() {
           </div>
           <Badge variant="outline" className="capitalize">{r.status}</Badge>
           {r.status === "pending" && (
-            <div className="flex gap-1">
-              <Button size="sm" variant="outline" onClick={() => reject(r)}>Deny</Button>
-              <Button size="sm" className="btn-luxury" onClick={() => approve(r)}>Approve</Button>
-            </div>
+            isAdmin ? (
+              <div className="flex gap-1">
+                <Button size="sm" variant="outline" onClick={() => reject(r)}>Deny</Button>
+                <Button size="sm" className="btn-luxury" onClick={() => approve(r)}>Approve</Button>
+              </div>
+            ) : (
+              <Badge variant="outline" className="text-muted-foreground">Super Admin only</Badge>
+            )
           )}
         </Card>
       ))}
