@@ -20,10 +20,10 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import lslLogo from "@/assets/lsl-logo.png";
 import tileVirtual from "@/assets/tile-virtual.jpg";
-import tileBattle from "@/assets/tile-battle.jpg";
+import tileBattleAsset from "@/assets/tile-battle.jpg.asset.json";
 import tileChallenges from "@/assets/tile-challenges.jpg";
 import tileReferrals from "@/assets/tile-referrals.jpg";
-import tileUsers from "@/assets/tile-users.jpg";
+import tileUsersAsset from "@/assets/tile-users.jpg.asset.json";
 import leagueSkullFire from "@/assets/league-skull-fire.jpg";
 import { Countdown } from "@/components/Countdown";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
