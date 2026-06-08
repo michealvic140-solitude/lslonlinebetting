@@ -19,9 +19,9 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import lslLogo from "@/assets/lsl-logo.png";
-import tileVirtual from "@/assets/tile-virtual.jpg";
 import tileBattleAsset from "@/assets/tile-battle.jpg.asset.json";
-import tileChallenges from "@/assets/tile-challenges.jpg";
+import tileVirtualAsset from "@/assets/tile-virtual.jpg.asset.json";
+import tileChallengesAsset from "@/assets/tile-challenges.jpg.asset.json";
 import tileReferrals from "@/assets/tile-referrals.jpg";
 import tileUsersAsset from "@/assets/tile-users.jpg.asset.json";
 import leagueSkullFire from "@/assets/league-skull-fire.jpg";
@@ -2660,9 +2660,9 @@ function AnalyticsPanel() {
       {/* ROW 9 — 5 module tiles */}
       <div className="grid grid-cols-5 gap-2 sm:gap-3">
         {[
-          { l: "VIRTUAL", s: "Manage virtual matches and rounds", t: "virtual", img: tileVirtual },
+          { l: "VIRTUAL", s: "Manage virtual matches and rounds", t: "virtual", img: tileVirtualAsset.url },
           { l: "BATTLE", s: "Manage matches, fixtures and outcomes", t: "matches", img: tileBattleAsset.url },
-          { l: "CHALLENGES", s: "Create and manage gang challenges", t: "challenges", img: tileChallenges },
+          { l: "CHALLENGES", s: "Create and manage gang challenges", t: "challenges", img: tileChallengesAsset.url },
           { l: "REFERRALS", s: "Manage referrals and commissions", t: "referrals", img: tileReferrals },
           { l: "USERS", s: "Manage users, profiles and access", t: "users", img: tileUsersAsset.url },
         ].map((m) => (
