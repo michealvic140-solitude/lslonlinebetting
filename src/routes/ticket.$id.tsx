@@ -320,9 +320,7 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
             </div>
           )}
           {isVirtualTicket && status === "won" && (
-            <Link to="/virtual/history" className="w-full rounded-xl py-3 btn-luxury font-black tracking-widest text-base flex items-center justify-center gap-2">
-              <Trophy className="h-5 w-5" />Claim virtual payout
-            </Link>
+            <ClaimVirtualPayoutButton betId={bet.id} />
           )}
 
           {/* BARCODE */}
