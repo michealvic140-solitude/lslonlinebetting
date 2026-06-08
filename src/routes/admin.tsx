@@ -20,10 +20,10 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import lslLogo from "@/assets/lsl-logo.png";
 import tileVirtual from "@/assets/tile-virtual.jpg";
-import tileVip from "@/assets/tile-vip.jpg";
+import tileBattle from "@/assets/tile-battle.jpg";
 import tileChallenges from "@/assets/tile-challenges.jpg";
 import tileReferrals from "@/assets/tile-referrals.jpg";
-import tileHousewallet from "@/assets/tile-housewallet.jpg";
+import tileUsers from "@/assets/tile-users.jpg";
 import leagueSkullFire from "@/assets/league-skull-fire.jpg";
 import { Countdown } from "@/components/Countdown";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
@@ -2661,10 +2661,10 @@ function AnalyticsPanel() {
       <div className="grid grid-cols-5 gap-2 sm:gap-3">
         {[
           { l: "VIRTUAL", s: "Manage virtual matches and rounds", t: "virtual", img: tileVirtual },
-          { l: "VIP PROGRAM", s: "Manage VIP tiers and rewards", t: "vip", img: tileVip },
+          { l: "BATTLE", s: "Manage matches, fixtures and outcomes", t: "matches", img: tileBattle },
           { l: "CHALLENGES", s: "Create and manage gang challenges", t: "challenges", img: tileChallenges },
           { l: "REFERRALS", s: "Manage referrals and commissions", t: "referrals", img: tileReferrals },
-          { l: "HOUSE WALLET", s: "Manage platform funds", t: "housewallet", img: tileHousewallet },
+          { l: "USERS", s: "Manage users, profiles and access", t: "users", img: tileUsers },
         ].map((m) => (
           <Card key={m.l} className="border-primary/20 bg-card/60 p-2 sm:p-3 flex flex-col">
             <button type="button" onClick={() => setActiveTabFromAnalytics(nav, m.t)} className="relative aspect-square w-full mb-1 rounded overflow-hidden border border-primary/20 hover:border-primary/60 transition active:scale-95">
