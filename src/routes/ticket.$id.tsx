@@ -373,6 +373,52 @@ function CashoutButton({ betId, amount }: { betId: string; amount: number }) {
   );
 }
 
+function ClaimVirtualPayoutButton({ betId }: { betId: string }) {
+  const [busy, setBusy] = useState(false);
+  const [claimed, setClaimed] = useState(false);
+  const confirm = useConfirm();
+  async function go() {
+    const ok = await confirm({
+      title: "Claim virtual payout?",
+      description: "Your winnings will be credited from the virtual house wallet immediately, if funds are available.",
+      confirmText: "Claim now",
+    });
+    if (!ok) return;
+    setBusy(true);
+    // find the payout request id for this bet
+    const { data: vpr } = await supabase
+      .from("virtual_payout_requests")
+      .select("id,status")
+      .eq("bet_id", betId)
+      .maybeSingle();
+    if (!vpr?.id) {
+      setBusy(false);
+      toast.error("No payout request found for this ticket.");
+      return;
+    }
+    if (vpr.status === "claimed") { setBusy(false); setClaimed(true); toast.info("Already claimed."); return; }
+    const { data, error } = await (supabase as any).rpc("claim_virtual_payout", { _id: vpr.id });
+    setBusy(false);
+    if (error) {
+      const msg = String(error.message || "").toLowerCase();
+      if (msg.includes("insufficient")) {
+        toast.error("Virtual house wallet is empty", { description: "Payout is paused until the wallet is funded. It will be available automatically once funds are added." });
+      } else {
+        toast.error("Claim failed", { description: error.message });
+      }
+      return;
+    }
+    setClaimed(true);
+    toast.success("Payout claimed!", { description: `+${Number(data?.amount ?? 0).toLocaleString()} tokens. New balance: ${Number(data?.balance ?? 0).toLocaleString()}.` });
+  }
+  return (
+    <button onClick={go} disabled={busy || claimed}
+      className="w-full rounded-xl py-3 btn-luxury font-black tracking-widest text-base flex items-center justify-center gap-2 disabled:opacity-60">
+      <Trophy className="h-5 w-5" />{claimed ? "Payout claimed" : busy ? "Processing…" : "Claim virtual payout"}
+    </button>
+  );
+}
+
 /* ================= SUPPORT TICKET (real-time chat with admin) ================= */
 function SupportTicketView({ ticket, userId, isMod }: { ticket: any; userId: string; isMod: boolean }) {
   const [msgs, setMsgs] = useState<any[]>([]);
