@@ -24,6 +24,8 @@ import tileVirtualAsset from "@/assets/tile-virtual.jpg.asset.json";
 import tileChallengesAsset from "@/assets/tile-challenges.jpg.asset.json";
 import tileReferrals from "@/assets/tile-referrals.jpg";
 import tileUsersAsset from "@/assets/tile-users.jpg.asset.json";
+import tileClansAsset from "@/assets/tile-clans.jpg.asset.json";
+import consoleHeaderBgAsset from "@/assets/console-header-bg.jpg.asset.json";
 import leagueSkullFire from "@/assets/league-skull-fire.jpg";
 import { Countdown } from "@/components/Countdown";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
@@ -36,6 +38,8 @@ import {
 import { useConfirm } from "@/components/ConfirmDialog";
 import { SpotlightsAdminPanel } from "@/components/Spotlight";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { ClansAdminPanel } from "@/components/admin/ClansAdminPanel";
+import { TopBetsPanel } from "@/components/admin/TopBetsPanel";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/admin")({
@@ -100,10 +104,11 @@ function AdminPage() {
     <Layout>
       <main className="w-full min-h-[calc(100vh-3.5rem)]">
         <div className={`mx-auto w-full ${activeTab === "analytics" ? "max-w-[1600px]" : "max-w-[1080px]"} px-3 sm:px-4 py-4 sm:py-6 space-y-4`}>
-          <div className="relative overflow-hidden rounded-2xl p-4 border border-primary/30 shadow-luxury bg-gradient-to-br from-card/90 via-card/70 to-primary/10 backdrop-blur-xl">
+          <div
+            className="relative overflow-hidden rounded-2xl p-4 border border-primary/40 shadow-luxury bg-card"
+            style={{ backgroundImage: `linear-gradient(90deg, rgba(8,14,10,0.95) 0%, rgba(8,14,10,0.78) 45%, rgba(8,14,10,0.25) 100%), url(${consoleHeaderBgAsset.url})`, backgroundSize: "cover", backgroundPosition: "center right" }}
+          >
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
-            <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
             <div className="relative flex items-center gap-3 flex-wrap">
               <button
                 type="button"
@@ -179,6 +184,8 @@ function AdminPage() {
             <TabsContent value="emblems" className="mt-4"><EmblemModerationPanel /></TabsContent>
             <TabsContent value="vip" className="mt-4"><VipAdminPanel /></TabsContent>
             <TabsContent value="spotlights" className="mt-4"><SpotlightsAdminPanel /></TabsContent>
+            <TabsContent value="clans" className="mt-4"><ClansAdminPanel /></TabsContent>
+            <TabsContent value="topbets" className="mt-4"><TopBetsPanel /></TabsContent>
           </Tabs>
         </div>
       </main>
@@ -322,6 +329,8 @@ function Stats() {
 function UsersPanel() {
   const [users, setUsers] = useState<any[]>([]);
   const [rolesByUser, setRolesByUser] = useState<Record<string, string[]>>({});
+  const [kycByUser, setKycByUser] = useState<Record<string, boolean>>({});
+  const [betsByUser, setBetsByUser] = useState<Record<string, number>>({});
   const [q, setQ] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -329,9 +338,19 @@ function UsersPanel() {
   const [edit, setEdit] = useState<any | null>(null);
 
   async function load() {
-    const { data: u } = await supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(500);
-    setUsers(u ?? []);
-    const { data: r } = await supabase.from("user_roles").select("user_id,role").in("user_id", (u ?? []).map((x: any) => x.id));
+    const { data: rich } = await (supabase as any).rpc("admin_list_users_with_kyc");
+    const fallback = !rich || rich.length === 0;
+    let u: any[] = rich ?? [];
+    if (fallback) {
+      const r = await supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(500);
+      u = r.data ?? [];
+    }
+    setUsers(u);
+    const kyc: Record<string, boolean> = {};
+    const bets: Record<string, number> = {};
+    u.forEach((x: any) => { kyc[x.id] = !!x.email_confirmed; bets[x.id] = Number(x.total_bets ?? 0); });
+    setKycByUser(kyc); setBetsByUser(bets);
+    const { data: r } = await supabase.from("user_roles").select("user_id,role").in("user_id", u.map((x: any) => x.id));
     const m: Record<string, string[]> = {};
     (r ?? []).forEach((x: any) => { (m[x.user_id] ??= []).push(x.role); });
     setRolesByUser(m);
@@ -442,7 +461,7 @@ function UsersPanel() {
         <span className="h-px flex-1 mx-3 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 max-h-[80vh] overflow-y-auto pr-1">
         {filtered.map((u) => {
           const initials = (u.full_name ?? u.email ?? "U").split(/\s|@/).filter(Boolean).map((p: string) => p[0]).slice(0, 2).join("").toUpperCase();
           const userRoles = rolesByUser[u.id] ?? [];
@@ -484,6 +503,14 @@ function UsersPanel() {
                     {!u.is_banned && !u.is_muted && !u.is_restricted && <span className="badge-won text-[9px] px-1.5 py-0.5 rounded-full font-bold">ACTIVE</span>}
                   </div>
                   <div className="text-[11px] text-muted-foreground truncate">{u.email}</div>
+                  {u.phone && <div className="text-[10px] text-muted-foreground truncate">📞 {u.phone}</div>}
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {kycByUser[u.id]
+                      ? <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-emerald-400/60 text-emerald-300 bg-emerald-500/10">VERIFIED</span>
+                      : <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-amber-400/60 text-amber-300 bg-amber-500/10">UNVERIFIED</span>}
+                    {kycByUser[u.id] && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-sky-400/60 text-sky-300 bg-sky-500/10">KYC</span>}
+                    {(u.vip_tier ?? 0) > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-primary/60 text-primary bg-primary/10">VIP</span>}
+                  </div>
                   <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
                     <Shield className="h-3 w-3 text-primary/70" />
                     <span className="truncate">{u.gang_name ?? "Independent"}{u.gang_type && ` · ${u.gang_type}`}</span>
@@ -517,8 +544,8 @@ function UsersPanel() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">XP</div>
-                  <div className="text-sm font-black text-primary/90">{(u.xp ?? 0).toLocaleString()}</div>
+                  <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">Total Bets</div>
+                  <div className="text-sm font-black text-primary/90">{(betsByUser[u.id] ?? u.xp ?? 0).toLocaleString()}</div>
                 </div>
                 <div>
                   <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">Joined</div>
@@ -2658,13 +2685,14 @@ function AnalyticsPanel() {
       </div>
 
       {/* ROW 9 — 5 module tiles */}
-      <div className="grid grid-cols-5 gap-2 sm:gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
         {[
           { l: "VIRTUAL", s: "Manage virtual matches and rounds", t: "virtual", img: tileVirtualAsset.url },
           { l: "BATTLE", s: "Manage matches, fixtures and outcomes", t: "matches", img: tileBattleAsset.url },
           { l: "CHALLENGES", s: "Create and manage gang challenges", t: "challenges", img: tileChallengesAsset.url },
           { l: "REFERRALS", s: "Manage referrals and commissions", t: "referrals", img: tileReferrals },
           { l: "USERS", s: "Manage users, profiles and access", t: "users", img: tileUsersAsset.url },
+          { l: "CLANS", s: "Manage gangs, teams and players", t: "clans", img: tileClansAsset.url },
         ].map((m) => (
           <Card key={m.l} className="border-primary/20 bg-card/60 p-2 sm:p-3 flex flex-col">
             <button type="button" onClick={() => setActiveTabFromAnalytics(nav, m.t)} className="relative aspect-square w-full mb-1 rounded overflow-hidden border border-primary/20 hover:border-primary/60 transition active:scale-95">
@@ -2680,6 +2708,8 @@ function AnalyticsPanel() {
       </div>
 
       {/* ROW 10 — System Status */}
+      <TopBetsPanel />
+
       <Card className="border-primary/20 bg-card/60 p-3">
         <div className="text-[10px] sm:text-xs font-bold tracking-widest text-primary mb-2">SYSTEM STATUS <span className="text-muted-foreground font-normal">(COMING SOON)</span></div>
         <div className="grid grid-cols-5 gap-1 sm:gap-2">
