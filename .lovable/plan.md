@@ -1,54 +1,78 @@
 ## Scope
 
-Seven user-facing changes, grouped so each commit is verifiable on its own.
-
-### 1. Tile images (DONE — verify only)
-- Re-pointed `tile-virtual / tile-vip / tile-challenges / tile-referrals / tile-housewallet` `.asset.json` files to the new uploads (VR headset, sapphire crown, runed shield + swords, chrome link, vault). No code changes — imports are unchanged.
-- Add a subtle LSL skull-logo overlay (~12% opacity, blend-mode screen, centered) on each Manage tile so the logo "slightly shows" through, matching the reference screenshot.
-
-### 2. Mobile navbar → vertical left rail
-- Current state: desktop already has a top horizontal nav; the screenshot you sent is the **mobile** bottom bar.
-- Replace `Layout`'s `lg:hidden fixed bottom-0` mobile nav with a `lg:hidden fixed left-0 top-16 bottom-0 w-14` vertical rail, anchored under the logo and ending at the footer.
-- Background: `linear-gradient(180deg, dark-green 0%, dark-gold 100%)` (no transparency).
-- Add `lg:hidden pl-14` to `<main>` so content shifts right and never sits under the rail.
-- Remove the `h-20` bottom spacer.
-- Desktop top nav stays as-is.
-
-### 3. Compact tiles: Event Countdown / Broadcast Center / Quick Actions
-- Constrain `PanelBlock` for these 3 to `aspect-square max-w-[260px]` with `overflow-hidden` and a "View all →" chevron — same square footprint as the stat tiles above.
-- Quick Actions: collapse 6 buttons into a 3×2 icon grid (no labels, tooltip on hover).
-
-### 4. Leaderboard admin: 3 wipe buttons
-- In `LeaderboardAdminPanel`, add a destructive action row with 3 buttons:
-  - **Wipe Leaderboard** → `delete from leaderboard_overrides` + reset aggregated points (no-op since aggregation reads from matches; this just clears manual overrides).
-  - **Wipe Shooters** → clear player-scoped overrides only (`where kind = 'player'`).
-  - **Wipe Hall of Fame** → `delete from hall_of_fame` (table exists per types).
-- Each button gated by `useConfirm` dialog.
-
-### 5. Countdown `/` → `:`
-- Audit shows `Countdown.tsx` already uses `h … m … s` separators, no `/`. The `/` likely refers to the **date** rendering in EventBanner / event cards (`MM/DD/YYYY`). Switch those to `MM:DD:YYYY` per request, or — more likely intent — switch any HH/MM/SS displays to use `:`.
-- I'll grep and convert any `/` separator in date/time display strings under `Event*` and `Countdown*` components.
-
-### 6. Glassmorphism: thicker, less transparent
-- In `src/styles.css`, raise opacity on:
-  - `--glass-bg` from `0.06 / 0.02` → `0.22 / 0.14`
-  - `--glass-border` from `0.12` → `0.28`
-  - `.glass-strong` alphas from `0.92` (already strong, keep)
-- Increase blur from `14px` → `20px` on `.glass` for thicker frost.
-
-### 7. Image-URL inputs → file uploads
-- Create one private bucket `admin-uploads` (RLS: admins/mods upload + read, public read on objects).
-- Replace text URL `<Input>` for: Events banner, Announcements image, Advertisements image, Seasons banner, Spotlights image.
-- Each becomes an `<input type="file" accept="image/*">` that uploads via `supabase.storage.from('admin-uploads').upload()` and stores the resulting public URL.
-- Keep a small "or paste URL" link as fallback so admins can still use external CDN URLs if they prefer.
+Rebuild the Super Admin Console (`src/routes/admin.tsx`) layout to match the reference mockup, plus rebuild the Users admin panel, add a brand-new Clans panel (Gangs / Teams / Players CRUD), add a Top Bets leaderboard, generate a themed header background image, and reduce transparency across console surfaces.
 
 ---
 
-## Order of operations
+## 1. Themed header image
 
-1. Commit 1: Items **1, 3, 5, 6** (pure presentation — tiles + glass + countdown + compact panels). Safest, no DB.
-2. Commit 2: Item **2** (left rail). Mobile-only layout change.
-3. Commit 3: Item **4** (leaderboard wipes) — needs `useConfirm` wiring.
-4. Commit 4: Item **7** (storage bucket migration + form rewrites). Biggest blast radius — last.
+- Generate `src/assets/console-header-bg.jpg` (premium tier, 1920×512, dark green Lomita "command center" with masked shooter silhouette) via imagegen.
+- Upload via `lovable-assets create` → write `console-header-bg.jpg.asset.json`, remove the raw jpg.
+- Use as `background-image` of the existing "Super Admin Console" header card with a dark gradient overlay so the title row stays readable.
 
-Reply "go" and I'll execute commit 1 immediately, then proceed through the rest. Or tell me to reorder/skip any item.
+## 2. Console overview layout pass
+
+Edit `src/routes/admin.tsx` overview tab only (tabs/routes untouched):
+
+```
+[ header card with bg image ]
+[ stat row 1: Online / Game Worlds / Pending Requests / Total Volume / Open Reports ]
+[ stat row 2: Tickets Today / Total Requests / Withdrawals / Player Requests / Ban Appeals ]
+[ Volume chart (14d) | New users per day chart ]
+[ small stat tiles row: Total Users / Banned / Tokens Circ / Today Bets / Won Bets ]
+[ Recent Activity | Live Gang Wars / Event Countdown | Highlights Hub ]
+[ Broadcast Center | Quick Actions | TOP BETS (new) ]
+[ tile grid: Virtual / Battle / Challenges / Alliances / Leaderboards / CLANS (new) ]
+```
+
+All wrapper cards switch from `bg-card/40 backdrop-blur` style to `bg-card/85` (or solid `bg-card`) with subtle border — "thicker, less transparent" per request.
+
+## 3. Users panel rebuild
+
+Edit existing Users admin section (component inside `admin.tsx` or extracted file):
+
+- Top summary bar: Total / Active / KYC / Suspended / Frozen / Joined (date range).
+- Filters row: search input, role select, status select, sort select, Export CSV button.
+- View toggle: grid (3 columns @ desktop, 2 @ md, 1 @ sm) / list. Vertical scroll container `max-h-[80vh] overflow-y-auto`.
+- User card: avatar tag (U1, U2…), name + status badge, email, phone, badges row (Verified / KYC / VIP / Frozen / Suspended), stats row (Balance, Total bets, Joined), gold "Manage Profile" button.
+- **KYC rule**: Verified iff `auth.users.email_confirmed_at IS NOT NULL`. Implemented as a new SECURITY DEFINER RPC `admin_list_users_with_kyc()` returning each profile joined to `email_confirmed_at`. RLS-gated by `has_role(auth.uid(),'admin')`.
+- Manage Profile dialog: tabs Profile / Tokens / Roles / Actions / History matching mockup — reuse existing user-edit logic where possible.
+
+## 4. Clans panel (NEW)
+
+New file `src/components/admin/ClansAdminPanel.tsx`, rendered when sidebar `clans` tab is active. Add `clans` entry to `AdminSidebar` (icon: Shield).
+
+- Tabs: Gangs | Teams | Players.
+- Each tab: list + "Create" button + edit/delete actions. Uses existing tables (`teams`, `players`, `profiles.gang_name`).
+- Gangs tab manages distinct `gang_name` + `gang_type` values across `profiles` (or new lightweight `gangs` table if needed — check schema first; prefer no new table).
+- Teams tab: full CRUD on `public.teams`.
+- Players tab: full CRUD on `public.players` (link to team).
+- Seed a tile image `tile-clans.jpg` via imagegen + `lovable-assets`, add a Clans tile in the bottom tile grid replacing nothing (added as 6th tile).
+
+No changes to match-creation flow — it already selects from `teams`/`players`.
+
+## 5. Top Bets panel (NEW)
+
+New component `src/components/admin/TopBetsPanel.tsx`. Replaces the spot where "Top Players" sits in the mockup, but the existing **Users** panel/section stays. Combined score = `SUM(won) + SUM(stake)` per user across `bets`. Scrollable `max-h-[420px]`. Realtime-refresh on `bets` changes (same pattern as `GrandPrizeWinners`).
+
+## 6. Migration
+
+One migration:
+- `CREATE OR REPLACE FUNCTION public.admin_list_users_with_kyc()` returning profile rows + `email_confirmed boolean` + aggregate `total_bets`, `balance`. SECURITY DEFINER, search_path = public, guarded by `has_role(auth.uid(),'admin')`.
+- `GRANT EXECUTE ... TO authenticated`.
+
+No table schema changes expected (reusing existing `profiles`, `teams`, `players`, `bets`).
+
+---
+
+## Out of scope / explicit non-goals
+
+- Sidebar nav reorganization (already implemented, untouched).
+- Match creation flow.
+- Mobile-specific redesign beyond responsive grid collapse.
+- Replacing the existing Hall of Fame / Grand Prize Winners card.
+
+## Risks
+
+- `admin.tsx` is large; layout changes will be surgical to the Overview tab + Users tab only.
+- If a `gangs` table doesn't exist, Gangs tab will manage them via existing `profiles.gang_name` distinct list rather than introducing schema.
