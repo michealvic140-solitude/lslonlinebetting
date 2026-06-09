@@ -24,6 +24,8 @@ import tileVirtualAsset from "@/assets/tile-virtual.jpg.asset.json";
 import tileChallengesAsset from "@/assets/tile-challenges.jpg.asset.json";
 import tileReferrals from "@/assets/tile-referrals.jpg";
 import tileUsersAsset from "@/assets/tile-users.jpg.asset.json";
+import tileClansAsset from "@/assets/tile-clans.jpg.asset.json";
+import consoleHeaderBgAsset from "@/assets/console-header-bg.jpg.asset.json";
 import leagueSkullFire from "@/assets/league-skull-fire.jpg";
 import { Countdown } from "@/components/Countdown";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
@@ -36,6 +38,8 @@ import {
 import { useConfirm } from "@/components/ConfirmDialog";
 import { SpotlightsAdminPanel } from "@/components/Spotlight";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { ClansAdminPanel } from "@/components/admin/ClansAdminPanel";
+import { TopBetsPanel } from "@/components/admin/TopBetsPanel";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/admin")({
@@ -100,10 +104,11 @@ function AdminPage() {
     <Layout>
       <main className="w-full min-h-[calc(100vh-3.5rem)]">
         <div className={`mx-auto w-full ${activeTab === "analytics" ? "max-w-[1600px]" : "max-w-[1080px]"} px-3 sm:px-4 py-4 sm:py-6 space-y-4`}>
-          <div className="relative overflow-hidden rounded-2xl p-4 border border-primary/30 shadow-luxury bg-gradient-to-br from-card/90 via-card/70 to-primary/10 backdrop-blur-xl">
+          <div
+            className="relative overflow-hidden rounded-2xl p-4 border border-primary/40 shadow-luxury bg-card"
+            style={{ backgroundImage: `linear-gradient(90deg, rgba(8,14,10,0.95) 0%, rgba(8,14,10,0.78) 45%, rgba(8,14,10,0.25) 100%), url(${consoleHeaderBgAsset.url})`, backgroundSize: "cover", backgroundPosition: "center right" }}
+          >
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
-            <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
             <div className="relative flex items-center gap-3 flex-wrap">
               <button
                 type="button"
@@ -179,6 +184,8 @@ function AdminPage() {
             <TabsContent value="emblems" className="mt-4"><EmblemModerationPanel /></TabsContent>
             <TabsContent value="vip" className="mt-4"><VipAdminPanel /></TabsContent>
             <TabsContent value="spotlights" className="mt-4"><SpotlightsAdminPanel /></TabsContent>
+            <TabsContent value="clans" className="mt-4"><ClansAdminPanel /></TabsContent>
+            <TabsContent value="topbets" className="mt-4"><TopBetsPanel /></TabsContent>
           </Tabs>
         </div>
       </main>
