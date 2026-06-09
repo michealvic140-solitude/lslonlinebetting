@@ -2528,6 +2528,27 @@ export type Database = {
         Args: { _reason?: string; _user_id: string }
         Returns: Json
       }
+      admin_list_users_with_kyc: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          created_at: string
+          email: string
+          email_confirmed: boolean
+          full_name: string
+          gang_name: string
+          gang_type: string
+          id: string
+          is_banned: boolean
+          is_muted: boolean
+          is_restricted: boolean
+          phone: string
+          token_balance: number
+          total_bets: number
+          vip_tier: string
+          xp: number
+        }[]
+      }
       admin_lock_virtual_round: { Args: { _match_id: string }; Returns: Json }
       admin_log_action: {
         Args: {
