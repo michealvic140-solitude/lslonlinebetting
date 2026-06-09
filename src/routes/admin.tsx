@@ -329,6 +329,8 @@ function Stats() {
 function UsersPanel() {
   const [users, setUsers] = useState<any[]>([]);
   const [rolesByUser, setRolesByUser] = useState<Record<string, string[]>>({});
+  const [kycByUser, setKycByUser] = useState<Record<string, boolean>>({});
+  const [betsByUser, setBetsByUser] = useState<Record<string, number>>({});
   const [q, setQ] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -336,9 +338,19 @@ function UsersPanel() {
   const [edit, setEdit] = useState<any | null>(null);
 
   async function load() {
-    const { data: u } = await supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(500);
-    setUsers(u ?? []);
-    const { data: r } = await supabase.from("user_roles").select("user_id,role").in("user_id", (u ?? []).map((x: any) => x.id));
+    const { data: rich } = await (supabase as any).rpc("admin_list_users_with_kyc");
+    const fallback = !rich || rich.length === 0;
+    let u: any[] = rich ?? [];
+    if (fallback) {
+      const r = await supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(500);
+      u = r.data ?? [];
+    }
+    setUsers(u);
+    const kyc: Record<string, boolean> = {};
+    const bets: Record<string, number> = {};
+    u.forEach((x: any) => { kyc[x.id] = !!x.email_confirmed; bets[x.id] = Number(x.total_bets ?? 0); });
+    setKycByUser(kyc); setBetsByUser(bets);
+    const { data: r } = await supabase.from("user_roles").select("user_id,role").in("user_id", u.map((x: any) => x.id));
     const m: Record<string, string[]> = {};
     (r ?? []).forEach((x: any) => { (m[x.user_id] ??= []).push(x.role); });
     setRolesByUser(m);
@@ -2688,6 +2700,8 @@ function AnalyticsPanel() {
       </div>
 
       {/* ROW 10 — System Status */}
+      <TopBetsPanel />
+
       <Card className="border-primary/20 bg-card/60 p-3">
         <div className="text-[10px] sm:text-xs font-bold tracking-widest text-primary mb-2">SYSTEM STATUS <span className="text-muted-foreground font-normal">(COMING SOON)</span></div>
         <div className="grid grid-cols-5 gap-1 sm:gap-2">
