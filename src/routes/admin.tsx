@@ -461,7 +461,7 @@ function UsersPanel() {
         <span className="h-px flex-1 mx-3 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 max-h-[80vh] overflow-y-auto pr-1">
         {filtered.map((u) => {
           const initials = (u.full_name ?? u.email ?? "U").split(/\s|@/).filter(Boolean).map((p: string) => p[0]).slice(0, 2).join("").toUpperCase();
           const userRoles = rolesByUser[u.id] ?? [];
@@ -503,6 +503,14 @@ function UsersPanel() {
                     {!u.is_banned && !u.is_muted && !u.is_restricted && <span className="badge-won text-[9px] px-1.5 py-0.5 rounded-full font-bold">ACTIVE</span>}
                   </div>
                   <div className="text-[11px] text-muted-foreground truncate">{u.email}</div>
+                  {u.phone && <div className="text-[10px] text-muted-foreground truncate">📞 {u.phone}</div>}
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {kycByUser[u.id]
+                      ? <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-emerald-400/60 text-emerald-300 bg-emerald-500/10">VERIFIED</span>
+                      : <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-amber-400/60 text-amber-300 bg-amber-500/10">UNVERIFIED</span>}
+                    {kycByUser[u.id] && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-sky-400/60 text-sky-300 bg-sky-500/10">KYC</span>}
+                    {(u.vip_tier ?? 0) > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-primary/60 text-primary bg-primary/10">VIP</span>}
+                  </div>
                   <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
                     <Shield className="h-3 w-3 text-primary/70" />
                     <span className="truncate">{u.gang_name ?? "Independent"}{u.gang_type && ` · ${u.gang_type}`}</span>
@@ -536,8 +544,8 @@ function UsersPanel() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">XP</div>
-                  <div className="text-sm font-black text-primary/90">{(u.xp ?? 0).toLocaleString()}</div>
+                  <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">Total Bets</div>
+                  <div className="text-sm font-black text-primary/90">{(betsByUser[u.id] ?? u.xp ?? 0).toLocaleString()}</div>
                 </div>
                 <div>
                   <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">Joined</div>
