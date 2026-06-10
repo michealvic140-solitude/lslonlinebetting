@@ -18,8 +18,8 @@ export function MatchCardLive({ match }: { match: MatchRow }) {
   const market = mainMarket;
   const locked = match.status !== "scheduled" || !market?.is_open;
   const selectedOdd = selections.find((s) => s.match_id === match.id)?.odd_id;
-  const homeName = match.home_team?.name ?? "Home";
-  const awayName = match.away_team?.name ?? "Away";
+  const homeName = match.match_kind === "shooter" ? (match.home_player?.name ?? "Shooter A") : match.home_team?.name ?? "Home";
+  const awayName = match.match_kind === "shooter" ? (match.away_player?.name ?? "Shooter B") : match.away_team?.name ?? "Away";
   const [csOpen, setCsOpen] = useState(false);
   const [csSearch, setCsSearch] = useState("");
   const [csTab, setCsTab] = useState<"all" | "home" | "draw" | "away">("all");
@@ -39,7 +39,7 @@ export function MatchCardLive({ match }: { match: MatchRow }) {
         </div>
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mt-3">
           <div className="flex items-center gap-2 min-w-0">
-            <TeamLogo name={homeName} url={match.home_team?.logo_url} size={36} rounded="full" />
+            <TeamLogo name={homeName} url={match.match_kind === "shooter" ? match.home_player?.avatar_url : match.home_team?.logo_url} size={36} rounded="full" />
             <div className="min-w-0"><div className="font-bold truncate text-sm">{homeName}</div><div className="text-[10px] text-muted-foreground">{match.status === "scheduled" ? "—" : match.home_score}</div></div>
           </div>
           <div className="text-center">
@@ -47,7 +47,7 @@ export function MatchCardLive({ match }: { match: MatchRow }) {
             <Crosshair className="h-5 w-5 text-primary mx-auto" />
           </div>
           <div className="flex items-center gap-2 flex-row-reverse text-right min-w-0">
-            <TeamLogo name={awayName} url={match.away_team?.logo_url} size={36} rounded="full" />
+            <TeamLogo name={awayName} url={match.match_kind === "shooter" ? match.away_player?.avatar_url : match.away_team?.logo_url} size={36} rounded="full" />
             <div className="min-w-0"><div className="font-bold truncate text-sm">{awayName}</div><div className="text-[10px] text-muted-foreground">{match.status === "scheduled" ? "—" : match.away_score}</div></div>
           </div>
         </div>
@@ -106,7 +106,10 @@ export function MatchCardLive({ match }: { match: MatchRow }) {
 
       <div className="mt-2 flex items-center justify-between">
         <Badge variant="outline" className="text-[10px]">{market?.name ?? "TBA"}</Badge>
-        {match.is_featured && <Badge className="text-[10px] bg-primary/20 text-primary border-primary/40" variant="outline">Featured</Badge>}
+        <div className="flex items-center gap-1">
+          {match.match_kind === "shooter" && <Badge className="text-[10px] bg-accent/15 text-accent border-accent/40" variant="outline">Shooter 1v1</Badge>}
+          {match.is_featured && <Badge className="text-[10px] bg-primary/20 text-primary border-primary/40" variant="outline">Featured</Badge>}
+        </div>
       </div>
 
       {csMarket && (

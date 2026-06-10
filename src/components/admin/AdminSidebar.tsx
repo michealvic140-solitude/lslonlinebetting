@@ -14,7 +14,7 @@ import {
 import {
   BarChart3, Users, Sparkles, AlertTriangle, History, ClipboardList, Send,
   MessageSquare, Megaphone, Trophy, Calendar, Wallet, ListOrdered, Tag,
-  Settings as SettingsIcon, Ticket, Coins, Dice5, Shield, Flame,
+  Settings as SettingsIcon, Ticket, Coins, Dice5, Shield, Flame, Target,
 } from "lucide-react";
 import lslLogo from "@/assets/lsl-logo.png";
 
@@ -41,6 +41,7 @@ const NAV: AdminNavItem[] = [
   { key: "content",     label: "Content",              icon: Megaphone,       modOk: true },
   { key: "emblems",     label: "Emblems",              icon: Trophy,          admin: true },
   { key: "events",      label: "Events",               icon: Calendar,        admin: true },
+  { key: "futures",     label: "Futures",              icon: Target,          admin: true },
   { key: "housewallet", label: "House Wallet",         icon: Wallet,          admin: true },
   { key: "leaderboard", label: "Leaderboard",          icon: ListOrdered,     admin: true },
   { key: "matches",     label: "Matches",              icon: Trophy,          modOk: true },

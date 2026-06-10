@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,7 +35,7 @@ function rankIcon(i: number) {
   return `#${i + 1}`;
 }
 
-type Stats = { name: string; top_player?: string; W: number; L: number; D: number; PTS: number; P: number; manual_rank?: number | null };
+type Stats = { name: string; top_player?: string; gang_faction?: string; W: number; L: number; D: number; PTS: number; P: number; manual_rank?: number | null };
 
 function Page() {
   const [shooters, setShooters] = useState<Stats[]>([]);
@@ -57,7 +57,7 @@ function Page() {
       // Real (non-virtual) finished matches only — virtual rounds never count.
       const { data: matches } = await supabase
         .from("matches")
-        .select("home_team_id,away_team_id,home_score,away_score,winner_team_id,status,is_virtual,settled_at,created_at")
+        .select("home_team_id,away_team_id,home_player_id,away_player_id,home_score,away_score,winner_team_id,status,is_virtual,match_kind,settled_at,created_at")
         .eq("status", "ended")
         .eq("is_virtual", false);
       const { data: teams } = await supabase.from("teams").select("id,name");
@@ -65,17 +65,49 @@ function Page() {
       const { data: overrides } = await supabase.from("leaderboard_overrides").select("*");
 
       const teamMap = new Map<string, string>(); (teams ?? []).forEach((t) => teamMap.set(t.id, t.name));
+      const playerMap = new Map<string, any>(); (players ?? []).forEach((p) => playerMap.set(p.id, p));
       const teamPlayers = new Map<string, string[]>();
-      (players ?? []).forEach((p) => { const a = teamPlayers.get(p.team_id) ?? []; a.push(p.name); teamPlayers.set(p.team_id, a); });
+      (players ?? []).forEach((p) => {
+        if (!p.team_id) return;
+        const a = teamPlayers.get(p.team_id) ?? [];
+        a.push(p.name);
+        teamPlayers.set(p.team_id, a);
+      });
 
       const gangAgg = new Map<string, Stats>();
       const playerAgg = new Map<string, Stats>();
+      // Seed all known shooters so they appear on the board even with zero stats.
+      (players ?? []).forEach((p) => {
+        if (!p.name) return;
+        const tname = p.team_id ? (teamMap.get(p.team_id) || "") : "";
+        playerAgg.set(p.name, { name: p.name, gang_faction: tname || "—", W: 0, L: 0, D: 0, PTS: 0, P: 0 });
+      });
+
 
       (matches ?? []).forEach((m: any) => {
         const ts = new Date(m.settled_at ?? m.created_at ?? 0).getTime();
         const countForGangs = ts >= gangsReset;
         const countForShooters = ts >= shootersReset;
         if (!countForGangs && !countForShooters) return;
+        if (m.match_kind === "future") return;
+        if (m.match_kind === "shooter") {
+          if (!countForShooters) return;
+          const draw = Number(m.home_score ?? 0) === Number(m.away_score ?? 0);
+          const winnerPlayerId = draw ? null : Number(m.home_score ?? 0) > Number(m.away_score ?? 0) ? m.home_player_id : m.away_player_id;
+          for (const pid of [m.home_player_id, m.away_player_id]) {
+            const pl = pid ? playerMap.get(pid) : null;
+            if (!pl?.name) continue;
+            const tname = pl.team_id ? (teamMap.get(pl.team_id) || "—") : "—";
+            const pc = playerAgg.get(pl.name) ?? { name: pl.name, gang_faction: tname, W: 0, L: 0, D: 0, PTS: 0, P: 0 };
+            pc.gang_faction = tname;
+            pc.P += 1;
+            if (draw) { pc.D += 1; pc.PTS += 1; }
+            else if (winnerPlayerId === pid) { pc.W += 1; pc.PTS += 3; }
+            else { pc.L += 1; }
+            playerAgg.set(pl.name, pc);
+          }
+          return;
+        }
         for (const side of ["home", "away"] as const) {
           const tid = side === "home" ? m.home_team_id : m.away_team_id;
           const tname = teamMap.get(tid) || "Team";
@@ -91,7 +123,8 @@ function Page() {
           }
           if (countForShooters) {
             (teamPlayers.get(tid) ?? []).forEach((pname) => {
-              const pc = playerAgg.get(pname) ?? { name: pname, W: 0, L: 0, D: 0, PTS: 0, P: 0 };
+              const pc = playerAgg.get(pname) ?? { name: pname, gang_faction: tname, W: 0, L: 0, D: 0, PTS: 0, P: 0 };
+              pc.gang_faction = pc.gang_faction || tname;
               pc.P += 1;
               if (draw) { pc.D += 1; pc.PTS += 1; }
               else if (won) { pc.W += 1; pc.PTS += 3; }
@@ -173,23 +206,26 @@ function Page() {
               <table className="w-full text-sm">
                 <thead className="border-b border-border bg-card/40">
                   <tr className="text-left text-xs uppercase tracking-widest text-muted-foreground">
-                    <Th>Rank</Th><Th>Player</Th>
-                    <Th right>Won</Th><Th right>Lost</Th><Th right>Total</Th><Th right>PTS</Th>
+                    <Th>Rank</Th><Th>Gang &amp; Faction</Th><Th>Player</Th>
+                    <Th right>W</Th><Th right>L</Th><Th right>D</Th><Th right>P</Th><Th right>PTS</Th>
                   </tr>
                 </thead>
                 <tbody>
-                  {shooters.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No shooters yet.</td></tr>}
+                  {shooters.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">No shooters yet.</td></tr>}
                   {shooters.map((p, i) => (
                     <tr key={p.name} className="border-b border-border/40 hover:bg-primary/5">
                       <Td><span className="text-lg font-bold">{rankIcon(i)}</span></Td>
+                      <Td><span className="font-bold text-primary/90">{p.gang_faction || "—"}</span></Td>
                       <Td><span className="font-bold">{p.name}</span></Td>
                       <Td right><span className="text-emerald-400 font-bold">{p.W}</span></Td>
                       <Td right><span className="text-destructive font-bold">{p.L}</span></Td>
+                      <Td right><span className="text-amber-400 font-bold">{p.D}</span></Td>
                       <Td right>{p.P}</Td>
                       <Td right><span className="font-bold text-primary">{p.PTS}</span></Td>
                     </tr>
                   ))}
                 </tbody>
+
               </table>
             </Card>
           </TabsContent>

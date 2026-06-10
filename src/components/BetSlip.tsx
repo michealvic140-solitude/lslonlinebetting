@@ -57,6 +57,9 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
   const [realMaxPayout, setRealMaxPayout] = useState(100_000_000);
   const [virtMinStake, setVirtMinStake] = useState(100_000);
   const [virtMaxPayout, setVirtMaxPayout] = useState(100_000_000);
+  const [futureMinStake, setFutureMinStake] = useState(1);
+  const [futureMaxPayout, setFutureMaxPayout] = useState(100_000_000);
+  const [futureMaxSel, setFutureMaxSel] = useState(1);
   const [maxSelReal, setMaxSelReal] = useState(20);
   const [maxSelVirt, setMaxSelVirt] = useState(20);
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +68,7 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
   const nav = useNavigate();
 
   useEffect(() => {
-    supabase.from("app_settings").select("min_stake,max_payout,virtual_min_stake,virtual_max_payout,max_selections_per_ticket,virtual_max_selections").eq("id", 1).maybeSingle()
+    supabase.from("app_settings").select("min_stake,max_payout,virtual_min_stake,virtual_max_payout,max_selections_per_ticket,virtual_max_selections,futures_min_stake,futures_max_payout,futures_max_selections").eq("id", 1).maybeSingle()
       .then(({ data }) => {
         if (data?.min_stake) setRealMinStake(Number(data.min_stake));
         if ((data as any)?.max_payout) setRealMaxPayout(Number((data as any).max_payout));
@@ -73,14 +76,18 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
         if ((data as any)?.virtual_max_payout) setVirtMaxPayout(Number((data as any).virtual_max_payout));
         if ((data as any)?.max_selections_per_ticket) setMaxSelReal(Number((data as any).max_selections_per_ticket));
         if ((data as any)?.virtual_max_selections) setMaxSelVirt(Number((data as any).virtual_max_selections));
+        if ((data as any)?.futures_min_stake) setFutureMinStake(Number((data as any).futures_min_stake));
+        if ((data as any)?.futures_max_payout) setFutureMaxPayout(Number((data as any).futures_max_payout));
+        if ((data as any)?.futures_max_selections) setFutureMaxSel(Number((data as any).futures_max_selections));
       });
   }, [open]);
 
   const isVirtualTicket = selections.length > 0 && selections.every((s) => s.is_virtual);
-  const isMixedTicket = selections.some((s) => s.is_virtual) && selections.some((s) => !s.is_virtual);
-  const minStake = isVirtualTicket ? virtMinStake : realMinStake;
-  const maxPayout = isVirtualTicket ? virtMaxPayout : realMaxPayout;
-  const maxSel = isVirtualTicket ? maxSelVirt : maxSelReal;
+  const isFutureTicket = selections.length > 0 && selections.every((s) => s.is_future);
+  const isMixedTicket = new Set(selections.map((s) => s.is_virtual ? "virtual" : s.is_future ? "future" : "real")).size > 1;
+  const minStake = isVirtualTicket ? virtMinStake : isFutureTicket ? futureMinStake : realMinStake;
+  const maxPayout = isVirtualTicket ? virtMaxPayout : isFutureTicket ? futureMaxPayout : realMaxPayout;
+  const maxSel = isVirtualTicket ? maxSelVirt : isFutureTicket ? futureMaxSel : maxSelReal;
   const rawPayout = Math.floor(stake * totalOdds);
   const payout = Math.min(rawPayout, maxPayout);
   const capped = rawPayout > maxPayout;
@@ -89,10 +96,10 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
     if (!user || !profile) { nav({ to: "/login" }); return; }
     if (selections.length === 0) return;
     if (isMixedTicket) {
-      toast.error("Virtual and real match selections must be placed on separate slips.");
+      toast.error("Virtual, futures and real match selections must be placed on separate slips.");
       return;
     }
-    if (!isVirtualTicket && selections.length < 2) {
+    if (!isVirtualTicket && !isFutureTicket && selections.length < 2) {
       toast.error(`Add at least 2 selections to place a bet (you have ${selections.length}).`);
       return;
     }
@@ -167,7 +174,7 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
               {placed ? <CheckCircle2 className="h-5 w-5" /> : <Ticket className="h-5 w-5" />}
             </span>
             <span className="leading-tight">
-              <span className="block text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{isVirtualTicket ? "Virtual ticket desk" : "Real match ticket desk"}</span>
+              <span className="block text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{isVirtualTicket ? "Virtual ticket desk" : isFutureTicket ? "Futures ticket desk" : "Real match ticket desk"}</span>
               <span className="block text-2xl gradient-gold-text">{placed ? "Ticket Placed" : "Bet Slip"}</span>
             </span>
           </SheetTitle>
@@ -233,9 +240,9 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
             )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={clear} className="flex-1"><Trash2 className="h-4 w-4 mr-1" />Clear</Button>
-              <Button className="btn-luxury flex-1" disabled={submitting || selections.length < 2} onClick={place}>{submitting ? "Placing…" : `Place Bet${selections.length < 2 ? ` (need ${2 - selections.length} more)` : ""}`}</Button>
+              <Button className="btn-luxury flex-1" disabled={submitting || (!isVirtualTicket && !isFutureTicket && selections.length < 2)} onClick={place}>{submitting ? "Placing…" : `Place Bet${(!isVirtualTicket && !isFutureTicket && selections.length < 2) ? ` (need ${2 - selections.length} more)` : ""}`}</Button>
             </div>
-            <p className="text-[10px] text-muted-foreground text-center">Minimum 2 selections required. Tokens are deducted on placement. Cash-out available only after the match ends and your bet wins.</p>
+            <p className="text-[10px] text-muted-foreground text-center">{isFutureTicket ? `Futures tickets can hold up to ${futureMaxSel} selection${futureMaxSel === 1 ? "" : "s"}. Tokens are deducted on placement and paid after admin settlement.` : "Minimum 2 selections required. Tokens are deducted on placement. Cash-out available only after the match ends and your bet wins."}</p>
           </div>
         )}
         </div>
@@ -279,7 +286,7 @@ function PlacedPreview({ bet, onView, onClose }: { bet: any; onView: () => void;
         </div>
         <div className="rounded-xl bg-muted/40 p-3 col-span-2">
           <div className="text-[10px] uppercase text-muted-foreground">Voucher Type</div>
-          <div className="font-bold">{bet._is_virtual ? "Virtual matches" : "Real matches"}</div>
+          <div className="font-bold">{bet._is_virtual ? "Virtual matches" : sels.some((s: any) => s.is_future) ? "Tournament futures" : "Real matches"}</div>
         </div>
       </div>
       <div className="space-y-2 max-h-[28vh] overflow-y-auto pr-1">

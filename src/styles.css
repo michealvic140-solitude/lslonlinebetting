@@ -47,11 +47,11 @@
 :root {
   --radius: 0.75rem;
 
-  /* Jewel Glass: deep obsidian-emerald base */
-  --background: oklch(0.09 0.02 165);
+  /* Thick pitch dark green platform base */
+  --background: #00180d;
   --foreground: oklch(0.96 0.04 90);
 
-  --card: oklch(0.16 0.025 168 / 0.65);
+  --card: oklch(0.12 0.035 155 / 0.86);
   --card-foreground: oklch(0.96 0.04 90);
 
   --popover: oklch(0.13 0.025 168 / 0.92);
@@ -112,17 +112,34 @@
     overflow-x: hidden;
   }
   body {
-    background: var(--background);
+    background: #00180d;
     color: var(--foreground);
     font-family: var(--font-sans);
-    background-image: var(--gradient-glow), var(--gradient-luxury);
+    background-image: linear-gradient(180deg, #00180d 0%, #001408 52%, #00180d 100%);
+    background-attachment: fixed;
     min-height: 100vh;
     min-height: 100dvh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     width: 100%;
+    position: relative;
   }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url("/icon.svg");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: min(70vw, 700px);
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 0;
+    filter: drop-shadow(0 0 40px rgba(0, 0, 0, 0.6));
+  }
+  body > * { position: relative; z-index: 1; }
   #root, main { min-width: 0; width: 100%; }
+
   img, video, canvas, svg { max-width: 100%; height: auto; }
   input, textarea, select { font-size: 16px; } /* prevent iOS zoom on focus */
   @supports (padding: env(safe-area-inset-top)) {
@@ -536,33 +553,21 @@
   content: "";
   position: absolute; inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(120% 80% at 0% 0%, oklch(0.40 0.12 75 / 0.45), transparent 60%),
-    radial-gradient(110% 80% at 100% 100%, oklch(0.38 0.16 158 / 0.42), transparent 65%),
-    linear-gradient(160deg, oklch(0.18 0.07 75 / 0.45) 0%, oklch(0.16 0.06 95 / 0.40) 35%, oklch(0.16 0.08 140 / 0.45) 70%, oklch(0.16 0.10 158 / 0.50) 100%);
+  background: #00180d;
   z-index: -2;
 }
 .page-shell--wallet::before {
-  background:
-    radial-gradient(120% 80% at 0% 0%, oklch(0.46 0.16 88 / 0.55), transparent 60%),
-    radial-gradient(110% 80% at 100% 100%, oklch(0.40 0.18 158 / 0.45), transparent 65%),
-    linear-gradient(160deg, oklch(0.22 0.10 80 / 0.55) 0%, oklch(0.18 0.08 110 / 0.45) 50%, oklch(0.18 0.12 158 / 0.55) 100%);
+  background: #00180d;
 }
 .page-shell--social::before {
-  background:
-    radial-gradient(120% 80% at 0% 0%, oklch(0.38 0.10 158 / 0.50), transparent 60%),
-    radial-gradient(110% 80% at 100% 100%, oklch(0.42 0.14 80 / 0.45), transparent 65%),
-    linear-gradient(160deg, oklch(0.16 0.08 158 / 0.50) 0%, oklch(0.16 0.06 120 / 0.45) 50%, oklch(0.18 0.08 80 / 0.45) 100%);
+  background: #00180d;
 }
 .page-shell-aurora {
   position: absolute; inset: -20%;
   pointer-events: none;
-  background:
-    radial-gradient(40% 30% at 20% 25%, oklch(0.78 0.20 88 / 0.30), transparent 70%),
-    radial-gradient(45% 35% at 80% 75%, oklch(0.66 0.24 158 / 0.35), transparent 70%),
-    radial-gradient(35% 28% at 70% 15%, oklch(0.72 0.20 120 / 0.22), transparent 70%);
-  filter: blur(50px) saturate(150%);
-  animation: admin-aurora 18s ease-in-out infinite alternate;
+  background: none;
+  filter: none;
+  animation: none;
   z-index: -1;
 }
 .page-shell-logo {
