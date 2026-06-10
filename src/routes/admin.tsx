@@ -1461,7 +1461,8 @@ function FuturesAdminPanel() {
   async function finalizeFuture(match: any) {
     const winners = (match.markets ?? []).flatMap((m: any) => m.odds ?? []).filter((o: any) => o.future_status === "winner" || o.is_winner);
     if (winners.length === 0) { toast.error("Mark at least one winner first"); return; }
-    if (!confirm(`Settle ${match.name} with ${winners.length} winner(s)?`)) return;
+    const ok1 = await confirm({ title: `Settle ${match.name}?`, description: `${winners.length} winner(s) will be paid out and tickets settled.`, confirmText: "Finalize" });
+    if (!ok1) return;
     await supabase.from("odds").update({ is_winner: false, future_status: "settled" } as any).in("market_id", (match.markets ?? []).map((m: any) => m.id));
     await supabase.from("odds").update({ is_winner: true, future_status: "winner" } as any).in("id", winners.map((o: any) => o.id));
     await supabase.from("markets").update({ is_open: false }).eq("match_id", match.id);
@@ -1472,7 +1473,8 @@ function FuturesAdminPanel() {
     load();
   }
   async function archiveFuture(id: string) {
-    if (!confirm("Archive this futures market?")) return;
+    const ok2 = await confirm({ title: "Archive this futures market?", tone: "danger", confirmText: "Archive" });
+    if (!ok2) return;
     await supabase.from("matches").update({ is_archived: true }).eq("id", id);
     load();
   }
