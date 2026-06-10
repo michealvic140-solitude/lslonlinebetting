@@ -207,7 +207,7 @@ export function PushNotifSettings() {
     supabase.from("app_settings").select("vapid_public_key").eq("id", 1).maybeSingle()
       .then(({ data }) => setVapidKey((data as any)?.vapid_public_key ?? null));
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      /* sw disabled */
       navigator.serviceWorker.ready.then(async (reg) => {
         const sub = await reg.pushManager.getSubscription();
         setSubscribed(!!sub);

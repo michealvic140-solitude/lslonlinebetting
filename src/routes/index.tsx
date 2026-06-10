@@ -15,6 +15,7 @@ import { Spotlight } from "@/components/Spotlight";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { Crosshair, Flame, Trophy, ChevronRight, Skull, Coins, Ticket as TicketIcon, ClipboardPaste, X } from "lucide-react";
+import { Countdown } from "@/components/Countdown";
 import hero from "@/assets/hero.jpg";
 import { fetchMatches, fetchSettings, type MatchRow } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,8 +60,10 @@ function Index() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const live = matches.filter((m) => m.status === "live");
-  const upcoming = matches.filter((m) => m.status === "scheduled");
+  const futures = matches.filter((m) => m.match_kind === "future" && m.status === "scheduled");
+  const normalMatches = matches.filter((m) => m.match_kind !== "future");
+  const live = normalMatches.filter((m) => m.status === "live");
+  const upcoming = normalMatches.filter((m) => m.status === "scheduled");
   const featuredAll = matches.filter((m) => m.is_featured && m.status !== "ended");
   const featuredFallback = featuredAll.length === 0 && upcoming[0] ? [upcoming[0]] : featuredAll;
 
@@ -116,6 +119,7 @@ function Index() {
       <HighlightsRow />
       <AnnouncementSlider />
       <AdsRow />
+      <FuturesSection title={settings?.futures_section_title || "TOURNAMENT FUTURES"} markets={futures} maxSelections={Number(settings?.futures_max_selections ?? 1)} />
 
       <BookingCodeFab />
 
@@ -199,6 +203,103 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between py-1.5 border-b border-border last:border-0 text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-bold text-primary">{value}</span>
+    </div>
+  );
+}
+
+function FuturesSection({ title, markets, maxSelections }: { title: string; markets: MatchRow[]; maxSelections: number }) {
+  const { selections, add, remove, setOpen } = useBetSlip();
+  return (
+    <section className="container mt-10">
+      <div className="flex items-end justify-between gap-3 mb-4">
+        <SectionHeader icon={Trophy} title={title} subtitle={`Season-long markets · pick up to ${maxSelections} contender${maxSelections === 1 ? "" : "s"}.`} />
+        <Badge variant="outline" className="border-accent/40 text-accent">Seasonal</Badge>
+      </div>
+      {markets.length === 0 && (
+        <Card className="glass-strong p-5 border-accent/30">
+          <div className="text-[10px] uppercase tracking-[0.28em] text-accent">Tournament futures</div>
+          <div className="mt-1 font-black text-xl">No active seasonal market yet</div>
+          <p className="mt-1 text-sm text-muted-foreground">New champion, top shooter, best clan, and most-wins markets will appear here when posted.</p>
+        </Card>
+      )}
+      <div className="grid lg:grid-cols-2 gap-4">
+        {markets.map((future) => {
+          const market = future.markets?.[0];
+          return (
+            <Card key={future.id} className="glass overflow-hidden border-accent/30">
+              <div className="border-b border-border/60 bg-card/60 px-4 py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] uppercase tracking-[0.28em] text-accent">Tournament Futures</div>
+                  <div className="font-black text-lg truncate">{future.name}</div>
+                </div>
+                <div className="text-right text-[10px] text-muted-foreground shrink-0">
+                  Closes in<br /><span className="font-mono text-primary"><Countdown target={future.start_time} /></span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-px bg-border/50 p-px">
+                {(market?.odds ?? []).slice(0, 16).map((odd) => {
+                  const selected = selections.some((s) => s.odd_id === odd.id);
+                  const status = odd.future_status ?? "active";
+                  const blocked = !market?.is_open || future.status !== "scheduled" || ["disqualified", "lost", "settled"].includes(status);
+                  return (
+                    <button
+                      key={odd.id}
+                      onClick={() => {
+                        if (selected) remove(odd.id);
+                        else {
+                          if (blocked) return;
+                          if (selections.filter((s) => s.is_future).length >= maxSelections) { toast.error(`This market allows up to ${maxSelections} futures selection${maxSelections === 1 ? "" : "s"}.`); return; }
+                          add({ match_id: future.id, match_name: future.name, market_id: market.id, market_name: market.name, odd_id: odd.id, selection_label: odd.label, odds: Number(odd.value), is_future: true });
+                          setOpen(true);
+                        }
+                      }}
+                      disabled={blocked && !selected}
+                      className={`min-h-24 bg-card/90 px-3 py-2 text-left transition hover:bg-primary/10 disabled:opacity-45 disabled:hover:bg-card/90 ${selected ? "ring-2 ring-primary bg-primary/15" : ""}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <FutureEmblem label={odd.label} url={odd.future_emblem_url} />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-bold text-foreground truncate">{odd.label}</div>
+                          <div className="text-[9px] uppercase tracking-widest text-muted-foreground truncate">{odd.future_candidate_type ?? "Contender"}</div>
+                        </div>
+                        <div className="font-mono font-black text-accent">{Number(odd.value).toFixed(2)}</div>
+                      </div>
+                      <FutureProgress odd={odd} />
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function FutureEmblem({ label, url }: { label: string; url?: string | null }) {
+  const initials = label.split(/\s+/).filter(Boolean).map((p) => p[0]).slice(0, 2).join("").toUpperCase() || "LS";
+  return (
+    <span className="h-10 w-10 shrink-0 rounded-full border border-primary/35 bg-primary/10 grid place-items-center overflow-hidden text-[11px] font-black text-primary">
+      {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : initials}
+    </span>
+  );
+}
+
+function FutureProgress({ odd }: { odd: any }) {
+  const progress = Array.isArray(odd.future_progress) ? odd.future_progress : [];
+  const status = odd.future_status ?? "active";
+  const latest = progress[progress.length - 1];
+  const tone = status === "winner" ? "text-emerald-300" : ["lost", "disqualified", "settled"].includes(status) ? "text-destructive" : "text-primary";
+  return (
+    <div className="mt-2 border-t border-border/40 pt-2">
+      <div className={`text-[10px] uppercase tracking-widest font-bold ${tone}`}>{status.replace(/_/g, " ")}</div>
+      <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
+        <div className="h-full bg-gradient-gold" style={{ width: `${Math.min(100, Math.max(18, (progress.length + 1) * 22))}%` }} />
+      </div>
+      <div className="mt-1 text-[10px] text-muted-foreground truncate">
+        {odd.future_next_title ? `Next: ${odd.future_next_title}` : latest?.title ?? "Awaiting next round"}
+      </div>
     </div>
   );
 }

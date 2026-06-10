@@ -9,6 +9,7 @@ export interface SlipSelection {
   selection_label: string;
   odds: number;
   is_virtual?: boolean;
+  is_future?: boolean;
   virtual_round_batch_id?: string | null;
 }
 
@@ -51,6 +52,12 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
 
   const add = (s: SlipSelection) =>
     setSelections((prev) => {
+      if (s.is_future) {
+        if (prev.some((x) => !x.is_future)) return [s];
+        if (prev.some((x) => x.odd_id === s.odd_id)) return prev;
+        return [...prev, s];
+      }
+      if (prev.some((x) => x.is_future)) return [s];
       const filtered = prev.filter((x) => x.match_id !== s.match_id);
       const next = [...filtered, s];
       return next;

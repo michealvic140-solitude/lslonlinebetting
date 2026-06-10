@@ -15,16 +15,21 @@ import { Switch } from "@/components/ui/switch";
 import {
   Shield, Users, Trophy, Coins, Megaphone, Settings as SettingsIcon, Ticket, AlertTriangle,
   Calendar, Tag, Image as ImageIcon, BarChart3, History, Send, Plus, Trash2, Pencil, ChevronRight, ChevronLeft, Wallet, ListOrdered, Sparkles, ClipboardList, Lock, Pause, Play, Check, X, MessageSquare, Eye, RotateCw, Copy, Globe, MapPin, Smartphone, Clock, Filter,
-  Dice5, LogOut,
+  Dice5, LogOut, Crosshair, Target,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import lslLogo from "@/assets/lsl-logo.png";
-import tileBattleAsset from "@/assets/tile-battle.jpg.asset.json";
-import tileVirtualAsset from "@/assets/tile-virtual.jpg.asset.json";
-import tileChallengesAsset from "@/assets/tile-challenges.jpg.asset.json";
+import tileBattle from "@/assets/tile-battle.jpg";
+import tileVirtual from "@/assets/tile-virtual.jpg";
+import tileChallenges from "@/assets/tile-challenges.jpg";
 import tileReferrals from "@/assets/tile-referrals.jpg";
-import tileUsersAsset from "@/assets/tile-users.jpg.asset.json";
-import tileClansAsset from "@/assets/tile-clans.jpg.asset.json";
+import tileUsers from "@/assets/tile-users.jpg";
+import tileClans from "@/assets/tile-clans.jpg";
+const tileBattleAsset = { url: tileBattle };
+const tileVirtualAsset = { url: tileVirtual };
+const tileChallengesAsset = { url: tileChallenges };
+const tileUsersAsset = { url: tileUsers };
+const tileClansAsset = { url: tileClans };
 import consoleHeaderBgAsset from "@/assets/console-header-bg.jpg.asset.json";
 import leagueSkullFire from "@/assets/league-skull-fire.jpg";
 import { Countdown } from "@/components/Countdown";
@@ -102,8 +107,9 @@ function AdminPage() {
 
   return (
     <Layout>
-      <main className="w-full min-h-[calc(100vh-3.5rem)]">
-        <div className={`mx-auto w-full ${activeTab === "analytics" ? "max-w-[1600px]" : "max-w-[1080px]"} px-3 sm:px-4 py-4 sm:py-6 space-y-4`}>
+      <main className="w-full min-h-[calc(100vh-3.5rem)] overflow-x-hidden">
+        <div className="mx-auto w-full max-w-[1280px] px-3 sm:px-4 py-4 sm:py-6 space-y-4">
+
           <div
             className="relative overflow-hidden rounded-2xl p-4 border border-primary/40 shadow-luxury bg-card"
             style={{ backgroundImage: `linear-gradient(90deg, rgba(8,14,10,0.95) 0%, rgba(8,14,10,0.78) 45%, rgba(8,14,10,0.25) 100%), url(${consoleHeaderBgAsset.url})`, backgroundSize: "cover", backgroundPosition: "center right" }}
@@ -150,6 +156,7 @@ function AdminPage() {
             <TabsContent value="bannedusers" className="mt-4"><BannedUsersPanel /></TabsContent>
             <TabsContent value="virtual" className="mt-4"><VirtualAdminPanel /></TabsContent>
             <TabsContent value="matches" className="mt-4"><MatchesPanel /></TabsContent>
+            <TabsContent value="futures" className="mt-4"><FuturesAdminPanel /></TabsContent>
             <TabsContent value="events" className="mt-4"><EventsPanel /></TabsContent>
             <TabsContent value="tokens" className="mt-4"><TokensPanel /></TabsContent>
             <TabsContent value="tokenmovement" className="mt-4"><TokenMovementPanel /></TabsContent>
@@ -1079,9 +1086,10 @@ function MatchesPanel() {
   const confirm = useConfirm();
   const [matches, setMatches] = useState<any[]>([]);
   const [wizard, setWizard] = useState(false);
+  const [shooterWizard, setShooterWizard] = useState(false);
 
   async function load() {
-    const { data } = await supabase.from("matches").select("*, home_team:teams!home_team_id(name,logo_url), away_team:teams!away_team_id(name,logo_url)").eq("is_archived", false).order("start_time", { ascending: false });
+    const { data } = await (supabase as any).from("matches").select("*, home_team:teams!home_team_id(name,logo_url), away_team:teams!away_team_id(name,logo_url), home_player:players!home_player_id(name,avatar_url), away_player:players!away_player_id(name,avatar_url)").eq("is_archived", false).neq("match_kind", "future").order("start_time", { ascending: false });
     setMatches(data ?? []);
   }
   useEffect(() => { load(); }, []);
@@ -1092,7 +1100,9 @@ function MatchesPanel() {
     load();
   }
   async function settle(m: any) {
-    const ok = await confirm({ title: "End match and settle bets?", description: `Final score will be ${m.home_team?.name} ${m.home_score}–${m.away_score} ${m.away_team?.name}. Suspended/refunded tickets will not be credited.`, confirmText: "Settle match" });
+    const homeLabel = m.match_kind === "shooter" ? m.home_player?.name : m.home_team?.name;
+    const awayLabel = m.match_kind === "shooter" ? m.away_player?.name : m.away_team?.name;
+    const ok = await confirm({ title: "End match and settle bets?", description: `Final score will be ${homeLabel} ${m.home_score}–${m.away_score} ${awayLabel}. Suspended/refunded tickets will not be credited.`, confirmText: "Settle match" });
     if (!ok) return;
     const hs = Number(m.home_score ?? 0), as = Number(m.away_score ?? 0);
     let winnerId = null;
@@ -1136,12 +1146,15 @@ function MatchesPanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <Button className="btn-luxury" onClick={() => setWizard(true)}><Plus className="h-4 w-4 mr-1" />New Match (Wizard)</Button>
+        <Button className="btn-luxury" onClick={() => setShooterWizard(true)}><Crosshair className="h-4 w-4 mr-1" />New Shooter Match</Button>
+        <Button className="btn-luxury" onClick={() => window.dispatchEvent(new CustomEvent("admin:set-tab", { detail: "futures" }))}><Target className="h-4 w-4 mr-1" />New Tournament Futures</Button>
         <Button variant="destructive" onClick={clearEnded}>
           <Trash2 className="h-4 w-4 mr-1" />Clear Ended Matches
         </Button>
         <Badge variant="outline" className="ml-auto text-[10px]">Bet history is preserved — only the panel list is cleared.</Badge>
       </div>
       {wizard && <MatchWizard onClose={() => { setWizard(false); load(); }} />}
+      {shooterWizard && <ShooterMatchWizard onClose={() => { setShooterWizard(false); load(); }} />}
 
       <div className="space-y-2">
         {matches.map((m: any) => (
@@ -1149,8 +1162,8 @@ function MatchesPanel() {
             <div className="min-w-0 flex items-center gap-2">
               {m.home_team?.logo_url && <img src={m.home_team.logo_url} alt="" className="h-8 w-8 rounded-full object-cover" />}
               <div>
-                <div className="font-bold truncate">{m.home_team?.name} vs {m.away_team?.name} {m.status === "ended" && <span className="text-xs text-muted-foreground">({m.home_score}–{m.away_score})</span>}</div>
-                <div className="text-xs text-muted-foreground">{m.name} · {m.start_time ? new Date(m.start_time).toLocaleString() : ""}</div>
+                <div className="font-bold truncate">{m.match_kind === "shooter" ? m.home_player?.name : m.home_team?.name} vs {m.match_kind === "shooter" ? m.away_player?.name : m.away_team?.name} {m.status === "ended" && <span className="text-xs text-muted-foreground">({m.home_score}–{m.away_score})</span>}</div>
+                <div className="text-xs text-muted-foreground">{m.name} · {m.start_time ? new Date(m.start_time).toLocaleString() : ""} {m.match_kind === "shooter" && <Badge variant="outline" className="ml-2 text-[9px] border-accent/40 text-accent">Shooter 1v1</Badge>}</div>
               </div>
             </div>
             <div className="flex gap-1 items-center flex-wrap">
@@ -1176,11 +1189,15 @@ async function settleBetsForMatch(matchId: string, winnerTeamId: string | null, 
   const { data: sels } = await supabase.from("bet_selections").select("*, markets!market_id(name), odds!odd_id(label)").eq("match_id", matchId);
   if (!sels || sels.length === 0) return;
   // Get team names for label comparison
-  const { data: match } = await supabase.from("matches").select("home_team_id, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name), home_score, away_score").eq("id", matchId).single() as any;
+  const { data: match } = await (supabase as any).from("matches").select("home_team_id,away_team_id,home_player_id,away_player_id,match_kind,home_player:players!home_player_id(name),away_player:players!away_player_id(name),home_team:teams!home_team_id(name),away_team:teams!away_team_id(name),home_score,away_score").eq("id", matchId).single() as any;
   const hs = homeScore ?? Number(match?.home_score ?? 0);
   const as_ = awayScore ?? Number(match?.away_score ?? 0);
   const scoreLabel = `${hs}-${as_}`;
-  const winnerLabel = winnerTeamId === null ? "Draw" : (winnerTeamId === match?.home_team_id ? match?.home_team?.name : match?.away_team?.name);
+  const winnerLabel = winnerTeamId === null
+    ? "Draw"
+    : match?.match_kind === "shooter"
+    ? (winnerTeamId === match?.home_team_id ? match?.home_player?.name : match?.away_player?.name)
+    : (winnerTeamId === match?.home_team_id ? match?.home_team?.name : match?.away_team?.name);
   for (const s of sels) {
     const marketName = (s as any).markets?.name ?? "";
     const oddLabel = (s as any).odds?.label ?? "";
@@ -1213,6 +1230,267 @@ async function settleBetsForMatch(matchId: string, winnerTeamId: string | null, 
       await supabase.from("notifications").insert({ user_id: bet.user_id, title: "Bet lost", body: `Your ticket ${bet.tracking_id} did not win.`, link: `/ticket/${bid}` });
     }
   }
+}
+
+async function settleFutureBets(matchId: string, winningOddIds: string[], winningLabel: string) {
+  const { data: sels } = await supabase.from("bet_selections").select("*").eq("match_id", matchId);
+  if (!sels || sels.length === 0) return;
+  for (const s of sels) {
+    await supabase.from("bet_selections").update({ result: winningOddIds.includes(s.odd_id) ? "won" : "lost" }).eq("id", s.id);
+  }
+  const betIds = Array.from(new Set(sels.map((s: any) => s.bet_id)));
+  for (const bid of betIds) {
+    const { data: betSels } = await supabase.from("bet_selections").select("result").eq("bet_id", bid);
+    if (!betSels || betSels.some((s: any) => !s.result)) continue;
+    const allWon = betSels.every((s: any) => s.result === "won");
+    const { data: bet } = await supabase.from("bets").select("*").eq("id", bid).single();
+    if (!bet || ["suspended", "refunded", "void", "cashed_out"].includes(bet.status)) continue;
+    if (allWon) {
+      const { error } = await supabase.rpc("settle_pay_winning_bet", { _bet_id: bid });
+      if (error) toast.error(`Could not credit ${bet.tracking_id}: ${error.message}`);
+    } else {
+      await supabase.from("bets").update({ status: "lost", settled_at: new Date().toISOString() }).eq("id", bid);
+      await supabase.from("notifications").insert({ user_id: bet.user_id, title: "Future bet lost", body: `Your ticket ${bet.tracking_id} did not match ${winningLabel}.`, link: `/ticket/${bid}` });
+    }
+  }
+}
+
+function ShooterMatchWizard({ onClose }: { onClose: () => void }) {
+  const [players, setPlayers] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [form, setForm] = useState({ home_player_id: "", away_player_id: "", oddsA: 2, draw: 3.5, oddsB: 2, name: "", start_time: "", location: "", featured: true, marketing: true });
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from("players").select("id,name,avatar_url,team_id,teams!team_id(name)").order("name"),
+      supabase.from("teams").select("id,name,logo_url").order("name"),
+    ]).then(([p, t]) => { setPlayers(p.data ?? []); setTeams(t.data ?? []); });
+  }, []);
+
+  async function create() {
+    if (!form.home_player_id || !form.away_player_id) { toast.error("Pick two shooters"); return; }
+    if (form.home_player_id === form.away_player_id) { toast.error("Choose two different shooters"); return; }
+    const home = players.find((p) => p.id === form.home_player_id);
+    const away = players.find((p) => p.id === form.away_player_id);
+    const homeTeamId = home?.team_id || teams[0]?.id;
+    const awayTeamId = away?.team_id || teams.find((t) => t.id !== homeTeamId)?.id || homeTeamId;
+    if (!homeTeamId || !awayTeamId) { toast.error("Create at least one team in Clan first, then seed shooters freely with or without team tag."); return; }
+    const { data: m, error } = await supabase.from("matches").insert({
+      name: form.name || `${home?.name} vs ${away?.name}`,
+      home_team_id: homeTeamId,
+      away_team_id: awayTeamId,
+      home_player_id: form.home_player_id,
+      away_player_id: form.away_player_id,
+      match_kind: "shooter",
+      marketing_enabled: form.marketing,
+      is_featured: form.featured,
+      location: form.location || "Shooter 1v1",
+      start_time: form.start_time ? new Date(form.start_time).toISOString() : new Date().toISOString(),
+      status: "scheduled",
+    } as any).select().single();
+    if (error) { toast.error(error.message); return; }
+    const { data: market } = await supabase.from("markets").insert({ match_id: m.id, name: "Shooter Winner" }).select().single();
+    if (market) await supabase.from("odds").insert([
+      { market_id: market.id, label: home?.name ?? "Shooter A", value: form.oddsA },
+      { market_id: market.id, label: "Draw", value: form.draw },
+      { market_id: market.id, label: away?.name ?? "Shooter B", value: form.oddsB },
+    ]);
+    await logAudit("shooter_match_created", "match", m.id, { home_player: home?.name, away_player: away?.name, marketing: form.marketing });
+    toast.success("Shooter match posted with odds");
+    onClose();
+  }
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader><DialogTitle className="flex items-center gap-2"><Crosshair className="h-5 w-5 text-primary" />Shooter Match — 1v1 Marketing Odds</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <ShooterSelect label="Shooter A" value={form.home_player_id} players={players} onChange={(v) => setForm({ ...form, home_player_id: v })} />
+            <ShooterSelect label="Shooter B" value={form.away_player_id} players={players} onChange={(v) => setForm({ ...form, away_player_id: v })} />
+            <div><label className="text-xs text-muted-foreground">Shooter A odds</label><Input type="number" step="0.01" min={1.01} value={form.oddsA} onChange={(e) => setForm({ ...form, oddsA: Number(e.target.value) })} /></div>
+            <div><label className="text-xs text-muted-foreground">Draw odds</label><Input type="number" step="0.01" min={1.01} value={form.draw} onChange={(e) => setForm({ ...form, draw: Number(e.target.value) })} /></div>
+            <div><label className="text-xs text-muted-foreground">Shooter B odds</label><Input type="number" step="0.01" min={1.01} value={form.oddsB} onChange={(e) => setForm({ ...form, oddsB: Number(e.target.value) })} /></div>
+            <div><label className="text-xs text-muted-foreground">Start time</label><Input type="datetime-local" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} /></div>
+          </div>
+          <Input placeholder="Marketing title (optional)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input placeholder="Location / stream / venue" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <label className="flex items-center gap-2 rounded-lg border border-primary/20 bg-card/60 p-3"><Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} />Feature on homepage</label>
+            <label className="flex items-center gap-2 rounded-lg border border-accent/20 bg-card/60 p-3"><Switch checked={form.marketing} onCheckedChange={(v) => setForm({ ...form, marketing: v })} />Post for marketing</label>
+          </div>
+        </div>
+        <DialogFooter><Button variant="outline" onClick={onClose}>Cancel</Button><Button className="btn-luxury" onClick={create}>Create Shooter Match</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ShooterSelect({ label, value, players, onChange }: { label: string; value: string; players: any[]; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground">{label}</label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger><SelectValue placeholder="Pick seeded shooter" /></SelectTrigger>
+        <SelectContent>
+          {players.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}{p.teams?.name ? ` · ${p.teams.name}` : " · Free agent"}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function FuturesAdminPanel() {
+  const [settings, setSettings] = useState({ futures_section_title: "TOURNAMENT FUTURES", futures_min_stake: 1, futures_max_payout: 100000000, futures_max_selections: 1 });
+  const [futures, setFutures] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [players, setPlayers] = useState<any[]>([]);
+  const [draft, setDraft] = useState({ title: "Gang Champion of the Season", opens_at: new Date().toISOString().slice(0, 16), closes_at: "", options: "", min_stake: 1, max_payout: 100000000, max_selections: 1, next_title: "Round 1" });
+
+  async function load() {
+    const [{ data: s }, { data: f }, { data: tm }, { data: pl }] = await Promise.all([
+      supabase.from("app_settings").select("futures_section_title,futures_min_stake,futures_max_payout,futures_max_selections").eq("id", 1).maybeSingle(),
+      supabase.from("matches").select("*, markets(id,name,is_open,odds(id,label,value,is_winner,market_id,future_candidate_type,future_emblem_url,future_status,future_next_title,future_next_at,future_progress))").eq("match_kind", "future").eq("is_archived", false).order("start_time", { ascending: false }),
+      supabase.from("teams").select("id,name,logo_url,gang_type").order("name"),
+      supabase.from("players").select("id,name,avatar_url,team_id,teams!team_id(name)").order("name"),
+    ]);
+    if (s) setSettings({ futures_section_title: (s as any).futures_section_title ?? "TOURNAMENT FUTURES", futures_min_stake: Number((s as any).futures_min_stake ?? 1), futures_max_payout: Number((s as any).futures_max_payout ?? 100000000), futures_max_selections: Number((s as any).futures_max_selections ?? 1) });
+    setFutures(f ?? []);
+    setTeams(tm ?? []);
+    setPlayers(pl ?? []);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function ensureFutureTeams() {
+    const { data } = await supabase.from("teams").select("id,name").in("name", ["LSL Futures", "Season Field"]);
+    let a = data?.find((t) => t.name === "LSL Futures")?.id;
+    let b = data?.find((t) => t.name === "Season Field")?.id;
+    if (!a) { const { data: row } = await supabase.from("teams").insert({ name: "LSL Futures" }).select("id").single(); a = row?.id; }
+    if (!b) { const { data: row } = await supabase.from("teams").insert({ name: "Season Field" }).select("id").single(); b = row?.id; }
+    return { a, b };
+  }
+  async function saveSettings() {
+    const { error } = await supabase.from("app_settings").update(settings as any).eq("id", 1);
+    if (error) toast.error(error.message); else toast.success("Futures settings saved");
+  }
+  function addCandidate(label: string, odds = 5, type = "contender", emblem?: string | null) {
+    const row = [label, odds.toFixed(2), type, emblem ?? ""].join(" | ");
+    setDraft((d) => ({ ...d, options: `${d.options}${d.options.trim() ? "\n" : ""}${row}` }));
+  }
+  async function createFuture() {
+    const options = draft.options.split("\n").map((line) => {
+      const parts = line.includes("|") ? line.split("|").map((x) => x.trim()) : line.split(/[,@]/).map((x) => x.trim());
+      const [label, odd, type, emblem] = parts;
+      return { label, value: Number(odd), future_candidate_type: type || null, future_emblem_url: emblem || null };
+    }).filter((x) => x.label && Number.isFinite(x.value) && x.value >= 1.01);
+    if (!draft.title.trim() || !draft.closes_at || options.length < 2) { toast.error("Add title, close date, and at least two outcomes like: Spain, 5.50"); return; }
+    const ids = await ensureFutureTeams();
+    if (!ids.a || !ids.b) { toast.error("Could not prepare futures teams"); return; }
+    const { data: m, error } = await supabase.from("matches").insert({
+      name: draft.title.trim(), home_team_id: ids.a, away_team_id: ids.b, match_kind: "future", is_featured: true, marketing_enabled: true,
+      location: `Opens ${new Date(draft.opens_at).toLocaleString()} · ${draft.next_title || "Tournament"}`, start_time: new Date(draft.closes_at).toISOString(), lock_time: new Date(draft.opens_at).toISOString(), status: "scheduled",
+    } as any).select().single();
+    if (error) { toast.error(error.message); return; }
+    const { data: market } = await supabase.from("markets").insert({ match_id: m.id, name: draft.title.trim() }).select().single();
+    if (market) await supabase.from("odds").insert(options.map((o) => ({ market_id: market.id, label: o.label, value: o.value, future_candidate_type: o.future_candidate_type, future_emblem_url: o.future_emblem_url, future_next_title: draft.next_title || null, future_next_at: draft.opens_at ? new Date(draft.opens_at).toISOString() : null })) as any);
+    await supabase.from("app_settings").update({ futures_min_stake: draft.min_stake, futures_max_payout: draft.max_payout, futures_max_selections: draft.max_selections } as any).eq("id", 1);
+    await logAudit("future_market_created", "match", m.id, { title: draft.title, options: options.length });
+    toast.success("Futures market created");
+    setDraft({ title: "Gang Champion of the Season", opens_at: draft.opens_at, closes_at: "", options: "", min_stake: draft.min_stake, max_payout: draft.max_payout, max_selections: draft.max_selections, next_title: "Round 1" });
+    load();
+  }
+  async function updateOdd(oddId: string, value: number) {
+    await supabase.from("odds").update({ value } as any).eq("id", oddId);
+    load();
+  }
+  async function updateFutureStatus(odd: any, status: string, title?: string, at?: string) {
+    const progress = Array.isArray(odd.future_progress) ? odd.future_progress : [];
+    const entry = { status, title: title || odd.future_next_title || status, at: at ? new Date(at).toISOString() : new Date().toISOString() };
+    await supabase.from("odds").update({ future_status: status, future_next_title: title || null, future_next_at: at ? new Date(at).toISOString() : null, future_progress: [...progress, entry], is_winner: status === "winner" ? true : odd.is_winner } as any).eq("id", odd.id);
+    if (["lost", "disqualified"].includes(status)) await loseFutureSelection(odd);
+    load();
+  }
+  async function loseFutureSelection(odd: any) {
+    const { data: sels } = await supabase.from("bet_selections").select("id,bet_id").eq("odd_id", odd.id).is("result", null);
+    if (!sels?.length) return;
+    await supabase.from("bet_selections").update({ result: "lost" }).eq("odd_id", odd.id).is("result", null);
+    const betIds = Array.from(new Set(sels.map((s: any) => s.bet_id)));
+    for (const bid of betIds) await supabase.from("bets").update({ status: "lost", settled_at: new Date().toISOString() } as any).eq("id", bid).eq("status", "open");
+  }
+  async function finalizeFuture(match: any) {
+    const winners = (match.markets ?? []).flatMap((m: any) => m.odds ?? []).filter((o: any) => o.future_status === "winner" || o.is_winner);
+    if (winners.length === 0) { toast.error("Mark at least one winner first"); return; }
+    if (!confirm(`Settle ${match.name} with ${winners.length} winner(s)?`)) return;
+    await supabase.from("odds").update({ is_winner: false, future_status: "settled" } as any).in("market_id", (match.markets ?? []).map((m: any) => m.id));
+    await supabase.from("odds").update({ is_winner: true, future_status: "winner" } as any).in("id", winners.map((o: any) => o.id));
+    await supabase.from("markets").update({ is_open: false }).eq("match_id", match.id);
+    await supabase.from("matches").update({ status: "ended", settled_at: new Date().toISOString() } as any).eq("id", match.id);
+    await settleFutureBets(match.id, winners.map((o: any) => o.id), winners.map((o: any) => o.label).join(", "));
+    await logAudit("future_market_settled", "match", match.id, { winners: winners.map((o: any) => o.label) });
+    toast.success("Future settled and tickets updated");
+    load();
+  }
+  async function archiveFuture(id: string) {
+    if (!confirm("Archive this futures market?")) return;
+    await supabase.from("matches").update({ is_archived: true }).eq("id", id);
+    load();
+  }
+
+  return (
+    <div className="grid lg:grid-cols-[420px_1fr] gap-4">
+      <Card className="glass-strong p-4 space-y-3">
+        <div className="font-bold flex items-center gap-2"><Target className="h-4 w-4 text-primary" />Futures Betting Control</div>
+        <Input value={settings.futures_section_title} onChange={(e) => setSettings({ ...settings, futures_section_title: e.target.value })} placeholder="Homepage section name" />
+        <div className="grid grid-cols-3 gap-2"><Input type="number" min={1} value={settings.futures_min_stake} onChange={(e) => setSettings({ ...settings, futures_min_stake: Number(e.target.value) })} /><Input type="number" min={1} value={settings.futures_max_payout} onChange={(e) => setSettings({ ...settings, futures_max_payout: Number(e.target.value) })} /><Input type="number" min={1} max={3} value={settings.futures_max_selections} onChange={(e) => setSettings({ ...settings, futures_max_selections: Math.min(3, Math.max(1, Number(e.target.value))) })} /></div>
+        <Button variant="outline" onClick={saveSettings}>Save Section Settings</Button>
+        <div className="h-px bg-border" />
+        <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Market title" />
+        <Input value={draft.next_title} onChange={(e) => setDraft({ ...draft, next_title: e.target.value })} placeholder="Current / next round title" />
+        <div><label className="text-xs text-muted-foreground">Opening date</label><Input type="datetime-local" value={draft.opens_at} onChange={(e) => setDraft({ ...draft, opens_at: e.target.value })} /></div>
+        <div><label className="text-xs text-muted-foreground">Closing date</label><Input type="datetime-local" value={draft.closes_at} onChange={(e) => setDraft({ ...draft, closes_at: e.target.value })} /></div>
+        <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1">
+          {teams.slice(0, 12).map((t) => <Button key={t.id} size="sm" variant="outline" onClick={() => addCandidate(t.name, 5, t.gang_type === "F" ? "Faction / Clan" : "Gang", t.logo_url)}>{t.name}</Button>)}
+          {players.slice(0, 12).map((p) => <Button key={p.id} size="sm" variant="outline" onClick={() => addCandidate(p.name, 8, "Shooter", p.avatar_url)}>{p.name}</Button>)}
+        </div>
+        <Textarea rows={8} value={draft.options} onChange={(e) => setDraft({ ...draft, options: e.target.value })} placeholder={"One option per line:\nGang A | 5.50 | Gang | image-url\nTop Shooter | 8.00 | Shooter | image-url\nBest Clan | 10.00 | Faction / Clan | image-url"} />
+        <div className="grid grid-cols-3 gap-2"><Input type="number" min={1} value={draft.min_stake} onChange={(e) => setDraft({ ...draft, min_stake: Number(e.target.value) })} /><Input type="number" min={1} value={draft.max_payout} onChange={(e) => setDraft({ ...draft, max_payout: Number(e.target.value) })} /><Input type="number" min={1} max={3} value={draft.max_selections} onChange={(e) => setDraft({ ...draft, max_selections: Math.min(3, Math.max(1, Number(e.target.value))) })} /></div>
+        <Button className="btn-luxury w-full" onClick={createFuture}><Plus className="h-4 w-4 mr-1" />Create Futures Market</Button>
+      </Card>
+      <div className="space-y-3">
+        {futures.map((f) => (
+          <Card key={f.id} className="glass p-4 space-y-3">
+            <div className="flex items-start gap-2"><div className="min-w-0 flex-1"><div className="font-bold text-lg truncate">{f.name}</div><div className="text-xs text-muted-foreground">Opens {f.lock_time ? new Date(f.lock_time).toLocaleString() : "now"} · Closes {new Date(f.start_time).toLocaleString()} · {f.status}</div></div><Button size="sm" className="btn-luxury" disabled={f.status === "ended"} onClick={() => finalizeFuture(f)}>Finalize</Button><Button size="sm" variant="destructive" onClick={() => archiveFuture(f.id)}><Trash2 className="h-3 w-3" /></Button></div>
+            {(f.markets ?? []).map((m: any) => <div key={m.id} className="grid grid-cols-2 md:grid-cols-3 gap-2">{(m.odds ?? []).map((o: any) => <FutureOddAdminCard key={o.id} odd={o} disabled={f.status === "ended"} onOdd={updateOdd} onStatus={updateFutureStatus} />)}</div>)}
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FutureOddAdminCard({ odd, disabled, onOdd, onStatus }: { odd: any; disabled: boolean; onOdd: (id: string, value: number) => void; onStatus: (odd: any, status: string, title?: string, at?: string) => void }) {
+  const [title, setTitle] = useState(odd.future_next_title ?? "Next round");
+  const [at, setAt] = useState(odd.future_next_at ? new Date(odd.future_next_at).toISOString().slice(0, 16) : "");
+  const status = odd.future_status ?? "active";
+  return (
+    <div className="rounded-lg border border-primary/20 bg-card/60 p-2 space-y-2">
+      <div className="flex items-center gap-2"><FutureTinyEmblem label={odd.label} url={odd.future_emblem_url} /><div className="min-w-0 flex-1"><div className="text-xs font-bold truncate">{odd.label}</div><div className="text-[10px] text-muted-foreground truncate">{odd.future_candidate_type ?? "Contender"} · {status}</div></div></div>
+      <Input className="h-8" type="number" step="0.01" value={Number(odd.value)} onChange={(e) => onOdd(odd.id, Number(e.target.value))} />
+      <Input className="h-8" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Next match / round title" />
+      <Input className="h-8" type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} />
+      <div className="grid grid-cols-2 gap-1">
+        <Button size="sm" variant="outline" disabled={disabled} onClick={() => onStatus(odd, "qualified", title, at)}>Qualified</Button>
+        <Button size="sm" variant="outline" disabled={disabled} onClick={() => onStatus(odd, "winner", title, at)}>Winner</Button>
+        <Button size="sm" variant="destructive" disabled={disabled} onClick={() => onStatus(odd, "lost", title, at)}>Lost</Button>
+        <Button size="sm" variant="destructive" disabled={disabled} onClick={() => onStatus(odd, "disqualified", title, at)}>DQ</Button>
+      </div>
+    </div>
+  );
+}
+
+function FutureTinyEmblem({ label, url }: { label: string; url?: string | null }) {
+  const initials = label.split(/\s+/).filter(Boolean).map((p) => p[0]).slice(0, 2).join("").toUpperCase() || "LS";
+  return <span className="h-9 w-9 rounded-full bg-primary/10 border border-primary/30 grid place-items-center overflow-hidden text-[10px] font-bold text-primary shrink-0">{url ? <img src={url} alt="" className="h-full w-full object-cover" /> : initials}</span>;
 }
 
 function MatchWizard({ onClose }: { onClose: () => void }) {
@@ -1441,9 +1719,9 @@ function EventsPanel() {
     let banner_url: string | null = null;
     if (draft.banner) {
       const path = `event-${crypto.randomUUID()}.${draft.banner.name.split(".").pop()}`;
-      const { error } = await supabase.storage.from("announcements").upload(path, draft.banner);
+      const { error } = await supabase.storage.from("event-banners").upload(path, draft.banner);
       if (error) { toast.error(error.message); return; }
-      banner_url = supabase.storage.from("announcements").getPublicUrl(path).data.publicUrl;
+      banner_url = supabase.storage.from("event-banners").getPublicUrl(path).data.publicUrl;
     }
     const { error } = await supabase.from("events").insert({ title: draft.title, description: draft.description, banner_url, ends_at: new Date(draft.ends_at).toISOString() });
     if (error) toast.error(error.message);
@@ -2366,7 +2644,7 @@ function AnalyticsPanel() {
         supabase.from("ban_appeals").select("id", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("support_tickets").select("id", { count: "exact", head: true }).neq("status", "closed"),
         supabase.from("broadcasts").select("*").order("created_at", { ascending: false }).limit(3),
-        supabase.from("events").select("*").eq("is_active", true).order("starts_at", { ascending: true }).limit(1).maybeSingle(),
+        supabase.from("events").select("*").eq("is_active", true).gt("ends_at", new Date().toISOString()).order("ends_at", { ascending: true }).limit(1).maybeSingle(),
       ]);
       const users = u.data ?? [];
       const bets = b.data ?? [];
@@ -2546,11 +2824,11 @@ function AnalyticsPanel() {
         </Card>
       </div>
 
-      {/* ROW 7 — Recent Activity | Live Gang Wars | Highlights Hub */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      {/* ROW 7 — Recent Activity | Live Gang Wars + Event Countdown | Highlights Hub */}
+      <div className="grid grid-cols-[1.15fr_0.9fr_1.35fr] gap-3">
         <PanelBlock title="RECENT ACTIVITY" accent="sky" onView={() => setActiveTabFromAnalytics(nav, "activity")}>
           {activity.length === 0 && <div className="text-[10px] text-muted-foreground">No activity yet</div>}
-          {activity.slice(0, 3).map((a, i) => (
+          {activity.slice(0, 5).map((a, i) => (
             <button key={i} onClick={() => setActiveTabFromAnalytics(nav, "audit")} className="w-full text-left flex items-start gap-1.5 text-[9px] sm:text-xs py-1 border-b border-border/40 last:border-0 hover:bg-sky-500/10 rounded transition">
               <Sparkles className="h-3 w-3 text-sky-400 shrink-0 mt-0.5" />
               <div className="min-w-0 flex-1">
@@ -2560,23 +2838,36 @@ function AnalyticsPanel() {
             </button>
           ))}
         </PanelBlock>
-        <PanelBlock title="LIVE GANG WARS" accent="rose" onView={() => nav({ to: "/matches" })}>
-          {liveMatches.length === 0 && <div className="text-[10px] text-muted-foreground">No live wars</div>}
-          {liveMatches.slice(0, 3).map((m: any) => {
-            const home = m.home_team; const away = m.away_team;
-            const initial = (n?: string) => (n ? n.charAt(0).toUpperCase() : "?");
-            return (
-              <button key={m.id} onClick={() => nav({ to: "/matches/$matchId", params: { matchId: m.id } })} className="w-full flex items-center gap-1.5 text-[9px] sm:text-xs py-1 border-b border-border/40 last:border-0 hover:bg-rose-500/10 rounded px-1 transition">
-                {home?.logo_url ? <img src={home.logo_url} alt="" className="h-5 w-5 rounded-full object-cover border border-rose-500/40" /> : <div className="h-5 w-5 rounded-full bg-rose-500/20 grid place-items-center text-[8px] font-bold text-rose-300 border border-rose-500/40">{initial(home?.name)}</div>}
-                <div className="flex-1 min-w-0 text-center text-foreground font-semibold truncate">{home?.name ?? "Home"} <span className="text-muted-foreground">vs</span> {away?.name ?? "Away"}</div>
-                {away?.logo_url ? <img src={away.logo_url} alt="" className="h-5 w-5 rounded-full object-cover border border-rose-500/40" /> : <div className="h-5 w-5 rounded-full bg-rose-500/20 grid place-items-center text-[8px] font-bold text-rose-300 border border-rose-500/40">{initial(away?.name)}</div>}
+        <div className="space-y-3">
+          <PanelBlock title="LIVE GANG WARS" accent="rose" compact onView={() => nav({ to: "/matches" })}>
+            {liveMatches.length === 0 && <div className="text-[10px] text-muted-foreground">No live wars</div>}
+            {liveMatches.slice(0, 2).map((m: any) => {
+              const home = m.home_team; const away = m.away_team;
+              const initial = (n?: string) => (n ? n.charAt(0).toUpperCase() : "?");
+              return (
+                <button key={m.id} onClick={() => nav({ to: "/matches/$matchId", params: { matchId: m.id } })} className="w-full flex items-center gap-1.5 text-[9px] sm:text-xs py-1 border-b border-border/40 last:border-0 hover:bg-rose-500/10 rounded px-1 transition">
+                  {home?.logo_url ? <img src={home.logo_url} alt="" className="h-5 w-5 rounded-full object-cover border border-rose-500/40" /> : <div className="h-5 w-5 rounded-full bg-rose-500/20 grid place-items-center text-[8px] font-bold text-rose-300 border border-rose-500/40">{initial(home?.name)}</div>}
+                  <div className="flex-1 min-w-0 text-center text-foreground font-semibold truncate">{home?.name ?? "Home"} <span className="text-muted-foreground">vs</span> {away?.name ?? "Away"}</div>
+                  {away?.logo_url ? <img src={away.logo_url} alt="" className="h-5 w-5 rounded-full object-cover border border-rose-500/40" /> : <div className="h-5 w-5 rounded-full bg-rose-500/20 grid place-items-center text-[8px] font-bold text-rose-300 border border-rose-500/40">{initial(away?.name)}</div>}
+                </button>
+              );
+            })}
+          </PanelBlock>
+          <PanelBlock title="EVENT COUNTDOWN" compact onView={() => setActiveTabFromAnalytics(nav, "events")}>
+            {event ? (
+              <button onClick={() => setActiveTabFromAnalytics(nav, "events")} className="relative w-full min-h-24 text-left rounded-lg p-2 transition space-y-1 overflow-hidden border border-primary/20 bg-card/50">
+                {event.banner_url ? <img src={event.banner_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" /> : <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20" />}
+                <div className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/45 to-background/70" />
+                <div className="relative text-[9px] sm:text-xs font-bold text-primary truncate drop-shadow">{event.title}</div>
+                <div className="relative text-[10px] sm:text-sm font-mono text-amber-300 drop-shadow"><Countdown target={event.ends_at} /></div>
+                {event.description && <div className="relative text-[9px] text-muted-foreground line-clamp-1">{event.description}</div>}
               </button>
-            );
-          })}
-        </PanelBlock>
+            ) : <div className="text-[10px] text-muted-foreground">No active event</div>}
+          </PanelBlock>
+        </div>
         <PanelBlock title="HIGHLIGHTS HUB" accent="violet" onView={() => setActiveTabFromAnalytics(nav, "content")}>
           {highlights.length === 0 && <div className="text-[10px] text-muted-foreground">No highlights yet</div>}
-          {highlights.slice(0, 3).map((h) => (
+          {highlights.slice(0, 4).map((h) => (
             <button key={h.id} onClick={() => setActiveTabFromAnalytics(nav, "content")} className="w-full flex items-center gap-1.5 text-[9px] sm:text-xs py-1 border-b border-border/40 last:border-0 hover:bg-violet-500/10 rounded px-1 transition">
               {h.media_type === "video" ? <Play className="h-3 w-3 text-violet-400 shrink-0" /> : <ImageIcon className="h-3 w-3 text-violet-400 shrink-0" />}
               <div className="min-w-0 flex-1 truncate text-left">{h.title}</div>
@@ -2585,25 +2876,8 @@ function AnalyticsPanel() {
         </PanelBlock>
       </div>
 
-      {/* ROW 8 — Event Countdown | Broadcast Center | Quick Actions */}
+      {/* ROW 8 — Broadcast Center | Quick Actions | Top Bets */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <PanelBlock title="EVENT COUNTDOWN" compact onView={() => setActiveTabFromAnalytics(nav, "events")}>
-          {event ? (
-            <button onClick={() => setActiveTabFromAnalytics(nav, "events")} className="relative w-full text-left rounded p-1 transition space-y-1 overflow-hidden">
-              {event.banner_url && (
-                <>
-                  <img src={event.banner_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70 rounded" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/40 to-background/20 rounded" />
-                </>
-              )}
-              <div className="relative text-[9px] sm:text-xs font-bold text-primary truncate drop-shadow">{event.title}</div>
-              <div className="relative text-[10px] sm:text-sm font-mono text-amber-300 drop-shadow"><Countdown target={event.ends_at ?? event.starts_at} /></div>
-              <div className="relative text-[7px] sm:text-[9px] text-muted-foreground tabular-nums">{(() => { const d = new Date(event.starts_at ?? event.ends_at); const p = (n: number) => String(n).padStart(2, "0"); return `${d.getFullYear()}:${p(d.getMonth()+1)}:${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; })()}</div>
-            </button>
-          ) : (
-            <div className="text-[10px] text-muted-foreground">No active event</div>
-          )}
-        </PanelBlock>
         <PanelBlock title="BROADCAST CENTER" compact onView={() => setActiveTabFromAnalytics(nav, "broadcast")}>
           {broadcasts.length === 0 && <div className="text-[10px] text-muted-foreground">No broadcasts</div>}
           {broadcasts.map((b) => (
@@ -2629,6 +2903,7 @@ function AnalyticsPanel() {
                 { i: Sparkles, l: "Challenges", t: "challenges" },
                 { i: MessageSquare, l: "Chat", t: "chat" },
                 { i: Megaphone, l: "Content", t: "content" },
+                { i: Target, l: "Futures", t: "futures" },
                 { i: Trophy, l: "Emblems", t: "emblems" },
                 { i: Calendar, l: "Events", t: "events" },
                 { i: Wallet, l: "House Wallet", t: "housewallet" },
@@ -2682,10 +2957,11 @@ function AnalyticsPanel() {
             </div>
           </div>
         </PanelBlock>
+        <TopBetsPanel />
       </div>
 
       {/* ROW 9 — 5 module tiles */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
+      <div className="grid grid-cols-6 gap-3">
         {[
           { l: "VIRTUAL", s: "Manage virtual matches and rounds", t: "virtual", img: tileVirtualAsset.url },
           { l: "BATTLE", s: "Manage matches, fixtures and outcomes", t: "matches", img: tileBattleAsset.url },
@@ -2706,9 +2982,6 @@ function AnalyticsPanel() {
           </Card>
         ))}
       </div>
-
-      {/* ROW 10 — System Status */}
-      <TopBetsPanel />
 
       <Card className="border-primary/20 bg-card/60 p-3">
         <div className="text-[10px] sm:text-xs font-bold tracking-widest text-primary mb-2">SYSTEM STATUS <span className="text-muted-foreground font-normal">(COMING SOON)</span></div>

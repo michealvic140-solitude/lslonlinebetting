@@ -161,16 +161,11 @@ import { RouteProgress } from "@/components/RouteProgress";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  // PWA: register the service worker in production only (skip iframes/preview)
+  // Service workers / push disabled in this build — unregister any lingering ones.
   if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-    const isIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
-    const isPreview = /id-preview--|lovableproject\.com/.test(window.location.hostname);
-    if (!isIframe && !isPreview) {
-      navigator.serviceWorker.getRegistration("/sw.js").then((r) => { if (!r) navigator.serviceWorker.register("/sw.js").catch(() => {}); });
-    } else {
-      navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()));
-    }
+    navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
   }
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

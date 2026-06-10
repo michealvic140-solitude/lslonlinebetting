@@ -2,26 +2,42 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type MatchStatus = "scheduled" | "live" | "ended" | "cancelled";
 
-export interface OddRow { id: string; label: string; value: number; is_winner: boolean | null; market_id: string }
+export interface OddRow {
+  id: string;
+  label: string;
+  value: number;
+  is_winner: boolean | null;
+  market_id: string;
+  future_candidate_type?: string | null;
+  future_emblem_url?: string | null;
+  future_status?: "active" | "qualified" | "disqualified" | "lost" | "winner" | "settled" | null;
+  future_next_title?: string | null;
+  future_next_at?: string | null;
+  future_progress?: Array<{ status: string; title?: string; at?: string; note?: string }> | null;
+}
 export interface MarketRow { id: string; name: string; is_open: boolean; odds: OddRow[] }
 export interface TeamRow { id: string; name: string; logo_url: string | null; gang_type: "G" | "F" | null }
 export interface MatchRow {
   id: string; name: string; status: MatchStatus;
   start_time: string; location: string | null; is_featured: boolean;
   home_score: number; away_score: number;
-  is_virtual?: boolean; lock_time?: string | null;
+  is_virtual?: boolean; lock_time?: string | null; match_kind?: "gang" | "shooter" | "future"; marketing_enabled?: boolean;
   home_team: TeamRow | null; away_team: TeamRow | null;
+  home_player?: { id: string; name: string; avatar_url: string | null; team_id: string | null } | null;
+  away_player?: { id: string; name: string; avatar_url: string | null; team_id: string | null } | null;
   markets: MarketRow[];
   category_id?: string | null;
   category?: { id: string; name: string; icon: string | null } | null;
 }
 
 const matchSelect = `
-  id,name,status,start_time,location,is_featured,home_score,away_score,category_id,is_virtual,lock_time,
+  id,name,status,start_time,location,is_featured,home_score,away_score,category_id,is_virtual,lock_time,match_kind,marketing_enabled,
   category:categories!category_id(id,name,icon),
   home_team:teams!home_team_id(id,name,logo_url,gang_type),
   away_team:teams!away_team_id(id,name,logo_url,gang_type),
-  markets(id,name,is_open,odds(id,label,value,is_winner,market_id))
+  home_player:players!home_player_id(id,name,avatar_url,team_id),
+  away_player:players!away_player_id(id,name,avatar_url,team_id),
+  markets(id,name,is_open,odds(id,label,value,is_winner,market_id,future_candidate_type,future_emblem_url,future_status,future_next_title,future_next_at,future_progress))
 `;
 
 export async function fetchMatches(): Promise<MatchRow[]> {
