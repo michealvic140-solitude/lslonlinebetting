@@ -1341,6 +1341,7 @@ function ShooterSelect({ label, value, players, onChange }: { label: string; val
 }
 
 function FuturesAdminPanel() {
+  const confirm = useConfirm();
   const [settings, setSettings] = useState({ futures_section_title: "TOURNAMENT FUTURES", futures_min_stake: 1, futures_max_payout: 100000000, futures_max_selections: 1 });
   const [futures, setFutures] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
@@ -1403,11 +1404,51 @@ function FuturesAdminPanel() {
     await supabase.from("odds").update({ value } as any).eq("id", oddId);
     load();
   }
-  async function updateFutureStatus(odd: any, status: string, title?: string, at?: string) {
+  async function updateFutureStatus(
+    odd: any,
+    status: string,
+    extras?: { score?: string; opponent?: string; nextTitle?: string; nextAt?: string }
+  ) {
     const progress = Array.isArray(odd.future_progress) ? odd.future_progress : [];
-    const entry = { status, title: title || odd.future_next_title || status, at: at ? new Date(at).toISOString() : new Date().toISOString() };
-    await supabase.from("odds").update({ future_status: status, future_next_title: title || null, future_next_at: at ? new Date(at).toISOString() : null, future_progress: [...progress, entry], is_winner: status === "winner" ? true : odd.is_winner } as any).eq("id", odd.id);
+    const qualifiedCount = progress.filter((p: any) => p?.status === "qualified").length;
+    // The round the contender just played = qualifiedCount + 1 for a qualify event,
+    // or qualifiedCount + 1 as the round they were eliminated in for lost/DQ.
+    const playedRound = qualifiedCount + 1;
+    const nextRoundNumber = status === "qualified" ? qualifiedCount + 2 : null;
+    const autoNextTitle = nextRoundNumber ? `Round ${nextRoundNumber}` : null;
+    const finalNextTitle = extras?.nextTitle?.trim() || autoNextTitle || (status === "winner" ? "Champion" : null);
+    const entry: any = {
+      status,
+      round: playedRound,
+      title: status === "qualified"
+        ? `Round ${playedRound} won`
+        : status === "winner"
+          ? "Champion"
+          : status === "lost"
+            ? `Round ${playedRound} lost`
+            : status === "disqualified"
+              ? `Round ${playedRound} disqualified`
+              : status,
+      score: extras?.score?.trim() || null,
+      opponent: extras?.opponent?.trim() || null,
+      at: extras?.nextAt ? new Date(extras.nextAt).toISOString() : new Date().toISOString(),
+    };
+    const { error } = await supabase.from("odds").update({
+      future_status: status,
+      future_next_title: ["lost", "disqualified", "settled"].includes(status) ? null : finalNextTitle,
+      future_next_at: extras?.nextAt && status === "qualified" ? new Date(extras.nextAt).toISOString() : null,
+      future_progress: [...progress, entry],
+      is_winner: status === "winner" ? true : odd.is_winner,
+    } as any).eq("id", odd.id);
+    if (error) { toast.error(error.message); return; }
     if (["lost", "disqualified"].includes(status)) await loseFutureSelection(odd);
+    toast.success(
+      status === "qualified"
+        ? `${odd.label} qualified — advancing to Round ${nextRoundNumber}`
+        : status === "winner"
+          ? `${odd.label} marked as Champion`
+          : `${odd.label} marked as ${status}${extras?.opponent ? ` to ${extras.opponent}` : ""}`
+    );
     load();
   }
   async function loseFutureSelection(odd: any) {
@@ -1460,7 +1501,7 @@ function FuturesAdminPanel() {
         {futures.map((f) => (
           <Card key={f.id} className="glass p-4 space-y-3">
             <div className="flex items-start gap-2"><div className="min-w-0 flex-1"><div className="font-bold text-lg truncate">{f.name}</div><div className="text-xs text-muted-foreground">Opens {f.lock_time ? new Date(f.lock_time).toLocaleString() : "now"} · Closes {new Date(f.start_time).toLocaleString()} · {f.status}</div></div><Button size="sm" className="btn-luxury" disabled={f.status === "ended"} onClick={() => finalizeFuture(f)}>Finalize</Button><Button size="sm" variant="destructive" onClick={() => archiveFuture(f.id)}><Trash2 className="h-3 w-3" /></Button></div>
-            {(f.markets ?? []).map((m: any) => <div key={m.id} className="grid grid-cols-2 md:grid-cols-3 gap-2">{(m.odds ?? []).map((o: any) => <FutureOddAdminCard key={o.id} odd={o} disabled={f.status === "ended"} onOdd={updateOdd} onStatus={updateFutureStatus} />)}</div>)}
+            {(f.markets ?? []).map((m: any) => <div key={m.id} className="grid grid-cols-2 md:grid-cols-3 gap-2">{(m.odds ?? []).map((o: any) => <FutureOddAdminCard key={o.id} odd={o} disabled={f.status === "ended"} onOdd={updateOdd} onStatus={updateFutureStatus} confirm={confirm} />)}</div>)}
           </Card>
         ))}
       </div>
@@ -1468,21 +1509,82 @@ function FuturesAdminPanel() {
   );
 }
 
-function FutureOddAdminCard({ odd, disabled, onOdd, onStatus }: { odd: any; disabled: boolean; onOdd: (id: string, value: number) => void; onStatus: (odd: any, status: string, title?: string, at?: string) => void }) {
-  const [title, setTitle] = useState(odd.future_next_title ?? "Next round");
+function FutureOddAdminCard({ odd, disabled, onOdd, onStatus, confirm }: { odd: any; disabled: boolean; onOdd: (id: string, value: number) => void; onStatus: (odd: any, status: string, extras?: { score?: string; opponent?: string; nextTitle?: string; nextAt?: string }) => void | Promise<void>; confirm: ReturnType<typeof useConfirm> }) {
+  const [score, setScore] = useState("");
+  const [opponent, setOpponent] = useState("");
   const [at, setAt] = useState(odd.future_next_at ? new Date(odd.future_next_at).toISOString().slice(0, 16) : "");
   const status = odd.future_status ?? "active";
+  const progress = Array.isArray(odd.future_progress) ? odd.future_progress : [];
+  const qualifiedCount = progress.filter((p: any) => p?.status === "qualified").length;
+  const currentRound = qualifiedCount + 1;
+  const nextRound = qualifiedCount + 2;
+  const eliminated = ["lost", "disqualified", "settled"].includes(status);
+  const isWinner = status === "winner";
+
+  async function go(nextStatus: "qualified" | "winner" | "lost" | "disqualified") {
+    if (eliminated) return;
+    const labels: Record<string, { verb: string; tone: "default" | "danger"; ph: string }> = {
+      qualified: { verb: "Mark qualified", tone: "default", ph: "e.g. 12 (or 12-8)" },
+      winner: { verb: "Crown champion", tone: "default", ph: "Final score (optional)" },
+      lost: { verb: "Mark as lost", tone: "danger", ph: "Final score in this round" },
+      disqualified: { verb: "Disqualify", tone: "danger", ph: "Score before DQ (optional)" },
+    };
+    const cfg = labels[nextStatus];
+    const isElim = nextStatus === "lost" || nextStatus === "disqualified";
+    const ok = await confirm({
+      title: `${cfg.verb}: ${odd.label}?`,
+      description: nextStatus === "qualified"
+        ? `${odd.label} will advance to Round ${nextRound}. Their bet vouchers will update with the new par-round progress.`
+        : isElim
+          ? `${odd.label} will be eliminated from the tournament. All open bet selections on them will settle as lost.`
+          : `${odd.label} will be crowned the tournament champion. All bet vouchers on them will pay out when you finalize.`,
+      confirmText: cfg.verb,
+      tone: cfg.tone,
+      inputLabel: `Score for Round ${currentRound}${nextStatus === "winner" ? " (final)" : ""}`,
+      inputPlaceholder: `${cfg.ph}${score ? ` — currently: ${score}` : ""}`,
+      inputRequired: false,
+    });
+    if (!ok) return;
+    const scoreInput = typeof ok === "object" ? ok.value : score;
+    await onStatus(odd, nextStatus, { score: scoreInput || score, opponent, nextTitle: nextStatus === "qualified" ? `Round ${nextRound}` : undefined, nextAt: at });
+    setScore("");
+    setOpponent("");
+  }
+
   return (
-    <div className="rounded-lg border border-primary/20 bg-card/60 p-2 space-y-2">
-      <div className="flex items-center gap-2"><FutureTinyEmblem label={odd.label} url={odd.future_emblem_url} /><div className="min-w-0 flex-1"><div className="text-xs font-bold truncate">{odd.label}</div><div className="text-[10px] text-muted-foreground truncate">{odd.future_candidate_type ?? "Contender"} · {status}</div></div></div>
-      <Input className="h-8" type="number" step="0.01" value={Number(odd.value)} onChange={(e) => onOdd(odd.id, Number(e.target.value))} />
-      <Input className="h-8" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Next match / round title" />
-      <Input className="h-8" type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} />
+    <div className={`rounded-lg border p-2 space-y-2 ${isWinner ? "border-emerald-400/60 bg-emerald-500/10" : eliminated ? "border-destructive/40 bg-destructive/5 opacity-70" : "border-primary/20 bg-card/60"}`}>
+      <div className="flex items-center gap-2">
+        <FutureTinyEmblem label={odd.label} url={odd.future_emblem_url} />
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-bold truncate">{odd.label}</div>
+          <div className="text-[10px] text-muted-foreground truncate">{odd.future_candidate_type ?? "Contender"} · {isWinner ? "🏆 Champion" : eliminated ? `❌ ${status}` : `Round ${currentRound} active`}</div>
+        </div>
+      </div>
       <div className="grid grid-cols-2 gap-1">
-        <Button size="sm" variant="outline" disabled={disabled} onClick={() => onStatus(odd, "qualified", title, at)}>Qualified</Button>
-        <Button size="sm" variant="outline" disabled={disabled} onClick={() => onStatus(odd, "winner", title, at)}>Winner</Button>
-        <Button size="sm" variant="destructive" disabled={disabled} onClick={() => onStatus(odd, "lost", title, at)}>Lost</Button>
-        <Button size="sm" variant="destructive" disabled={disabled} onClick={() => onStatus(odd, "disqualified", title, at)}>DQ</Button>
+        <Input className="h-8 text-xs" type="number" step="0.01" value={Number(odd.value)} onChange={(e) => onOdd(odd.id, Number(e.target.value))} title="Odds" />
+        <Input className="h-8 text-xs" type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} title="Next round at" />
+      </div>
+      {!eliminated && !isWinner && (
+        <>
+          <Input className="h-8 text-xs" value={score} onChange={(e) => setScore(e.target.value)} placeholder={`Round ${currentRound} score (e.g. 12-8)`} />
+          <Input className="h-8 text-xs" value={opponent} onChange={(e) => setOpponent(e.target.value)} placeholder="Opponent (optional)" />
+        </>
+      )}
+      {progress.length > 0 && (
+        <div className="rounded border border-border/50 bg-muted/30 p-1.5 max-h-20 overflow-y-auto space-y-0.5">
+          {progress.slice(-3).map((p: any, i: number) => (
+            <div key={i} className="text-[10px] flex items-center gap-1">
+              <span className={`font-bold ${p.status === "qualified" ? "text-emerald-400" : p.status === "winner" ? "text-amber-400" : "text-destructive"}`}>R{p.round ?? i + 1}</span>
+              <span className="text-muted-foreground truncate">{p.score ?? "—"}{p.opponent ? ` vs ${p.opponent}` : ""}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-1">
+        <Button size="sm" variant="outline" disabled={disabled || eliminated || isWinner} onClick={() => go("qualified")}>✓ Qualify R{currentRound}</Button>
+        <Button size="sm" variant="outline" disabled={disabled || eliminated || isWinner} onClick={() => go("winner")} className="border-amber-400/40">🏆 Winner</Button>
+        <Button size="sm" variant="destructive" disabled={disabled || eliminated || isWinner} onClick={() => go("lost")}>✗ Lost</Button>
+        <Button size="sm" variant="destructive" disabled={disabled || eliminated || isWinner} onClick={() => go("disqualified")}>⛔ DQ</Button>
       </div>
     </div>
   );
