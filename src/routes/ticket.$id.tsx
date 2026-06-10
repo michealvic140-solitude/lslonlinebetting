@@ -364,14 +364,26 @@ function FutureTicketProgress({ odd }: { odd: any }) {
         <span className="text-primary font-bold">{status}</span>
       </div>
       <div className="mt-2 flex items-center gap-1.5 overflow-x-auto pb-1">
-        {steps.map((step: any, i: number) => (
-          <div key={`${step.status}-${i}`} className="flex items-center gap-1.5 shrink-0">
-            <div className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary whitespace-nowrap">
-              {step.title || step.status}{step.at ? ` · ${new Date(step.at).toLocaleDateString()}` : ""}
+        {steps.map((step: any, i: number) => {
+          const tone = step.status === "qualified" ? "border-emerald-400/50 bg-emerald-500/10 text-emerald-300"
+            : step.status === "winner" ? "border-amber-400/60 bg-amber-500/15 text-amber-300"
+            : ["lost", "disqualified"].includes(step.status) ? "border-destructive/50 bg-destructive/10 text-destructive"
+            : "border-primary/40 bg-primary/10 text-primary";
+          const label = step.round ? `Par R${step.round}` : (step.title || step.status);
+          return (
+            <div key={`${step.status}-${i}`} className="flex items-center gap-1.5 shrink-0">
+              <div className={`rounded-lg border px-2.5 py-1 text-[10px] font-bold whitespace-nowrap ${tone}`}>
+                <div>{label} · {step.status}</div>
+                {(step.score || step.opponent) && (
+                  <div className="text-[9px] font-normal opacity-90">
+                    {step.score ? `Score ${step.score}` : ""}{step.score && step.opponent ? " · " : ""}{step.opponent ? `vs ${step.opponent}` : ""}
+                  </div>
+                )}
+              </div>
+              {i < steps.length - 1 && <div className="h-px w-6 bg-primary/40" />}
             </div>
-            {i < steps.length - 1 && <div className="h-px w-6 bg-primary/40" />}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
