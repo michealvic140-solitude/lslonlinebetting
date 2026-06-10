@@ -291,14 +291,21 @@ function FutureProgress({ odd }: { odd: any }) {
   const status = odd.future_status ?? "active";
   const latest = progress[progress.length - 1];
   const tone = status === "winner" ? "text-emerald-300" : ["lost", "disqualified", "settled"].includes(status) ? "text-destructive" : "text-primary";
+  const qualifiedCount = progress.filter((p: any) => p?.status === "qualified").length;
+  const currentRound = qualifiedCount + 1;
   return (
     <div className="mt-2 border-t border-border/40 pt-2">
-      <div className={`text-[10px] uppercase tracking-widest font-bold ${tone}`}>{status.replace(/_/g, " ")}</div>
+      <div className={`text-[10px] uppercase tracking-widest font-bold ${tone} flex items-center justify-between gap-2`}>
+        <span>{status === "active" ? `Par Round ${currentRound}` : status.replace(/_/g, " ")}</span>
+        {latest?.score && <span className="text-foreground/80 font-mono">{latest.score}{latest.opponent ? ` vs ${latest.opponent}` : ""}</span>}
+      </div>
       <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
         <div className="h-full bg-gradient-gold" style={{ width: `${Math.min(100, Math.max(18, (progress.length + 1) * 22))}%` }} />
       </div>
       <div className="mt-1 text-[10px] text-muted-foreground truncate">
-        {odd.future_next_title ? `Next: ${odd.future_next_title}` : latest?.title ?? "Awaiting next round"}
+        {["lost","disqualified"].includes(status) && latest?.opponent ? `Eliminated by ${latest.opponent}` :
+         status === "winner" ? "Tournament champion 🏆" :
+         odd.future_next_title ? `Next: ${odd.future_next_title}` : latest?.title ?? "Awaiting next round"}
       </div>
     </div>
   );
