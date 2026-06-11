@@ -42,6 +42,7 @@ const NAV: AdminNavItem[] = [
   { key: "emblems",     label: "Emblems",              icon: Trophy,          admin: true },
   { key: "events",      label: "Events",               icon: Calendar,        admin: true },
   { key: "futures",     label: "Futures",              icon: Target,          admin: true },
+  { key: "brackets",    label: "Brackets",             icon: Trophy,          admin: true },
   { key: "housewallet", label: "House Wallet",         icon: Wallet,          admin: true },
   { key: "leaderboard", label: "Leaderboard",          icon: ListOrdered,     admin: true },
   { key: "matches",     label: "Matches",              icon: Trophy,          modOk: true },

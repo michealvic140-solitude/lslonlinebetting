@@ -45,6 +45,7 @@ import { SpotlightsAdminPanel } from "@/components/Spotlight";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { ClansAdminPanel } from "@/components/admin/ClansAdminPanel";
 import { TopBetsPanel } from "@/components/admin/TopBetsPanel";
+import { BracketAdminPanel } from "@/components/admin/BracketAdminPanel";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/admin")({
@@ -193,6 +194,7 @@ function AdminPage() {
             <TabsContent value="spotlights" className="mt-4"><SpotlightsAdminPanel /></TabsContent>
             <TabsContent value="clans" className="mt-4"><ClansAdminPanel /></TabsContent>
             <TabsContent value="topbets" className="mt-4"><TopBetsPanel /></TabsContent>
+            <TabsContent value="brackets" className="mt-4"><BracketAdminPanel /></TabsContent>
           </Tabs>
         </div>
       </main>
@@ -1347,6 +1349,7 @@ function FuturesAdminPanel() {
   const [teams, setTeams] = useState<any[]>([]);
   const [players, setPlayers] = useState<any[]>([]);
   const [draft, setDraft] = useState({ title: "Gang Champion of the Season", opens_at: new Date().toISOString().slice(0, 16), closes_at: "", options: "", min_stake: 1, max_payout: 100000000, max_selections: 1, next_title: "Round 1" });
+  const [pickerSearch, setPickerSearch] = useState("");
 
   async function load() {
     const [{ data: s }, { data: f }, { data: tm }, { data: pl }] = await Promise.all([
@@ -1484,19 +1487,40 @@ function FuturesAdminPanel() {
       <Card className="glass-strong p-4 space-y-3">
         <div className="font-bold flex items-center gap-2"><Target className="h-4 w-4 text-primary" />Futures Betting Control</div>
         <Input value={settings.futures_section_title} onChange={(e) => setSettings({ ...settings, futures_section_title: e.target.value })} placeholder="Homepage section name" />
-        <div className="grid grid-cols-3 gap-2"><Input type="number" min={1} value={settings.futures_min_stake} onChange={(e) => setSettings({ ...settings, futures_min_stake: Number(e.target.value) })} /><Input type="number" min={1} value={settings.futures_max_payout} onChange={(e) => setSettings({ ...settings, futures_max_payout: Number(e.target.value) })} /><Input type="number" min={1} max={3} value={settings.futures_max_selections} onChange={(e) => setSettings({ ...settings, futures_max_selections: Math.min(3, Math.max(1, Number(e.target.value))) })} /></div>
+        <div className="grid grid-cols-3 gap-2">
+          <div><label className="text-[10px] uppercase tracking-wider text-muted-foreground">Min Stake (tokens)</label><Input type="number" min={1} value={settings.futures_min_stake} onChange={(e) => setSettings({ ...settings, futures_min_stake: Number(e.target.value) })} /></div>
+          <div><label className="text-[10px] uppercase tracking-wider text-muted-foreground">Max Payout (tokens)</label><Input type="number" min={1} value={settings.futures_max_payout} onChange={(e) => setSettings({ ...settings, futures_max_payout: Number(e.target.value) })} /></div>
+          <div><label className="text-[10px] uppercase tracking-wider text-muted-foreground">Max Selections / Ticket</label><Input type="number" min={1} max={3} value={settings.futures_max_selections} onChange={(e) => setSettings({ ...settings, futures_max_selections: Math.min(3, Math.max(1, Number(e.target.value))) })} /></div>
+        </div>
         <Button variant="outline" onClick={saveSettings}>Save Section Settings</Button>
         <div className="h-px bg-border" />
         <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Market title" />
         <Input value={draft.next_title} onChange={(e) => setDraft({ ...draft, next_title: e.target.value })} placeholder="Current / next round title" />
         <div><label className="text-xs text-muted-foreground">Opening date</label><Input type="datetime-local" value={draft.opens_at} onChange={(e) => setDraft({ ...draft, opens_at: e.target.value })} /></div>
         <div><label className="text-xs text-muted-foreground">Closing date</label><Input type="datetime-local" value={draft.closes_at} onChange={(e) => setDraft({ ...draft, closes_at: e.target.value })} /></div>
-        <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1">
-          {teams.slice(0, 12).map((t) => <Button key={t.id} size="sm" variant="outline" onClick={() => addCandidate(t.name, 5, t.gang_type === "F" ? "Faction / Clan" : "Gang", t.logo_url)}>{t.name}</Button>)}
-          {players.slice(0, 12).map((p) => <Button key={p.id} size="sm" variant="outline" onClick={() => addCandidate(p.name, 8, "Shooter", p.avatar_url)}>{p.name}</Button>)}
+        <div className="space-y-1">
+          <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Add Participants (click to add — gangs, factions & shooters from Clans Manager)</label>
+          <Input value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)} placeholder={`Search ${teams.length} clans + ${players.length} shooters…`} />
+          <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1 rounded-lg border border-primary/15 bg-background/30 p-2">
+            {teams.filter((t) => !pickerSearch || t.name.toLowerCase().includes(pickerSearch.toLowerCase())).map((t) => (
+              <Button key={`t-${t.id}`} size="sm" variant="outline" className="justify-start text-[11px]" onClick={() => addCandidate(t.name, 5, t.gang_type === "F" ? "Faction / Clan" : "Gang", t.logo_url)}>
+                <Shield className="h-3 w-3 mr-1 text-primary" />{t.name}
+              </Button>
+            ))}
+            {players.filter((p) => !pickerSearch || p.name.toLowerCase().includes(pickerSearch.toLowerCase())).map((p) => (
+              <Button key={`p-${p.id}`} size="sm" variant="outline" className="justify-start text-[11px]" onClick={() => addCandidate(p.name, 8, "Shooter", p.avatar_url)}>
+                <Target className="h-3 w-3 mr-1 text-primary" />{p.name}
+              </Button>
+            ))}
+            {teams.length + players.length === 0 && <div className="col-span-2 text-[10px] text-muted-foreground p-3 text-center">No clans or shooters yet — add them in the Clans tab.</div>}
+          </div>
         </div>
         <Textarea rows={8} value={draft.options} onChange={(e) => setDraft({ ...draft, options: e.target.value })} placeholder={"One option per line:\nGang A | 5.50 | Gang | image-url\nTop Shooter | 8.00 | Shooter | image-url\nBest Clan | 10.00 | Faction / Clan | image-url"} />
-        <div className="grid grid-cols-3 gap-2"><Input type="number" min={1} value={draft.min_stake} onChange={(e) => setDraft({ ...draft, min_stake: Number(e.target.value) })} /><Input type="number" min={1} value={draft.max_payout} onChange={(e) => setDraft({ ...draft, max_payout: Number(e.target.value) })} /><Input type="number" min={1} max={3} value={draft.max_selections} onChange={(e) => setDraft({ ...draft, max_selections: Math.min(3, Math.max(1, Number(e.target.value))) })} /></div>
+        <div className="grid grid-cols-3 gap-2">
+          <div><label className="text-[10px] uppercase tracking-wider text-muted-foreground">Min Stake (tokens)</label><Input type="number" min={1} value={draft.min_stake} onChange={(e) => setDraft({ ...draft, min_stake: Number(e.target.value) })} /></div>
+          <div><label className="text-[10px] uppercase tracking-wider text-muted-foreground">Max Payout (tokens)</label><Input type="number" min={1} value={draft.max_payout} onChange={(e) => setDraft({ ...draft, max_payout: Number(e.target.value) })} /></div>
+          <div><label className="text-[10px] uppercase tracking-wider text-muted-foreground">Max Selections / Ticket</label><Input type="number" min={1} max={3} value={draft.max_selections} onChange={(e) => setDraft({ ...draft, max_selections: Math.min(3, Math.max(1, Number(e.target.value))) })} /></div>
+        </div>
         <Button className="btn-luxury w-full" onClick={createFuture}><Plus className="h-4 w-4 mr-1" />Create Futures Market</Button>
       </Card>
       <div className="space-y-3">

@@ -1,78 +1,27 @@
 ## Scope
 
-Rebuild the Super Admin Console (`src/routes/admin.tsx`) layout to match the reference mockup, plus rebuild the Users admin panel, add a brand-new Clans panel (Gangs / Teams / Players CRUD), add a Top Bets leaderboard, generate a themed header background image, and reduce transparency across console surfaces.
+Three things in one turn:
 
----
+1. **Fix participant list in Futures Match Creation** — all gangs/teams/shooters from the Clans admin should appear, not a short subset. Replace the current limited list with a unified, searchable, scrollable picker pulling from `teams` (gangs/factions) + `players` (shooters) + profile-derived gangs.
 
-## 1. Themed header image
+2. **Label the unlabeled numeric inputs** in the Futures Betting Control card. The three boxes at the top and the three at the bottom currently just show `1 / 100000000 / 1`. Add labels: **Display Order**, **Max Stake (tokens)**, **Min Stake (tokens)** (matching what these fields actually control — confirm by reading admin.tsx first).
 
-- Generate `src/assets/console-header-bg.jpg` (premium tier, 1920×512, dark green Lomita "command center" with masked shooter silhouette) via imagegen.
-- Upload via `lovable-assets create` → write `console-header-bg.jpg.asset.json`, remove the raw jpg.
-- Use as `background-image` of the existing "Super Admin Console" header card with a dark gradient overlay so the title row stays readable.
+3. **Knockout Bracket Tournament** — new feature:
+   - DB: `tournaments`, `tournament_participants`, `tournament_matches` (round, slot, p1/p2, scores, winner, parent linkage for auto-advance), plus `background_image_url` on tournament.
+   - Admin panel "Tournaments" tab: create tournament (name, opening round size configurable e.g. 26), add participants from Clans, upload background image, per-match Qualify/Lose with score input + confirmation, auto-advance winner to next round slot.
+   - Public route `/tournaments/$id` + homepage card: full bracket UI matching the screenshot (Opening Round → R16 → QF → SF → Final + trophy/CHAMPION + format strip at bottom), gold/dark glassmorphism, fits viewport without inner scroll on desktop (horizontal scroll allowed on mobile only — true "no scroll" at 26 players on a phone is not physically possible, will scope to fit-to-width with zoom-out on mobile).
+   - Realtime: subscribe to `tournament_matches` so the public bracket updates live.
+   - Betting integration: tournament odds tie into existing `odds.future_status` flow — when a participant is marked winner of final, related "Tournament Champion" bets settle.
 
-## 2. Console overview layout pass
+## Technical notes
 
-Edit `src/routes/admin.tsx` overview tab only (tabs/routes untouched):
+- New migration creates the 3 tables with GRANTs + RLS (public read, admin write via `has_role`), enables realtime publication.
+- Bracket generator: given N participants, build round 1 with `ceil(N/2)` matches (byes handled), then half each round.
+- Auto-advance trigger (DB function) updates next-round match's p1 or p2 based on `slot % 2`.
+- Admin upload: reuse existing storage bucket for background image (or accept URL field if no bucket).
+- Bracket UI: CSS grid with 5 columns, connector lines via pseudo-elements; trophy SVG/emoji; format strip at bottom.
+- Mobile: `transform: scale()` to fit-to-width — keeps "no scroll" requirement.
 
-```
-[ header card with bg image ]
-[ stat row 1: Online / Game Worlds / Pending Requests / Total Volume / Open Reports ]
-[ stat row 2: Tickets Today / Total Requests / Withdrawals / Player Requests / Ban Appeals ]
-[ Volume chart (14d) | New users per day chart ]
-[ small stat tiles row: Total Users / Banned / Tokens Circ / Today Bets / Won Bets ]
-[ Recent Activity | Live Gang Wars / Event Countdown | Highlights Hub ]
-[ Broadcast Center | Quick Actions | TOP BETS (new) ]
-[ tile grid: Virtual / Battle / Challenges / Alliances / Leaderboards / CLANS (new) ]
-```
+## Open question
 
-All wrapper cards switch from `bg-card/40 backdrop-blur` style to `bg-card/85` (or solid `bg-card`) with subtle border — "thicker, less transparent" per request.
-
-## 3. Users panel rebuild
-
-Edit existing Users admin section (component inside `admin.tsx` or extracted file):
-
-- Top summary bar: Total / Active / KYC / Suspended / Frozen / Joined (date range).
-- Filters row: search input, role select, status select, sort select, Export CSV button.
-- View toggle: grid (3 columns @ desktop, 2 @ md, 1 @ sm) / list. Vertical scroll container `max-h-[80vh] overflow-y-auto`.
-- User card: avatar tag (U1, U2…), name + status badge, email, phone, badges row (Verified / KYC / VIP / Frozen / Suspended), stats row (Balance, Total bets, Joined), gold "Manage Profile" button.
-- **KYC rule**: Verified iff `auth.users.email_confirmed_at IS NOT NULL`. Implemented as a new SECURITY DEFINER RPC `admin_list_users_with_kyc()` returning each profile joined to `email_confirmed_at`. RLS-gated by `has_role(auth.uid(),'admin')`.
-- Manage Profile dialog: tabs Profile / Tokens / Roles / Actions / History matching mockup — reuse existing user-edit logic where possible.
-
-## 4. Clans panel (NEW)
-
-New file `src/components/admin/ClansAdminPanel.tsx`, rendered when sidebar `clans` tab is active. Add `clans` entry to `AdminSidebar` (icon: Shield).
-
-- Tabs: Gangs | Teams | Players.
-- Each tab: list + "Create" button + edit/delete actions. Uses existing tables (`teams`, `players`, `profiles.gang_name`).
-- Gangs tab manages distinct `gang_name` + `gang_type` values across `profiles` (or new lightweight `gangs` table if needed — check schema first; prefer no new table).
-- Teams tab: full CRUD on `public.teams`.
-- Players tab: full CRUD on `public.players` (link to team).
-- Seed a tile image `tile-clans.jpg` via imagegen + `lovable-assets`, add a Clans tile in the bottom tile grid replacing nothing (added as 6th tile).
-
-No changes to match-creation flow — it already selects from `teams`/`players`.
-
-## 5. Top Bets panel (NEW)
-
-New component `src/components/admin/TopBetsPanel.tsx`. Replaces the spot where "Top Players" sits in the mockup, but the existing **Users** panel/section stays. Combined score = `SUM(won) + SUM(stake)` per user across `bets`. Scrollable `max-h-[420px]`. Realtime-refresh on `bets` changes (same pattern as `GrandPrizeWinners`).
-
-## 6. Migration
-
-One migration:
-- `CREATE OR REPLACE FUNCTION public.admin_list_users_with_kyc()` returning profile rows + `email_confirmed boolean` + aggregate `total_bets`, `balance`. SECURITY DEFINER, search_path = public, guarded by `has_role(auth.uid(),'admin')`.
-- `GRANT EXECUTE ... TO authenticated`.
-
-No table schema changes expected (reusing existing `profiles`, `teams`, `players`, `bets`).
-
----
-
-## Out of scope / explicit non-goals
-
-- Sidebar nav reorganization (already implemented, untouched).
-- Match creation flow.
-- Mobile-specific redesign beyond responsive grid collapse.
-- Replacing the existing Hall of Fame / Grand Prize Winners card.
-
-## Risks
-
-- `admin.tsx` is large; layout changes will be surgical to the Overview tab + Users tab only.
-- If a `gangs` table doesn't exist, Gangs tab will manage them via existing `profiles.gang_name` distinct list rather than introducing schema.
+The "no scroll at all" requirement for a 26-player bracket on a 647px-wide mobile viewport will require aggressive scale-down (≈0.25x) which makes text unreadable. I'll implement fit-to-width scaling on mobile with a pinch-zoom hint, and pixel-perfect no-scroll on desktop. If you'd prefer horizontal scroll on mobile instead of tiny text, say so and I'll switch.
