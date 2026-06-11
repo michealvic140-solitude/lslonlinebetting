@@ -85,10 +85,6 @@ export type Database = {
           exposure_warn_pct: number
           force_reload_at: string | null
           friends_enabled: boolean
-          futures_max_payout: number
-          futures_max_selections: number
-          futures_min_stake: number
-          futures_section_title: string
           gift_daily_limit: number
           gift_enabled: boolean
           gift_fee_pct: number
@@ -163,10 +159,6 @@ export type Database = {
           exposure_warn_pct?: number
           force_reload_at?: string | null
           friends_enabled?: boolean
-          futures_max_payout?: number
-          futures_max_selections?: number
-          futures_min_stake?: number
-          futures_section_title?: string
           gift_daily_limit?: number
           gift_enabled?: boolean
           gift_fee_pct?: number
@@ -241,10 +233,6 @@ export type Database = {
           exposure_warn_pct?: number
           force_reload_at?: string | null
           friends_enabled?: boolean
-          futures_max_payout?: number
-          futures_max_selections?: number
-          futures_min_stake?: number
-          futures_section_title?: string
           gift_daily_limit?: number
           gift_enabled?: boolean
           gift_fee_pct?: number
@@ -976,13 +964,11 @@ export type Database = {
       }
       matches: {
         Row: {
-          away_player_id: string | null
           away_score: number
           away_team_id: string
           category_id: string | null
           created_at: string
           created_by: string | null
-          home_player_id: string | null
           home_score: number
           home_team_id: string
           id: string
@@ -993,8 +979,6 @@ export type Database = {
           lock_time: string | null
           locked_at: string | null
           locked_by: string | null
-          marketing_enabled: boolean
-          match_kind: string
           name: string
           settled_at: string | null
           settled_by: string | null
@@ -1007,13 +991,11 @@ export type Database = {
           winner_team_id: string | null
         }
         Insert: {
-          away_player_id?: string | null
           away_score?: number
           away_team_id: string
           category_id?: string | null
           created_at?: string
           created_by?: string | null
-          home_player_id?: string | null
           home_score?: number
           home_team_id: string
           id?: string
@@ -1024,8 +1006,6 @@ export type Database = {
           lock_time?: string | null
           locked_at?: string | null
           locked_by?: string | null
-          marketing_enabled?: boolean
-          match_kind?: string
           name: string
           settled_at?: string | null
           settled_by?: string | null
@@ -1038,13 +1018,11 @@ export type Database = {
           winner_team_id?: string | null
         }
         Update: {
-          away_player_id?: string | null
           away_score?: number
           away_team_id?: string
           category_id?: string | null
           created_at?: string
           created_by?: string | null
-          home_player_id?: string | null
           home_score?: number
           home_team_id?: string
           id?: string
@@ -1055,8 +1033,6 @@ export type Database = {
           lock_time?: string | null
           locked_at?: string | null
           locked_by?: string | null
-          marketing_enabled?: boolean
-          match_kind?: string
           name?: string
           settled_at?: string | null
           settled_by?: string | null
@@ -1070,13 +1046,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "matches_away_player_id_fkey"
-            columns: ["away_player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "matches_away_team_id_fkey"
             columns: ["away_team_id"]
             isOneToOne: false
@@ -1088,13 +1057,6 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "matches_home_player_id_fkey"
-            columns: ["home_player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
             referencedColumns: ["id"]
           },
           {
@@ -1201,12 +1163,6 @@ export type Database = {
       }
       odds: {
         Row: {
-          future_candidate_type: string | null
-          future_emblem_url: string | null
-          future_next_at: string | null
-          future_next_title: string | null
-          future_progress: Json
-          future_status: string
           id: string
           is_winner: boolean | null
           label: string
@@ -1215,12 +1171,6 @@ export type Database = {
           value: number
         }
         Insert: {
-          future_candidate_type?: string | null
-          future_emblem_url?: string | null
-          future_next_at?: string | null
-          future_next_title?: string | null
-          future_progress?: Json
-          future_status?: string
           id?: string
           is_winner?: boolean | null
           label: string
@@ -1229,12 +1179,6 @@ export type Database = {
           value: number
         }
         Update: {
-          future_candidate_type?: string | null
-          future_emblem_url?: string | null
-          future_next_at?: string | null
-          future_next_title?: string | null
-          future_progress?: Json
-          future_status?: string
           id?: string
           is_winner?: boolean | null
           label?: string
@@ -1260,7 +1204,7 @@ export type Database = {
           is_substitute: boolean
           name: string
           position: string | null
-          team_id: string | null
+          team_id: string
         }
         Insert: {
           avatar_url?: string | null
@@ -1269,7 +1213,7 @@ export type Database = {
           is_substitute?: boolean
           name: string
           position?: string | null
-          team_id?: string | null
+          team_id: string
         }
         Update: {
           avatar_url?: string | null
@@ -1278,7 +1222,7 @@ export type Database = {
           is_substitute?: boolean
           name?: string
           position?: string | null
-          team_id?: string | null
+          team_id?: string
         }
         Relationships: [
           {
@@ -2650,6 +2594,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_void_bet: {
+        Args: { _bet_id: string; _reason?: string; _refund?: boolean }
+        Returns: undefined
+      }
       apply_referral_code: { Args: { _code: string }; Returns: Json }
       approve_promo_request: {
         Args: { _id: string; _note?: string }
@@ -2675,7 +2623,6 @@ export type Database = {
         Returns: undefined
       }
       fix_pending_virtual_bets: { Args: never; Returns: Json }
-      fix_stuck_bets: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2782,11 +2729,18 @@ export type Database = {
         | "moderator"
         | "admin"
         | "sponsor"
-      bet_status: "open" | "won" | "lost" | "cashed_out" | "void" | "suspended"
+      bet_status:
+        | "open"
+        | "won"
+        | "lost"
+        | "cashed_out"
+        | "void"
+        | "suspended"
+        | "refunded"
       chat_room: "general" | "gang" | "moderator"
       gang_type: "G" | "F"
       match_status: "scheduled" | "live" | "ended" | "cancelled"
-      ticket_status: "open" | "pending" | "resolved" | "closed"
+      ticket_status: "open" | "in_progress" | "pending" | "resolved" | "closed"
       token_request_status: "pending" | "approved" | "denied"
       withdrawal_status: "pending" | "approved" | "declined"
     }
@@ -2925,11 +2879,19 @@ export const Constants = {
         "admin",
         "sponsor",
       ],
-      bet_status: ["open", "won", "lost", "cashed_out", "void", "suspended"],
+      bet_status: [
+        "open",
+        "won",
+        "lost",
+        "cashed_out",
+        "void",
+        "suspended",
+        "refunded",
+      ],
       chat_room: ["general", "gang", "moderator"],
       gang_type: ["G", "F"],
       match_status: ["scheduled", "live", "ended", "cancelled"],
-      ticket_status: ["open", "pending", "resolved", "closed"],
+      ticket_status: ["open", "in_progress", "pending", "resolved", "closed"],
       token_request_status: ["pending", "approved", "denied"],
       withdrawal_status: ["pending", "approved", "declined"],
     },
