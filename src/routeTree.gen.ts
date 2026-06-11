@@ -36,7 +36,6 @@ import { Route as VirtualHistoryRouteImport } from './routes/virtual.history'
 import { Route as TicketIdRouteImport } from './routes/ticket.$id'
 import { Route as MatchesMatchIdRouteImport } from './routes/matches.$matchId'
 import { Route as ApiPublicVirtualTickRouteImport } from './routes/api/public/virtual-tick'
-import { Route as ApiPublicHooksSendPushRouteImport } from './routes/api/public/hooks/send-push'
 
 const WithdrawRoute = WithdrawRouteImport.update({
   id: '/withdraw',
@@ -173,11 +172,6 @@ const ApiPublicVirtualTickRoute = ApiPublicVirtualTickRouteImport.update({
   path: '/api/public/virtual-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicHooksSendPushRoute = ApiPublicHooksSendPushRouteImport.update({
-  id: '/api/public/hooks/send-push',
-  path: '/api/public/hooks/send-push',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -207,7 +201,6 @@ export interface FileRoutesByFullPath {
   '/ticket/$id': typeof TicketIdRoute
   '/virtual/history': typeof VirtualHistoryRoute
   '/api/public/virtual-tick': typeof ApiPublicVirtualTickRoute
-  '/api/public/hooks/send-push': typeof ApiPublicHooksSendPushRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -237,7 +230,6 @@ export interface FileRoutesByTo {
   '/ticket/$id': typeof TicketIdRoute
   '/virtual/history': typeof VirtualHistoryRoute
   '/api/public/virtual-tick': typeof ApiPublicVirtualTickRoute
-  '/api/public/hooks/send-push': typeof ApiPublicHooksSendPushRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -268,7 +260,6 @@ export interface FileRoutesById {
   '/ticket/$id': typeof TicketIdRoute
   '/virtual/history': typeof VirtualHistoryRoute
   '/api/public/virtual-tick': typeof ApiPublicVirtualTickRoute
-  '/api/public/hooks/send-push': typeof ApiPublicHooksSendPushRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -300,7 +291,6 @@ export interface FileRouteTypes {
     | '/ticket/$id'
     | '/virtual/history'
     | '/api/public/virtual-tick'
-    | '/api/public/hooks/send-push'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -330,7 +320,6 @@ export interface FileRouteTypes {
     | '/ticket/$id'
     | '/virtual/history'
     | '/api/public/virtual-tick'
-    | '/api/public/hooks/send-push'
   id:
     | '__root__'
     | '/'
@@ -360,7 +349,6 @@ export interface FileRouteTypes {
     | '/ticket/$id'
     | '/virtual/history'
     | '/api/public/virtual-tick'
-    | '/api/public/hooks/send-push'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -389,7 +377,6 @@ export interface RootRouteChildren {
   WithdrawRoute: typeof WithdrawRoute
   TicketIdRoute: typeof TicketIdRoute
   ApiPublicVirtualTickRoute: typeof ApiPublicVirtualTickRoute
-  ApiPublicHooksSendPushRoute: typeof ApiPublicHooksSendPushRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -583,13 +570,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicVirtualTickRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/send-push': {
-      id: '/api/public/hooks/send-push'
-      path: '/api/public/hooks/send-push'
-      fullPath: '/api/public/hooks/send-push'
-      preLoaderRoute: typeof ApiPublicHooksSendPushRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -641,7 +621,6 @@ const rootRouteChildren: RootRouteChildren = {
   WithdrawRoute: WithdrawRoute,
   TicketIdRoute: TicketIdRoute,
   ApiPublicVirtualTickRoute: ApiPublicVirtualTickRoute,
-  ApiPublicHooksSendPushRoute: ApiPublicHooksSendPushRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
