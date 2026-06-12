@@ -32,6 +32,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TournamentsIndexRouteImport } from './routes/tournaments.index'
 import { Route as VirtualHistoryRouteImport } from './routes/virtual.history'
 import { Route as TournamentsIdRouteImport } from './routes/tournaments.$id'
 import { Route as TicketIdRouteImport } from './routes/ticket.$id'
@@ -153,6 +154,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TournamentsIndexRoute = TournamentsIndexRouteImport.update({
+  id: '/tournaments/',
+  path: '/tournaments/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VirtualHistoryRoute = VirtualHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/ticket/$id': typeof TicketIdRoute
   '/tournaments/$id': typeof TournamentsIdRoute
   '/virtual/history': typeof VirtualHistoryRoute
+  '/tournaments/': typeof TournamentsIndexRoute
   '/api/public/virtual-tick': typeof ApiPublicVirtualTickRoute
 }
 export interface FileRoutesByTo {
@@ -237,6 +244,7 @@ export interface FileRoutesByTo {
   '/ticket/$id': typeof TicketIdRoute
   '/tournaments/$id': typeof TournamentsIdRoute
   '/virtual/history': typeof VirtualHistoryRoute
+  '/tournaments': typeof TournamentsIndexRoute
   '/api/public/virtual-tick': typeof ApiPublicVirtualTickRoute
 }
 export interface FileRoutesById {
@@ -268,6 +276,7 @@ export interface FileRoutesById {
   '/ticket/$id': typeof TicketIdRoute
   '/tournaments/$id': typeof TournamentsIdRoute
   '/virtual/history': typeof VirtualHistoryRoute
+  '/tournaments/': typeof TournamentsIndexRoute
   '/api/public/virtual-tick': typeof ApiPublicVirtualTickRoute
 }
 export interface FileRouteTypes {
@@ -300,6 +309,7 @@ export interface FileRouteTypes {
     | '/ticket/$id'
     | '/tournaments/$id'
     | '/virtual/history'
+    | '/tournaments/'
     | '/api/public/virtual-tick'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -330,6 +340,7 @@ export interface FileRouteTypes {
     | '/ticket/$id'
     | '/tournaments/$id'
     | '/virtual/history'
+    | '/tournaments'
     | '/api/public/virtual-tick'
   id:
     | '__root__'
@@ -360,6 +371,7 @@ export interface FileRouteTypes {
     | '/ticket/$id'
     | '/tournaments/$id'
     | '/virtual/history'
+    | '/tournaments/'
     | '/api/public/virtual-tick'
   fileRoutesById: FileRoutesById
 }
@@ -389,6 +401,7 @@ export interface RootRouteChildren {
   WithdrawRoute: typeof WithdrawRoute
   TicketIdRoute: typeof TicketIdRoute
   TournamentsIdRoute: typeof TournamentsIdRoute
+  TournamentsIndexRoute: typeof TournamentsIndexRoute
   ApiPublicVirtualTickRoute: typeof ApiPublicVirtualTickRoute
 }
 
@@ -555,6 +568,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tournaments/': {
+      id: '/tournaments/'
+      path: '/tournaments'
+      fullPath: '/tournaments/'
+      preLoaderRoute: typeof TournamentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/virtual/history': {
       id: '/virtual/history'
       path: '/history'
@@ -641,8 +661,19 @@ const rootRouteChildren: RootRouteChildren = {
   WithdrawRoute: WithdrawRoute,
   TicketIdRoute: TicketIdRoute,
   TournamentsIdRoute: TournamentsIdRoute,
+  TournamentsIndexRoute: TournamentsIndexRoute,
   ApiPublicVirtualTickRoute: ApiPublicVirtualTickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
