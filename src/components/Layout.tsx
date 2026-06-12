@@ -69,6 +69,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           <nav className="hidden lg:flex flex-1 items-center justify-center gap-1 flex-nowrap">
             <NavLink to="/matches" icon={MatchIcon} label="Matches" />
             <NavLink to="/virtual" icon={Dice5} label="Virtual" />
+            <NavLink to="/tournaments" icon={Trophy} label="Brackets" />
             <NavLink to="/leaderboard" icon={Trophy} label="Leaderboard" />
             {user && <NavLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" />}
             {user && <NavLink to="/checkout" icon={Coins} label="Buy" />}
@@ -132,6 +133,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           {railOpen && <>
           <MobLink to="/matches" icon={MatchIcon} label="Matches" />
           <MobLink to="/virtual" icon={Dice5} label="Virtual" />
+          <MobLink to="/tournaments" icon={Trophy} label="Brackets" />
           <MobLink to="/leaderboard" icon={Trophy} label="Top" />
           {user && <>
             <MobLink to="/dashboard" icon={Ticket} label="Bets" />
