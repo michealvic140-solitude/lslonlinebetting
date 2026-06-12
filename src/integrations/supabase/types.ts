@@ -928,6 +928,7 @@ export type Database = {
           created_at: string
           id: string
           is_open: boolean
+          marketing_enabled: boolean | null
           match_id: string
           name: string
         }
@@ -935,6 +936,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_open?: boolean
+          marketing_enabled?: boolean | null
           match_id: string
           name: string
         }
@@ -942,6 +944,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_open?: boolean
+          marketing_enabled?: boolean | null
           match_id?: string
           name?: string
         }
@@ -979,6 +982,8 @@ export type Database = {
           lock_time: string | null
           locked_at: string | null
           locked_by: string | null
+          marketing_enabled: boolean | null
+          match_kind: string | null
           name: string
           settled_at: string | null
           settled_by: string | null
@@ -1006,6 +1011,8 @@ export type Database = {
           lock_time?: string | null
           locked_at?: string | null
           locked_by?: string | null
+          marketing_enabled?: boolean | null
+          match_kind?: string | null
           name: string
           settled_at?: string | null
           settled_by?: string | null
@@ -1033,6 +1040,8 @@ export type Database = {
           lock_time?: string | null
           locked_at?: string | null
           locked_by?: string | null
+          marketing_enabled?: boolean | null
+          match_kind?: string | null
           name?: string
           settled_at?: string | null
           settled_by?: string | null
