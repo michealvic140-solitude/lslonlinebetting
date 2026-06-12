@@ -68,8 +68,8 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
   const nav = useNavigate();
 
   useEffect(() => {
-    supabase.from("app_settings").select("min_stake,max_payout,virtual_min_stake,virtual_max_payout,max_selections_per_ticket,virtual_max_selections,futures_min_stake,futures_max_payout,futures_max_selections").eq("id", 1).maybeSingle()
-      .then(({ data }) => {
+    supabase.from("app_settings").select("*").eq("id", 1).maybeSingle()
+      .then(({ data }: { data: any }) => {
         if (data?.min_stake) setRealMinStake(Number(data.min_stake));
         if ((data as any)?.max_payout) setRealMaxPayout(Number((data as any).max_payout));
         if ((data as any)?.virtual_min_stake) setVirtMinStake(Number((data as any).virtual_min_stake));
