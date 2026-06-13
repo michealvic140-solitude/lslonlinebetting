@@ -240,7 +240,8 @@ function FuturesSection({ title, markets, maxSelections }: { title: string; mark
                 {(market?.odds ?? []).slice(0, 16).map((odd) => {
                   const selected = selections.some((s) => s.odd_id === odd.id);
                   const status = odd.future_status ?? "active";
-                  const blocked = !market?.is_open || future.status !== "scheduled" || ["disqualified", "lost", "settled"].includes(status);
+                  // "lost" contenders stay selectable — only DQ/settled are blocked, plus admin odds lock.
+                  const blocked = !market?.is_open || future.status !== "scheduled" || (future as any).odds_locked === true || ["disqualified", "settled"].includes(status);
                   return (
                     <button
                       key={odd.id}

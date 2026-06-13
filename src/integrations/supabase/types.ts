@@ -85,6 +85,11 @@ export type Database = {
           exposure_warn_pct: number
           force_reload_at: string | null
           friends_enabled: boolean
+          futures_max_payout: number | null
+          futures_max_selections: number | null
+          futures_min_stake: number | null
+          futures_repeat_tickets_enabled: boolean
+          futures_section_title: string | null
           gift_daily_limit: number
           gift_enabled: boolean
           gift_fee_pct: number
@@ -159,6 +164,11 @@ export type Database = {
           exposure_warn_pct?: number
           force_reload_at?: string | null
           friends_enabled?: boolean
+          futures_max_payout?: number | null
+          futures_max_selections?: number | null
+          futures_min_stake?: number | null
+          futures_repeat_tickets_enabled?: boolean
+          futures_section_title?: string | null
           gift_daily_limit?: number
           gift_enabled?: boolean
           gift_fee_pct?: number
@@ -233,6 +243,11 @@ export type Database = {
           exposure_warn_pct?: number
           force_reload_at?: string | null
           friends_enabled?: boolean
+          futures_max_payout?: number | null
+          futures_max_selections?: number | null
+          futures_min_stake?: number | null
+          futures_repeat_tickets_enabled?: boolean
+          futures_section_title?: string | null
           gift_daily_limit?: number
           gift_enabled?: boolean
           gift_fee_pct?: number
@@ -890,6 +905,7 @@ export type Database = {
           played: number
           points: number
           top_player: string | null
+          total_score: number
           updated_at: string
           wins: number
         }
@@ -904,6 +920,7 @@ export type Database = {
           played?: number
           points?: number
           top_player?: string | null
+          total_score?: number
           updated_at?: string
           wins?: number
         }
@@ -918,6 +935,7 @@ export type Database = {
           played?: number
           points?: number
           top_player?: string | null
+          total_score?: number
           updated_at?: string
           wins?: number
         }
@@ -965,8 +983,71 @@ export type Database = {
           },
         ]
       }
+      match_attendance: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          player_id: string | null
+          present: boolean
+          score: number
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          player_id?: string | null
+          present?: boolean
+          score?: number
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          player_id?: string | null
+          present?: boolean
+          score?: number
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_attendance_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_attendance_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_real_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_attendance_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_attendance_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
+          allow_repeat_future_bets: boolean
           away_player_id: string | null
           away_score: number
           away_team_id: string | null
@@ -987,6 +1068,7 @@ export type Database = {
           marketing_enabled: boolean | null
           match_kind: string | null
           name: string
+          odds_locked: boolean
           settled_at: string | null
           settled_by: string | null
           start_time: string
@@ -998,6 +1080,7 @@ export type Database = {
           winner_team_id: string | null
         }
         Insert: {
+          allow_repeat_future_bets?: boolean
           away_player_id?: string | null
           away_score?: number
           away_team_id?: string | null
@@ -1018,6 +1101,7 @@ export type Database = {
           marketing_enabled?: boolean | null
           match_kind?: string | null
           name: string
+          odds_locked?: boolean
           settled_at?: string | null
           settled_by?: string | null
           start_time: string
@@ -1029,6 +1113,7 @@ export type Database = {
           winner_team_id?: string | null
         }
         Update: {
+          allow_repeat_future_bets?: boolean
           away_player_id?: string | null
           away_score?: number
           away_team_id?: string | null
@@ -1049,6 +1134,7 @@ export type Database = {
           marketing_enabled?: boolean | null
           match_kind?: string | null
           name?: string
+          odds_locked?: boolean
           settled_at?: string | null
           settled_by?: string | null
           start_time?: string
@@ -1192,6 +1278,12 @@ export type Database = {
       }
       odds: {
         Row: {
+          future_candidate_type: string | null
+          future_emblem_url: string | null
+          future_next_at: string | null
+          future_next_title: string | null
+          future_progress: Json | null
+          future_status: string | null
           id: string
           is_winner: boolean | null
           label: string
@@ -1200,6 +1292,12 @@ export type Database = {
           value: number
         }
         Insert: {
+          future_candidate_type?: string | null
+          future_emblem_url?: string | null
+          future_next_at?: string | null
+          future_next_title?: string | null
+          future_progress?: Json | null
+          future_status?: string | null
           id?: string
           is_winner?: boolean | null
           label: string
@@ -1208,6 +1306,12 @@ export type Database = {
           value: number
         }
         Update: {
+          future_candidate_type?: string | null
+          future_emblem_url?: string | null
+          future_next_at?: string | null
+          future_next_title?: string | null
+          future_progress?: Json | null
+          future_status?: string | null
           id?: string
           is_winner?: boolean | null
           label?: string
