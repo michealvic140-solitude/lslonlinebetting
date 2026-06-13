@@ -85,6 +85,11 @@ export type Database = {
           exposure_warn_pct: number
           force_reload_at: string | null
           friends_enabled: boolean
+          futures_max_payout: number | null
+          futures_max_selections: number | null
+          futures_min_stake: number | null
+          futures_repeat_tickets_enabled: boolean
+          futures_section_title: string | null
           gift_daily_limit: number
           gift_enabled: boolean
           gift_fee_pct: number
@@ -159,6 +164,11 @@ export type Database = {
           exposure_warn_pct?: number
           force_reload_at?: string | null
           friends_enabled?: boolean
+          futures_max_payout?: number | null
+          futures_max_selections?: number | null
+          futures_min_stake?: number | null
+          futures_repeat_tickets_enabled?: boolean
+          futures_section_title?: string | null
           gift_daily_limit?: number
           gift_enabled?: boolean
           gift_fee_pct?: number
@@ -233,6 +243,11 @@ export type Database = {
           exposure_warn_pct?: number
           force_reload_at?: string | null
           friends_enabled?: boolean
+          futures_max_payout?: number | null
+          futures_max_selections?: number | null
+          futures_min_stake?: number | null
+          futures_repeat_tickets_enabled?: boolean
+          futures_section_title?: string | null
           gift_daily_limit?: number
           gift_enabled?: boolean
           gift_fee_pct?: number
