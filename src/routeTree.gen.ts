@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WithdrawRouteImport } from './routes/withdraw'
 import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as VirtualRouteImport } from './routes/virtual'
+import { Route as TournamentRouteImport } from './routes/tournament'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -38,6 +39,7 @@ import { Route as TournamentsIdRouteImport } from './routes/tournaments.$id'
 import { Route as TicketIdRouteImport } from './routes/ticket.$id'
 import { Route as MatchesMatchIdRouteImport } from './routes/matches.$matchId'
 import { Route as ApiPublicVirtualTickRouteImport } from './routes/api/public/virtual-tick'
+import { Route as ApiPublicHooksSendPushRouteImport } from './routes/api/public/hooks/send-push'
 
 const WithdrawRoute = WithdrawRouteImport.update({
   id: '/withdraw',
@@ -52,6 +54,11 @@ const WatchlistRoute = WatchlistRouteImport.update({
 const VirtualRoute = VirtualRouteImport.update({
   id: '/virtual',
   path: '/virtual',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TournamentRoute = TournamentRouteImport.update({
+  id: '/tournament',
+  path: '/tournament',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TasksRoute = TasksRouteImport.update({
@@ -184,6 +191,11 @@ const ApiPublicVirtualTickRoute = ApiPublicVirtualTickRouteImport.update({
   path: '/api/public/virtual-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksSendPushRoute = ApiPublicHooksSendPushRouteImport.update({
+  id: '/api/public/hooks/send-push',
+  path: '/api/public/hooks/send-push',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -206,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
+  '/tournament': typeof TournamentRoute
   '/virtual': typeof VirtualRouteWithChildren
   '/watchlist': typeof WatchlistRoute
   '/withdraw': typeof WithdrawRoute
@@ -215,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/virtual/history': typeof VirtualHistoryRoute
   '/tournaments/': typeof TournamentsIndexRoute
   '/api/public/virtual-tick': typeof ApiPublicVirtualTickRoute
+  '/api/public/hooks/send-push': typeof ApiPublicHooksSendPushRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -237,6 +251,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
+  '/tournament': typeof TournamentRoute
   '/virtual': typeof VirtualRouteWithChildren
   '/watchlist': typeof WatchlistRoute
   '/withdraw': typeof WithdrawRoute
@@ -246,6 +261,7 @@ export interface FileRoutesByTo {
   '/virtual/history': typeof VirtualHistoryRoute
   '/tournaments': typeof TournamentsIndexRoute
   '/api/public/virtual-tick': typeof ApiPublicVirtualTickRoute
+  '/api/public/hooks/send-push': typeof ApiPublicHooksSendPushRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -269,6 +285,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
+  '/tournament': typeof TournamentRoute
   '/virtual': typeof VirtualRouteWithChildren
   '/watchlist': typeof WatchlistRoute
   '/withdraw': typeof WithdrawRoute
@@ -278,6 +295,7 @@ export interface FileRoutesById {
   '/virtual/history': typeof VirtualHistoryRoute
   '/tournaments/': typeof TournamentsIndexRoute
   '/api/public/virtual-tick': typeof ApiPublicVirtualTickRoute
+  '/api/public/hooks/send-push': typeof ApiPublicHooksSendPushRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -302,6 +320,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/tasks'
+    | '/tournament'
     | '/virtual'
     | '/watchlist'
     | '/withdraw'
@@ -311,6 +330,7 @@ export interface FileRouteTypes {
     | '/virtual/history'
     | '/tournaments/'
     | '/api/public/virtual-tick'
+    | '/api/public/hooks/send-push'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -333,6 +353,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/tasks'
+    | '/tournament'
     | '/virtual'
     | '/watchlist'
     | '/withdraw'
@@ -342,6 +363,7 @@ export interface FileRouteTypes {
     | '/virtual/history'
     | '/tournaments'
     | '/api/public/virtual-tick'
+    | '/api/public/hooks/send-push'
   id:
     | '__root__'
     | '/'
@@ -364,6 +386,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/tasks'
+    | '/tournament'
     | '/virtual'
     | '/watchlist'
     | '/withdraw'
@@ -373,6 +396,7 @@ export interface FileRouteTypes {
     | '/virtual/history'
     | '/tournaments/'
     | '/api/public/virtual-tick'
+    | '/api/public/hooks/send-push'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -396,6 +420,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
   TasksRoute: typeof TasksRoute
+  TournamentRoute: typeof TournamentRoute
   VirtualRoute: typeof VirtualRouteWithChildren
   WatchlistRoute: typeof WatchlistRoute
   WithdrawRoute: typeof WithdrawRoute
@@ -403,6 +428,7 @@ export interface RootRouteChildren {
   TournamentsIdRoute: typeof TournamentsIdRoute
   TournamentsIndexRoute: typeof TournamentsIndexRoute
   ApiPublicVirtualTickRoute: typeof ApiPublicVirtualTickRoute
+  ApiPublicHooksSendPushRoute: typeof ApiPublicHooksSendPushRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -426,6 +452,13 @@ declare module '@tanstack/react-router' {
       path: '/virtual'
       fullPath: '/virtual'
       preLoaderRoute: typeof VirtualRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tournament': {
+      id: '/tournament'
+      path: '/tournament'
+      fullPath: '/tournament'
+      preLoaderRoute: typeof TournamentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tasks': {
@@ -610,6 +643,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicVirtualTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/send-push': {
+      id: '/api/public/hooks/send-push'
+      path: '/api/public/hooks/send-push'
+      fullPath: '/api/public/hooks/send-push'
+      preLoaderRoute: typeof ApiPublicHooksSendPushRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -656,6 +696,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
   TasksRoute: TasksRoute,
+  TournamentRoute: TournamentRoute,
   VirtualRoute: VirtualRouteWithChildren,
   WatchlistRoute: WatchlistRoute,
   WithdrawRoute: WithdrawRoute,
@@ -663,6 +704,7 @@ const rootRouteChildren: RootRouteChildren = {
   TournamentsIdRoute: TournamentsIdRoute,
   TournamentsIndexRoute: TournamentsIndexRoute,
   ApiPublicVirtualTickRoute: ApiPublicVirtualTickRoute,
+  ApiPublicHooksSendPushRoute: ApiPublicHooksSendPushRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
