@@ -1837,7 +1837,7 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
       location: details.location, status: "scheduled",
       category_id: details.category_id || null, is_featured: details.featured,
       home_present: details.homePresent, away_present: details.awayPresent, restrict_repeat_contender: details.restrictRepeat,
-    }).select().single();
+    } as any).select().single();
     if (error) { toast.error(error.message); return; }
     const { data: market } = await supabase.from("markets").insert({ match_id: m.id, name: "Match Winner" }).select().single();
     if (market) {
