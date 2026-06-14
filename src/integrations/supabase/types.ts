@@ -329,6 +329,39 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings_private: {
+        Row: {
+          admin_ai_enabled: boolean
+          admin_ai_model: string
+          exposure_warn_pct: number
+          house_low_balance: number
+          id: number
+          push_endpoint_url: string | null
+          updated_at: string
+          vapid_subject: string | null
+        }
+        Insert: {
+          admin_ai_enabled?: boolean
+          admin_ai_model?: string
+          exposure_warn_pct?: number
+          house_low_balance?: number
+          id?: number
+          push_endpoint_url?: string | null
+          updated_at?: string
+          vapid_subject?: string | null
+        }
+        Update: {
+          admin_ai_enabled?: boolean
+          admin_ai_model?: string
+          exposure_warn_pct?: number
+          house_low_balance?: number
+          id?: number
+          push_endpoint_url?: string | null
+          updated_at?: string
+          vapid_subject?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -3137,6 +3170,17 @@ export type Database = {
         Returns: undefined
       }
       fix_pending_virtual_bets: { Args: never; Returns: Json }
+      gang_directory: {
+        Args: never
+        Returns: {
+          members: number
+          name: string
+          sample: string[]
+          tokens: number
+          type: string
+        }[]
+      }
+      get_display_roles: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
