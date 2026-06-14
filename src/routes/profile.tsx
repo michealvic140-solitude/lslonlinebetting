@@ -9,7 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/profile")({ component: ProfilePage });
+export const Route = createFileRoute("/profile")({
+  head: () => ({
+    meta: [
+      { title: "Your Profile — LSL" },
+      { name: "description", content: "Manage your LSL profile, contact details, avatar, and gang affiliation." },
+    ],
+  }),
+  component: ProfilePage,
+});
 
 function ProfilePage() {
   const { user, profile, refresh } = useAuth();

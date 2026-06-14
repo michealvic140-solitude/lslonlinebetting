@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import { Megaphone, Film } from "lucide-react";
+import { Megaphone, Film, ThumbsUp, ThumbsDown } from "lucide-react";
+import { toast } from "sonner";
 
 export function AnnouncementSlider() {
   const [items, setItems] = useState<any[]>([]);
@@ -37,9 +39,44 @@ export function AnnouncementSlider() {
 
 export function HighlightsRow() {
   const [items, setItems] = useState<any[]>([]);
-  useEffect(() => {
+  const { user } = useAuth();
+  const [myReactions, setMyReactions] = useState<Record<string, "like" | "dislike">>({});
+
+  function load() {
     supabase.from("highlights").select("*").eq("is_active", true).order("created_at", { ascending: false }).limit(12).then(({ data }) => setItems(data ?? []));
-  }, []);
+  }
+  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (!user) { setMyReactions({}); return; }
+    supabase.from("highlight_reactions").select("highlight_id,reaction").eq("user_id", user.id).then(({ data }) => {
+      const map: Record<string, "like" | "dislike"> = {};
+      (data ?? []).forEach((r: any) => { map[r.highlight_id] = r.reaction; });
+      setMyReactions(map);
+    });
+  }, [user?.id]);
+
+  async function react(highlightId: string, reaction: "like" | "dislike") {
+    if (!user) { toast.error("Sign in to react"); return; }
+    const current = myReactions[highlightId];
+    // optimistic count update
+    setItems((prev) => prev.map((h) => {
+      if (h.id !== highlightId) return h;
+      let likes = h.likes ?? 0, dislikes = h.dislikes ?? 0;
+      if (current === "like") likes--; if (current === "dislike") dislikes--;
+      if (current !== reaction) { if (reaction === "like") likes++; else dislikes++; }
+      return { ...h, likes: Math.max(0, likes), dislikes: Math.max(0, dislikes) };
+    }));
+    if (current === reaction) {
+      setMyReactions((m) => { const n = { ...m }; delete n[highlightId]; return n; });
+      await supabase.from("highlight_reactions").delete().eq("highlight_id", highlightId).eq("user_id", user.id);
+    } else {
+      setMyReactions((m) => ({ ...m, [highlightId]: reaction }));
+      await supabase.from("highlight_reactions").upsert({ highlight_id: highlightId, user_id: user.id, reaction }, { onConflict: "highlight_id,user_id" });
+    }
+    load();
+  }
+
   if (items.length === 0) return null;
   return (
     <section className="container mt-10">
@@ -53,6 +90,24 @@ export function HighlightsRow() {
                   ? <video src={h.media_url} controls className="w-full h-44 object-cover" />
                   : <img src={h.media_url} alt={h.title} className="w-full h-44 object-cover" />}
                 <div className="p-2 font-bold text-sm truncate">{h.title}</div>
+                <div className="px-2 pb-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => react(h.id, "like")}
+                    className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold transition ${myReactions[h.id] === "like" ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-300" : "border-border text-muted-foreground hover:text-emerald-300 hover:border-emerald-500/40"}`}
+                    aria-label="Like highlight"
+                  >
+                    <ThumbsUp className="h-3.5 w-3.5" /> {h.likes ?? 0}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => react(h.id, "dislike")}
+                    className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold transition ${myReactions[h.id] === "dislike" ? "border-destructive/60 bg-destructive/15 text-destructive" : "border-border text-muted-foreground hover:text-destructive hover:border-destructive/40"}`}
+                    aria-label="Dislike highlight"
+                  >
+                    <ThumbsDown className="h-3.5 w-3.5" /> {h.dislikes ?? 0}
+                  </button>
+                </div>
               </Card>
             </CarouselItem>
           ))}

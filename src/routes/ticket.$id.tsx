@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/Layout";
-import { PageShell } from "@/components/PageShell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -32,6 +31,7 @@ function TicketPage() {
     const ch = supabase.channel(`item-${id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "bets", filter: `id=eq.${id}` }, loadBet)
       .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, loadBet)
+      .on("postgres_changes", { event: "*", schema: "public", table: "odds" }, loadBet)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "support_tickets", filter: `id=eq.${id}` },
         (p) => setTicket(p.new))
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "support_tickets", filter: `id=eq.${id}` },
@@ -67,7 +67,6 @@ function BetTicket({ bet, viewerId }: { bet: any; viewerId: string }) {
     : bet.status === "cashed_out" ? { label: "CASHED OUT", cls: "border border-amber-400/40 text-amber-300 bg-amber-400/10", Icon: ShieldCheck }
     : { label: "PENDING", cls: "neon-green-border text-emerald-300 bg-emerald-500/10", Icon: ClockIcon };
 
-  const allWon = sels.length > 0 && sels.every((s: any) => s.result === "won");
   function copy(t: string) { navigator.clipboard.writeText(t); toast.success("Copied"); }
 
   async function shareCode() {
@@ -78,10 +77,9 @@ function BetTicket({ bet, viewerId }: { bet: any; viewerId: string }) {
 
   return (
     <Layout>
-      <PageShell tone="wallet">
       <div className="w-full max-w-xl px-3 py-6 md:ml-0 md:mr-auto">
         <Link to="/dashboard" className="text-muted-foreground text-sm flex items-center gap-1 hover:text-primary mb-3"><ArrowLeft className="h-4 w-4" />My bets</Link>
-        <BetVoucher bet={bet} sels={sels} statusBadge={statusBadge} allWon={allWon} copy={copy} shareCode={shareCode} />
+        <BetVoucher bet={bet} sels={sels} statusBadge={statusBadge} copy={copy} shareCode={shareCode} />
 
         {!isOwner && (
           <Card className="glass mt-4 p-3 text-xs text-muted-foreground">
@@ -89,17 +87,30 @@ function BetTicket({ bet, viewerId }: { bet: any; viewerId: string }) {
           </Card>
         )}
       </div>
-      </PageShell>
     </Layout>
   );
 }
 
 /* ====== Premium Glassmorphism Bet Voucher (matches reference) ====== */
-export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: {
-  bet: any; sels: any[]; statusBadge: { label: string; cls: string; Icon: any }; allWon: boolean;
+export function BetVoucher({ bet, sels, statusBadge, copy, shareCode }: {
+  bet: any; sels: any[]; statusBadge: { label: string; cls: string; Icon: any };
   copy: (t: string) => void; shareCode: () => void;
 }) {
   const status = bet.status as string;
+  // A selection only counts as a win once its match has ENDED (no cash-out while live).
+  function endedWin(s: any): boolean {
+    if (s.result === "won") return true;
+    if (s.result === "lost") return false;
+    const m = s.matches;
+    if (m?.match_kind === "future") return s.odds?.future_status === "winner";
+    if (!m || m.status !== "ended") return false;
+    if (s.markets?.name === "Correct Score") return s.selection_label === `${m.home_score}-${m.away_score}`;
+    const lead = m.home_score > m.away_score ? m.home_team?.name : m.away_score > m.home_score ? m.away_team?.name : "Draw";
+    return s.selection_label === lead;
+  }
+  // Cash-out only when every match has ended and every selection won.
+  const allWon = sels.length > 0 && sels.every(endedWin);
+  const cashoutValue = Number(bet.potential_payout);
   const isVirtualTicket = sels.some((s: any) => s.matches?.is_virtual);
   const isFutureTicket = sels.some((s: any) => s.matches?.match_kind === "future");
   const statusBarCls =
@@ -314,13 +325,13 @@ export function BetVoucher({ bet, sels, statusBadge, allWon, copy, shareCode }: 
             <span className="text-center">{statusBarText}</span>
           </div>
 
-          {/* CASHOUT (only if open + all selections won) */}
+          {/* CASHOUT (open + every match ended and won) */}
           {status === "open" && allWon && (
-            <CashoutButton betId={bet.id} amount={Number(bet.potential_payout)} />
+            <CashoutButton betId={bet.id} amount={cashoutValue} full={true} />
           )}
           {status === "open" && !allWon && (
             <div className="text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1">
-              <LockIcon className="h-3 w-3" />Awaiting match settlement. Cash-out unlocks when every selection wins.
+              <LockIcon className="h-3 w-3" />Cash-out unlocks once all your matches have ended and every selection has won.
             </div>
           )}
           {isVirtualTicket && status === "won" && (
@@ -357,27 +368,38 @@ function FutureTicketProgress({ odd }: { odd: any }) {
   const progress = Array.isArray(odd?.future_progress) ? odd.future_progress : [];
   const status = odd?.future_status ?? "active";
   const steps = progress.length ? progress : [{ status, title: odd?.future_next_title || "Tournament active", at: odd?.future_next_at }];
+  // A "lost" round does NOT end the run — the contender advanced, so show the next round.
+  const headline = ["winner", "disqualified", "settled"].includes(status)
+    ? status
+    : odd?.future_next_title || "In progress";
   return (
     <div className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-500/5 p-3">
       <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-        <span>Progress tree</span>
-        <span className="text-primary font-bold">{status}</span>
+        <span>Progress · par rounds</span>
+        <span className="text-primary font-bold">{headline}</span>
       </div>
       <div className="mt-2 flex items-center gap-1.5 overflow-x-auto pb-1">
         {steps.map((step: any, i: number) => {
-          const tone = step.status === "qualified" ? "border-emerald-400/50 bg-emerald-500/10 text-emerald-300"
-            : step.status === "winner" ? "border-amber-400/60 bg-amber-500/15 text-amber-300"
-            : ["lost", "disqualified"].includes(step.status) ? "border-destructive/50 bg-destructive/10 text-destructive"
-            : "border-primary/40 bg-primary/10 text-primary";
-          const label = step.round ? `Par R${step.round}` : (step.title || step.status);
+          const win = step.status === "qualified" || step.status === "winner";
+          const lose = ["lost", "disqualified"].includes(step.status);
+          const tone = win
+            ? "border-emerald-400/50 bg-emerald-500/10 text-emerald-200"
+            : lose
+              ? "border-destructive/50 bg-destructive/10 text-destructive"
+              : "border-primary/40 bg-primary/10 text-primary";
+          const verb = step.status === "winner"
+            ? "Champion"
+            : win
+              ? (step.opponent ? `beat ${step.opponent}` : "qualified")
+              : lose
+                ? (step.opponent ? `lost to ${step.opponent}` : step.status)
+                : "active";
           return (
             <div key={`${step.status}-${i}`} className="flex items-center gap-1.5 shrink-0">
               <div className={`rounded-lg border px-2.5 py-1 text-[10px] font-bold whitespace-nowrap ${tone}`}>
-                <div>{label} · {step.status}</div>
+                <div>{step.round ? `Round ${step.round}` : step.title || step.status}</div>
                 {(step.score || step.opponent) && (
-                  <div className="text-[9px] font-normal opacity-90">
-                    {step.score ? `Score ${step.score}` : ""}{step.score && step.opponent ? " · " : ""}{step.opponent ? `vs ${step.opponent}` : ""}
-                  </div>
+                  <div className="font-normal opacity-90">{step.score ? `${step.score} · ` : ""}{verb}</div>
                 )}
               </div>
               {i < steps.length - 1 && <div className="h-px w-6 bg-primary/40" />}
@@ -389,13 +411,15 @@ function FutureTicketProgress({ odd }: { odd: any }) {
   );
 }
 
-function CashoutButton({ betId, amount }: { betId: string; amount: number }) {
+function CashoutButton({ betId, amount, full }: { betId: string; amount: number; full: boolean }) {
   const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   async function go() {
     const ok = await confirm({
-      title: "Cash out this winning ticket?",
-      description: `All selections won. ${amount.toLocaleString()} tokens will be credited to your wallet immediately.`,
+      title: full ? "Cash out this winning ticket?" : "Cash out early?",
+      description: full
+        ? `All selections won. ${amount.toLocaleString()} tokens will be credited to your wallet immediately.`
+        : `Every selection is winning so far. Lock in ${amount.toLocaleString()} tokens now (a reduced early-cashout value) while the match is still running. Credited to your wallet immediately.`,
       confirmText: "Cash out now",
     });
     if (!ok) return;
@@ -490,7 +514,7 @@ function SupportTicketView({ ticket, userId, isMod }: { ticket: any; userId: str
   async function loadProfiles(ids: string[]) {
     const need = Array.from(new Set(ids)).filter((id) => id && !profiles[id]);
     if (need.length === 0) return;
-    const { data } = await supabase.from("profiles").select("id,full_name").in("id", need);
+    const { data } = await supabase.rpc("public_profiles", { _ids: need });
     const next = { ...profiles };
     (data ?? []).forEach((p: any) => { next[p.id] = { name: p.full_name }; });
     setProfiles(next);

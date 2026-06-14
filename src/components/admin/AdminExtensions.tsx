@@ -23,15 +23,23 @@ export function StreakAndPushPanel() {
   const genVapid = useServerFn(generateVapidKeys);
 
   async function load() {
-    const { data } = await supabase.from("app_settings")
-      .select("daily_login_enabled, daily_login_base_reward, daily_login_bonus_per_day, daily_login_max_streak, vapid_public_key, vapid_subject, push_endpoint_url")
-      .eq("id", 1).maybeSingle();
-    setS(data ?? {});
+    const [{ data: pub }, { data: priv }] = await Promise.all([
+      supabase.from("app_settings")
+        .select("daily_login_enabled, daily_login_base_reward, daily_login_bonus_per_day, daily_login_max_streak, vapid_public_key")
+        .eq("id", 1).maybeSingle(),
+      supabase.from("app_settings_private").select("vapid_subject, push_endpoint_url").eq("id", 1).maybeSingle(),
+    ]);
+    setS({ ...(pub ?? {}), ...(priv ?? {}) });
   }
   useEffect(() => { load(); }, []);
 
   async function save() {
-    const { error } = await supabase.from("app_settings").update(s).eq("id", 1);
+    const { vapid_subject, push_endpoint_url, ...pub } = s;
+    const [{ error: e1 }, { error: e2 }] = await Promise.all([
+      supabase.from("app_settings").update(pub).eq("id", 1),
+      supabase.from("app_settings_private").update({ vapid_subject, push_endpoint_url }).eq("id", 1),
+    ]);
+    const error = e1 || e2;
     if (error) toast.error(error.message); else toast.success("Saved (audit log recorded)");
   }
 
@@ -155,7 +163,7 @@ export function RiskPanel() {
     const [{ data: rs }, { data: ex }, { data: ap }] = await Promise.all([
       supabase.rpc("admin_risk_summary"),
       supabase.rpc("admin_exposure_per_match"),
-      supabase.from("app_settings").select("exposure_warn_pct, house_low_balance").eq("id", 1).maybeSingle(),
+      supabase.from("app_settings_private").select("exposure_warn_pct, house_low_balance").eq("id", 1).maybeSingle(),
     ]);
     setS(rs);
     setExposure((ex as any) ?? []);
@@ -538,6 +546,18 @@ export function ActivityPanel() {
   useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
   const onlineThreshold = Date.now() - 2 * 60 * 1000;
   const online = rows.filter((r) => new Date(r.last_seen).getTime() > onlineThreshold);
+  const fmt = (v: any) => v ? new Date(v).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "—";
+  const relTime = (v: any) => {
+    if (!v) return "—";
+    const diff = Date.now() - new Date(v).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days} day${days === 1 ? "" : "s"} ago`;
+  };
   return (
     <div className="space-y-4">
       <Card className="p-5 flex items-center gap-3">
@@ -552,6 +572,7 @@ export function ActivityPanel() {
             const device = r.device_type || (/(mobile|android|iphone|ipad)/i.test(r.user_agent || "") ? "Mobile" : "Desktop");
             const browser = r.browser || (r.user_agent?.match(/Chrome|Firefox|Safari|Edge|Opera/)?.[0] ?? "—");
             const os = r.os || (r.user_agent?.match(/Windows|Mac OS X|Linux|Android|iOS|iPhone OS/)?.[0] ?? "—");
+            const cameOnline = r.signed_in_at || r.session_start;
             return (
               <div key={r.user_id} className="flex items-center gap-3 py-2 border-b border-border/50">
                 <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${isOn ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-muted"}`} title={isOn ? "Online" : "Offline"} />
@@ -565,10 +586,19 @@ export function ActivityPanel() {
                     <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[9px]">{os}</span>
                     {r.ip_address && <><span className="opacity-50">·</span><span className="font-mono text-[9px]">{r.ip_address}</span></>}
                   </div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
+                    <span className="text-emerald-300/90">Came online: {fmt(cameOnline)}</span>
+                    <span className="opacity-50">·</span>
+                    {isOn ? (
+                      <span className="text-emerald-400 font-semibold">Active now</span>
+                    ) : (
+                      <span className="text-amber-300/90">Went offline: {fmt(r.last_seen)} ({relTime(r.last_seen)})</span>
+                    )}
+                  </div>
                 </div>
                 <Badge variant="outline" className={`capitalize ${isOn ? "border-emerald-500/40 text-emerald-300" : ""}`}>{isOn ? "Online" : "Offline"}</Badge>
                 <Badge variant="outline" className="capitalize hidden sm:inline-flex">{p?.vip_tier ?? "bronze"}</Badge>
-                <div className="text-[10px] text-muted-foreground w-24 text-right shrink-0">{new Date(r.last_seen).toLocaleTimeString()}</div>
+                <div className="text-[10px] text-muted-foreground w-24 text-right shrink-0">{isOn ? "now" : relTime(r.last_seen)}</div>
               </div>
             );
           })}

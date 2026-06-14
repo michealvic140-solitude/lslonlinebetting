@@ -171,7 +171,7 @@ function VirtualPage() {
                 variant="outline"
                 className={
                   cycle.running
-                    ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
+                    ? "bg-amber-500/15 border-amber-500/40 text-amber-400"
                     : "bg-muted text-muted-foreground"
                 }
               >
@@ -242,7 +242,7 @@ function VirtualPage() {
 
           {recent.length > 0 && (
             <section>
-              <SectionTitle icon={Trophy} label="Recent results" color="text-emerald-400" />
+              <SectionTitle icon={Trophy} label="Recent results" color="text-amber-400" />
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {recent.map((m) => {
                   const outcome =
@@ -279,7 +279,7 @@ function VirtualPage() {
                           <span className="text-xs font-bold truncate">{m.away_team?.name}</span>
                         </div>
                       </div>
-                      <div className="mt-2 text-center text-[10px] font-bold tracking-widest text-emerald-400">
+                      <div className="mt-2 text-center text-[10px] font-bold tracking-widest text-amber-400">
                         {outcome}
                       </div>
                     </Card>
@@ -420,7 +420,7 @@ function VirtualRoundCard({ match, animSec }: { match: VirtualMatch; animSec: nu
 
       <div className="mt-3 text-center text-xs">
         {settled ? (
-          <span className="text-emerald-400 font-bold flex items-center justify-center gap-1">
+          <span className="text-amber-400 font-bold flex items-center justify-center gap-1">
             <CheckCircle2 className="h-3 w-3" />
             Final {match.home_score}-{match.away_score}
           </span>
@@ -511,7 +511,7 @@ function StatusBadge({
   locked: boolean;
 }) {
   const tone = settled
-    ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
+    ? "bg-amber-500/15 border-amber-500/40 text-amber-400"
     : playing
       ? "bg-destructive/15 border-destructive/40 text-destructive animate-pulse"
       : locked
@@ -602,7 +602,7 @@ function LiveScoreRow({ match, animSec }: { match: VirtualMatch; animSec: number
             />
           </div>
         ) : (
-          <div className="text-[8px] font-bold text-emerald-400 tracking-widest">FINAL</div>
+          <div className="text-[8px] font-bold text-amber-400 tracking-widest">FINAL</div>
         )}
       </div>
       <div className="flex items-center gap-2 flex-1 min-w-0 flex-row-reverse text-right">
@@ -652,7 +652,7 @@ function CenterDial({
     return (
       <div className="text-center">
         <div className="text-[9px] text-muted-foreground uppercase tracking-widest">Final</div>
-        <div className="font-mono font-black text-xl text-emerald-400 tabular-nums">
+        <div className="font-mono font-black text-xl text-amber-400 tabular-nums">
           {match.home_score}-{match.away_score}
         </div>
       </div>
@@ -1009,7 +1009,7 @@ function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: num
           <div className="font-mono font-black text-2xl tabular-nums text-primary tracking-widest">
             {showH} - {showA}
             {settled && (
-              <span className="ml-2 text-[9px] font-bold text-emerald-400 tracking-widest align-middle">
+              <span className="ml-2 text-[9px] font-bold text-amber-400 tracking-widest align-middle">
                 FINAL
               </span>
             )}

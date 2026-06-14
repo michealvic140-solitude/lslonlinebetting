@@ -7,7 +7,12 @@ import { Card } from "@/components/ui/card";
 import { Trophy, ArrowLeft, Sparkles, Award } from "lucide-react";
 
 export const Route = createFileRoute("/achievements")({
-  head: () => ({ meta: [{ title: "Achievements — LSL" }] }),
+  head: () => ({
+    meta: [
+      { title: "Achievements — LSL" },
+      { name: "description", content: "Track your unlocked badges and milestones across the Lomita Shooters League." },
+    ],
+  }),
   component: AchievementsPage,
 });
 

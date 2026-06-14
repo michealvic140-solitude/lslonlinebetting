@@ -78,7 +78,7 @@ function Room({ room, muted }: { room: Room; muted: boolean }) {
       await loadReactions((data ?? []).map((m: any) => m.id));
     };
     load();
-    supabase.from("profiles").select("id,full_name,gang_name").order("full_name").limit(200).then(({ data }) => setMembers(data ?? []));
+    supabase.rpc("public_profiles").then(({ data }) => setMembers((data ?? []).slice(0, 200).map((p: any) => ({ id: p.id, full_name: p.full_name, gang_name: p.gang_name }))));
     const ch = supabase.channel(`chat-${room}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages", filter: `room=eq.${room}` }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_message_reactions" }, load)
@@ -91,7 +91,7 @@ function Room({ room, muted }: { room: Room; muted: boolean }) {
   async function loadProfiles(ids: string[]) {
     const need = Array.from(new Set(ids)).filter((id) => id && !profilesById[id]);
     if (need.length === 0) return;
-    const { data } = await supabase.from("profiles").select("id,full_name,gang_name").in("id", need);
+    const { data } = await supabase.rpc("public_profiles", { _ids: need });
     setProfilesById((prev) => {
       const next = { ...prev };
       (data ?? []).forEach((p: any) => { next[p.id] = { name: p.full_name, gang: p.gang_name }; });
@@ -222,11 +222,11 @@ function UserBadge({ userId, name }: { userId: string; name: string }) {
     if (!open || profile) return;
     (async () => {
       const [{ data: p }, { data: r }] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, ingame_name, gang_name, vip_tier, xp, streak_days, longest_streak, profile_title, avatar_url, country").eq("id", userId).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", userId),
+        supabase.rpc("public_profiles", { _ids: [userId] }),
+        supabase.rpc("get_display_roles", { _user_id: userId }),
       ]);
-      setProfile(p);
-      setRoles((r ?? []).map((x: any) => x.role));
+      setProfile(Array.isArray(p) ? p[0] ?? null : p);
+      setRoles((r ?? []) as string[]);
     })();
   }, [open, userId, profile]);
 
