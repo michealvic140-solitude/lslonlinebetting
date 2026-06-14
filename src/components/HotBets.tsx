@@ -17,6 +17,7 @@ type Hot = {
   users_count: number;
   bets_count: number;
   total_stake: number;
+  last_bet_at?: string | null;
 };
 
 type MatchStatusInfo = { status: string; is_virtual: boolean };
@@ -29,12 +30,19 @@ export function HotBets() {
 
   useEffect(() => {
     const load = async () => {
+      const { data: settings } = await supabase
+        .from("app_settings")
+        .select("hot_bets_reset_at")
+        .eq("id", 1)
+        .maybeSingle();
+      const resetAt = (settings as any)?.hot_bets_reset_at ? new Date((settings as any).hot_bets_reset_at).getTime() : 0;
       const { data } = await supabase
         .from("hot_bets_v1")
         .select("*")
         .order("bets_count", { ascending: false })
         .limit(50);
-      const list = (data ?? []) as Hot[];
+      let list = (data ?? []) as Hot[];
+      if (resetAt) list = list.filter((r) => new Date((r as any).last_bet_at ?? 0).getTime() > resetAt);
       const ids = Array.from(new Set(list.map((r) => r.match_id).filter(Boolean))) as string[];
       if (ids.length) {
         const { data: ms } = await supabase.from("matches").select("id,status,is_virtual").in("id", ids);
@@ -50,6 +58,7 @@ export function HotBets() {
     const interval = setInterval(load, 60_000);
     const ch = supabase.channel("hot-bets")
       .on("postgres_changes", { event: "*", schema: "public", table: "bets" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "app_settings" }, load)
       .subscribe();
     return () => { clearInterval(interval); supabase.removeChannel(ch); };
   }, []);

@@ -12,7 +12,12 @@ import { LifeBuoy, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/support")({
-  head: () => ({ meta: [{ title: "Support — LSL" }, { name: "description", content: "Get help from the LSL team." }] }),
+  head: () => ({
+    meta: [
+      { title: "Support — LSL" },
+      { name: "description", content: "Get help with your LSL account. Open a support ticket and our AI assistant will reply instantly." },
+    ],
+  }),
   component: SupportPage,
 });
 

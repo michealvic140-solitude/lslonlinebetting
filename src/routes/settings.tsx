@@ -7,7 +7,12 @@ import { PushNotifSettings } from "@/components/UserHubSections";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings — LSL" }] }),
+  head: () => ({
+    meta: [
+      { title: "Settings — LSL" },
+      { name: "description", content: "Manage your LSL account preferences, notifications, and profile settings." },
+    ],
+  }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/login" });

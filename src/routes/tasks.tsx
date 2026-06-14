@@ -10,7 +10,12 @@ import { ListChecks, Gift, CheckCircle2, Clock, ArrowLeft, Sparkles } from "luci
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/tasks")({
-  head: () => ({ meta: [{ title: "Tasks — LSL" }] }),
+  head: () => ({
+    meta: [
+      { title: "Tasks — LSL" },
+      { name: "description", content: "Complete LSL tasks and claim token rewards for your daily challenges." },
+    ],
+  }),
   component: TasksPage,
 });
 

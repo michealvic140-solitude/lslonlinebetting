@@ -10,7 +10,7 @@ function seasonDiff(now: number, target: number) {
   const h = Math.floor(s / 3600); s -= h * 3600;
   const m = Math.floor(s / 60); s -= m * 60;
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d)}/${pad(h)}/${pad(m)}/${pad(s)}`;
+  return `${pad(d)}:${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
 export function SeasonBanner() {
@@ -39,7 +39,7 @@ export function SeasonBanner() {
 
   if (!season) return null;
   const ends = new Date(season.ends_at);
-  const countdown = now === null ? "--/--/--/--" : seasonDiff(now, ends.getTime());
+  const countdown = now === null ? "--:--:--:--" : seasonDiff(now, ends.getTime());
 
   return (
     <section className="container mt-6">
@@ -60,7 +60,7 @@ export function SeasonBanner() {
               >
                 {countdown}
               </span>
-              <span className="text-[10px] text-muted-foreground">DD/HH/MM/SS · ends {ends.toLocaleDateString()}</span>
+              <span className="text-[10px] text-muted-foreground">DD:HH:MM:SS · ends {ends.toLocaleDateString()}</span>
             </div>
           </div>
           {top.length > 0 && (
