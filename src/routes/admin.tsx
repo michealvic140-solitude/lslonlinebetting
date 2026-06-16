@@ -111,12 +111,12 @@ function AdminPage() {
 
   return (
     <Layout>
-      <main className="w-full min-h-[calc(100vh-3.5rem)] overflow-x-hidden">
+      <main className="admin-console-page w-full min-h-[calc(100vh-3.5rem)] overflow-x-hidden">
         <div className="mx-auto w-full max-w-[1280px] px-3 sm:px-4 py-4 sm:py-6 space-y-4">
 
           <div
-            className="relative overflow-hidden rounded-2xl p-4 border border-primary/40 shadow-luxury bg-card"
-            style={{ backgroundImage: `linear-gradient(90deg, rgba(8,14,10,0.94) 0%, rgba(8,14,10,0.72) 42%, rgba(8,14,10,0.18) 100%), url(${adminConsoleSeed})`, backgroundSize: "cover", backgroundPosition: "center right" }}
+            className="admin-hero-frame relative overflow-hidden rounded-2xl p-4"
+            style={{ backgroundImage: `linear-gradient(90deg, rgba(3,12,10,0.76) 0%, rgba(3,12,10,0.44) 42%, rgba(3,12,10,0.18) 100%), url(${adminConsoleSeed})`, backgroundSize: "cover", backgroundPosition: "center right" }}
           >
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
             <div className="relative flex items-center gap-3 flex-wrap">
@@ -1837,7 +1837,7 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
       location: details.location, status: "scheduled",
       category_id: details.category_id || null, is_featured: details.featured,
       home_present: details.homePresent, away_present: details.awayPresent, restrict_repeat_contender: details.restrictRepeat,
-    } as any).select().single();
+    }).select().single();
     if (error) { toast.error(error.message); return; }
     const { data: market } = await supabase.from("markets").insert({ match_id: m.id, name: "Match Winner" }).select().single();
     if (market) {
