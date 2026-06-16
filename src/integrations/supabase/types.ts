@@ -3105,6 +3105,15 @@ export type Database = {
         Args: { _bet_id: string; _reason?: string }
         Returns: undefined
       }
+      admin_resolve_virtual_round: {
+        Args: {
+          _away_score?: number
+          _first_blood_team_id?: string
+          _home_score?: number
+          _match_id: string
+        }
+        Returns: Json
+      }
       admin_review_virtual_payout: {
         Args: { _approve: boolean; _id: string; _reason?: string }
         Returns: Json

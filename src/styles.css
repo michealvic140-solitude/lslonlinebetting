@@ -226,7 +226,6 @@
       radial-gradient(ellipse at bottom right, oklch(0.34 0.11 158 / 0.45), transparent 65%),
       linear-gradient(165deg, oklch(0.30 0.09 75) 0%, oklch(0.22 0.07 95) 40%, oklch(0.18 0.07 140) 75%, oklch(0.16 0.08 158) 100%);
     backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
   }
   .voucher-frame {
     box-shadow:
@@ -314,7 +313,6 @@
     border: 1px solid oklch(0.78 0.15 88 / 0.35);
     border-radius: 14px;
     backdrop-filter: blur(10px) saturate(140%);
-    -webkit-backdrop-filter: blur(10px) saturate(140%);
     box-shadow:
       inset 0 1px 0 oklch(0.95 0.10 92 / 0.12),
       0 0 16px -4px oklch(0.78 0.15 80 / 0.35);
@@ -381,7 +379,6 @@
       radial-gradient(ellipse at bottom right, oklch(0.32 0.14 85 / 0.78), transparent 65%),
       linear-gradient(160deg, oklch(0.14 0.08 158) 0%, oklch(0.13 0.07 150) 45%, oklch(0.22 0.12 82) 100%);
     backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
   }
   .admin-user-frame {
     box-shadow:
@@ -426,8 +423,7 @@
       0 0 0 1px oklch(0.62 0.14 80 / 0.35),
       0 30px 80px -30px oklch(0 0 0 / 0.70),
       inset 0 1px 0 oklch(0.95 0.10 92 / 0.12);
-    backdrop-filter: blur(18px) saturate(150%);
-    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(26px) saturate(170%);
   }
   .admin-shell-aurora {
     position: absolute; inset: -20%;
@@ -457,12 +453,43 @@
     border: 1px solid oklch(0.78 0.16 88 / 0.45);
     background:
       linear-gradient(135deg, oklch(0.32 0.10 80 / 0.78) 0%, oklch(0.22 0.08 120 / 0.70) 50%, oklch(0.20 0.12 158 / 0.78) 100%);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(28px) saturate(180%);
     box-shadow:
       inset 0 1px 0 oklch(0.95 0.10 92 / 0.15),
       0 18px 50px -18px oklch(0 0 0 / 0.70),
       0 0 28px -8px oklch(0.66 0.24 158 / 0.40);
+  }
+
+  .admin-console-page .rounded-xl,
+  .admin-console-page .rounded-2xl,
+  .admin-console-page [class*="bg-card"],
+  .admin-console-page [class*="bg-background"] {
+    background:
+      linear-gradient(135deg, oklch(0.08 0.04 165 / 0.54), oklch(0.05 0.03 185 / 0.38)) !important;
+    border-color: oklch(0.78 0.16 88 / 0.38) !important;
+    backdrop-filter: blur(22px) saturate(165%);
+    box-shadow:
+      inset 0 1px 0 oklch(0.95 0.10 92 / 0.10),
+      0 18px 52px -30px oklch(0 0 0 / 0.88),
+      0 0 24px -14px oklch(0.72 0.18 88 / 0.45);
+  }
+
+  .admin-console-page .glass,
+  .admin-console-page .glass-strong,
+  .admin-console-page .glass-ice {
+    background:
+      radial-gradient(120% 90% at 18% 0%, oklch(0.54 0.15 158 / 0.16), transparent 64%),
+      linear-gradient(145deg, oklch(0.08 0.04 165 / 0.58), oklch(0.04 0.03 190 / 0.34)) !important;
+    border: 1px solid oklch(0.78 0.16 88 / 0.42) !important;
+    backdrop-filter: blur(28px) saturate(180%);
+  }
+
+  .admin-console-page input,
+  .admin-console-page textarea,
+  .admin-console-page [role="combobox"] {
+    background: oklch(0.04 0.03 170 / 0.34) !important;
+    border-color: oklch(0.78 0.16 88 / 0.22) !important;
+    backdrop-filter: blur(18px) saturate(150%);
   }
 }
 
@@ -525,7 +552,6 @@
   border: 1px solid oklch(0.82 0.17 90 / 0.45) !important;
   color: oklch(0.95 0.05 92) !important;
   backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
   box-shadow:
     inset 0 1px 0 oklch(0.95 0.10 92 / 0.18),
     0 6px 20px -10px oklch(0.62 0.16 158 / 0.55),
@@ -593,7 +619,6 @@
   background: linear-gradient(160deg, oklch(0.22 0.06 80 / 0.55), oklch(0.18 0.06 140 / 0.65)) !important;
   border: 1px solid oklch(0.72 0.16 88 / 0.30) !important;
   backdrop-filter: blur(14px) saturate(150%);
-  -webkit-backdrop-filter: blur(14px) saturate(150%);
   box-shadow:
     inset 0 1px 0 oklch(0.95 0.10 92 / 0.12),
     0 14px 36px -16px oklch(0 0 0 / 0.65),

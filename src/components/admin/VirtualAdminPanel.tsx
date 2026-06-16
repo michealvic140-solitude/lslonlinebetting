@@ -433,7 +433,7 @@ function ResolveDialog({ round, onClose }: { round: Round; onClose: () => void }
               <Button variant="ghost" onClick={() => setStep("edit")} disabled={busy}>Back</Button>
               <Button disabled={busy} onClick={async () => {
                 setBusy(true);
-                const { error } = await supabase.rpc("resolve_virtual_round", {
+                const { error } = await supabase.rpc("admin_resolve_virtual_round" as any, {
                   _match_id: round.id, _home_score: home, _away_score: away, _first_blood_team_id: first,
                 });
                 setBusy(false);
