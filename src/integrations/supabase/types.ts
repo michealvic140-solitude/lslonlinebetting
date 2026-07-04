@@ -1452,12 +1452,14 @@ export type Database = {
         Row: {
           allow_repeat_future_bets: boolean
           away_player_id: string | null
+          away_present: boolean
           away_score: number
           away_team_id: string | null
           category_id: string | null
           created_at: string
           created_by: string | null
           home_player_id: string | null
+          home_present: boolean
           home_score: number
           home_team_id: string | null
           id: string
@@ -1472,6 +1474,7 @@ export type Database = {
           match_kind: string | null
           name: string
           odds_locked: boolean
+          restrict_repeat_contender: boolean
           settled_at: string | null
           settled_by: string | null
           start_time: string
@@ -1485,12 +1488,14 @@ export type Database = {
         Insert: {
           allow_repeat_future_bets?: boolean
           away_player_id?: string | null
+          away_present?: boolean
           away_score?: number
           away_team_id?: string | null
           category_id?: string | null
           created_at?: string
           created_by?: string | null
           home_player_id?: string | null
+          home_present?: boolean
           home_score?: number
           home_team_id?: string | null
           id?: string
@@ -1505,6 +1510,7 @@ export type Database = {
           match_kind?: string | null
           name: string
           odds_locked?: boolean
+          restrict_repeat_contender?: boolean
           settled_at?: string | null
           settled_by?: string | null
           start_time: string
@@ -1518,12 +1524,14 @@ export type Database = {
         Update: {
           allow_repeat_future_bets?: boolean
           away_player_id?: string | null
+          away_present?: boolean
           away_score?: number
           away_team_id?: string | null
           category_id?: string | null
           created_at?: string
           created_by?: string | null
           home_player_id?: string | null
+          home_present?: boolean
           home_score?: number
           home_team_id?: string | null
           id?: string
@@ -1538,6 +1546,7 @@ export type Database = {
           match_kind?: string | null
           name?: string
           odds_locked?: boolean
+          restrict_repeat_contender?: boolean
           settled_at?: string | null
           settled_by?: string | null
           start_time?: string
