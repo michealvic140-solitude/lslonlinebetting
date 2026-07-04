@@ -1099,6 +1099,48 @@ export type Database = {
         }
         Relationships: []
       }
+      home_banners: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cta_label: string
+          id: string
+          image_url: string
+          is_active: boolean
+          link_url: string
+          sort_order: number
+          subtitle: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cta_label?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link_url?: string
+          sort_order?: number
+          subtitle?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cta_label?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string
+          sort_order?: number
+          subtitle?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       house_transactions: {
         Row: {
           actor_id: string | null
@@ -2018,13 +2060,54 @@ export type Database = {
           },
         ]
       }
+      push_delivery_log: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          last_error: string | null
+          notification_id: string
+          removed_count: number
+          sent_count: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          last_error?: string | null
+          notification_id: string
+          removed_count?: number
+          sent_count?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          last_error?: string | null
+          notification_id?: string
+          removed_count?: number
+          sent_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_delivery_log_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: true
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth_key: string
           created_at: string
+          disabled_at: string | null
           enabled: boolean
           endpoint: string
+          failure_count: number
           id: string
+          last_seen_at: string
           p256dh: string
           user_agent: string | null
           user_id: string
@@ -2032,9 +2115,12 @@ export type Database = {
         Insert: {
           auth_key: string
           created_at?: string
+          disabled_at?: string | null
           enabled?: boolean
           endpoint: string
+          failure_count?: number
           id?: string
+          last_seen_at?: string
           p256dh: string
           user_agent?: string | null
           user_id: string
@@ -2042,9 +2128,12 @@ export type Database = {
         Update: {
           auth_key?: string
           created_at?: string
+          disabled_at?: string | null
           enabled?: boolean
           endpoint?: string
+          failure_count?: number
           id?: string
+          last_seen_at?: string
           p256dh?: string
           user_agent?: string | null
           user_id?: string
@@ -2105,6 +2194,63 @@ export type Database = {
           referee_id?: string
           referrer_bonus?: number
           referrer_id?: string
+        }
+        Relationships: []
+      }
+      scheduled_pushes: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string
+          error: string | null
+          id: string
+          last_active_days: number | null
+          link: string
+          locale: string
+          role: string
+          scheduled_for: string
+          sent_at: string | null
+          sent_count: number
+          status: string
+          title: string
+          total_count: number
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          created_by: string
+          error?: string | null
+          id?: string
+          last_active_days?: number | null
+          link?: string
+          locale?: string
+          role?: string
+          scheduled_for: string
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          title: string
+          total_count?: number
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string
+          error?: string | null
+          id?: string
+          last_active_days?: number | null
+          link?: string
+          locale?: string
+          role?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          title?: string
+          total_count?: number
+          updated_at?: string
         }
         Relationships: []
       }
