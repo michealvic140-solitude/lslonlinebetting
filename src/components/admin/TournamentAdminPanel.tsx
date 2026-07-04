@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { notifyAction } from "@/lib/notify-action";
 import { TournamentBracket, type TMatch, type TParticipant, type Tournament } from "@/components/TournamentBracket";
 
 /** Upload a bracket image from device storage to a public bucket and return its URL. */
@@ -267,6 +268,12 @@ export function TournamentAdminPanel() {
     });
     if (error) { toast.error(error.message); return; }
     toast.success(winnerId ? "Result saved — winner advanced" : "Scores saved");
+    notifyAction(
+      winnerId ? "Tournament result saved" : "Tournament scores saved",
+      winnerId
+        ? `Scores ${sA || 0}–${sB || 0} saved and the winner has advanced to the next round.`
+        : `Scores ${sA || 0}–${sB || 0} saved for this tournament match.`,
+    );
     setResultMatch(null);
     loadDetail(sel!.id);
   }

@@ -1,11 +1,15 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, User as UserIcon, Shield, MessageSquare, Home, Trophy, Ticket, LifeBuoy, Wallet, Crosshair as MatchIcon, Settings as SettingsIcon, Coins, LayoutDashboard, Dice5, Swords } from "lucide-react";
+import { LogOut, User as UserIcon, Shield, MessageSquare, Home, Trophy, Ticket, LifeBuoy, Wallet, Crosshair as MatchIcon, Settings as SettingsIcon, Coins, LayoutDashboard, Dice5, Swords, Clover, ClipboardList, ListChecks, Gamepad2, ShoppingBag } from "lucide-react";
 import { GangLogo } from "@/components/GangLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth, ROLE_COLORS, ROLE_LABELS } from "@/contexts/AuthContext";
 import { NotificationBell } from "@/components/NotificationBell";
 import { LevelUpModal } from "@/components/Spotlight";
+import { GlobalWinAnimation } from "@/components/GlobalWinAnimation";
+import { BetSuccessPopout } from "@/components/BetSuccessPopout";
+import { SurveyPopout } from "@/components/SurveyPopout";
+import { PushPermissionPrompt } from "@/components/PushPermissionPrompt";
 import { ReactNode, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation } from "@tanstack/react-router";
@@ -51,38 +55,88 @@ export const Layout = ({ children }: { children: ReactNode }) => {
   useVirtualHeartbeat();
   useForceReloadBroadcast();
   const [railOpen, setRailOpen] = useState(false);
+  // Admin-configurable site-wide background + branding (fall back to bundled art).
+  const [siteBg, setSiteBg] = useState<string | null>(null);
+  const [bgFit, setBgFit] = useState<string>("cover");
+  const [bgPos, setBgPos] = useState<string>("center");
+  const [siteName, setSiteName] = useState<string | null>(null);
+  const [navBg, setNavBg] = useState<string | null>(null);
+  const [navBgFit, setNavBgFit] = useState<string>("cover");
+  const [navBgPos, setNavBgPos] = useState<string>("center");
+  useEffect(() => {
+    const apply = (d: any) => {
+      setSiteBg(d?.site_bg_url ?? null);
+      setBgFit(d?.site_bg_fit ?? "cover");
+      setBgPos(d?.site_bg_position ?? "center");
+      setSiteName(d?.site_name ?? null);
+      setNavBg(d?.nav_bg_url ?? null);
+      setNavBgFit(d?.nav_bg_fit ?? "cover");
+      setNavBgPos(d?.nav_bg_position ?? "center");
+    };
+    supabase.from("app_settings").select("site_bg_url,site_bg_fit,site_bg_position,site_name,nav_bg_url,nav_bg_fit,nav_bg_position").eq("id", 1).maybeSingle()
+      .then(({ data }) => apply(data));
+    const ch = supabase.channel("site-bg")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "app_settings" }, (p: any) => apply(p.new))
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   return (
     <div className="relative min-h-screen">
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <img
-          src={lslPlatformBg.url}
+          src={siteBg || lslPlatformBg.url}
           alt=""
           aria-hidden
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full"
+          style={{ objectFit: (bgFit as any) || "cover", objectPosition: bgPos || "center" }}
         />
         <div className="absolute inset-0 bg-background/40" />
       </div>
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-gradient-to-b from-card/80 to-card/50 border-b border-primary/20 shadow-[0_2px_30px_-12px_rgba(0,0,0,0.6)]">
-        <div className="container mx-auto px-4 flex h-16 items-center gap-3 lg:gap-4">
+        {navBg && (
+          <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+            <img
+              src={navBg}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 h-full w-full"
+              style={{ objectFit: (navBgFit as any) || "cover", objectPosition: navBgPos || "center" }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/55 via-background/45 to-background/65" />
+          </div>
+        )}
+        <div className="container mx-auto px-4 flex h-16 items-center gap-3 lg:gap-4 relative">
           <Link to="/" className="flex items-center gap-2 group shrink-0">
             <GangLogo size={38} className="transition-transform group-hover:scale-105 group-hover:rotate-3 duration-300" />
             <div className="leading-tight">
-              <div className="text-sm font-extrabold tracking-[0.25em] gradient-gold-text">LOMITA</div>
-              <div className="text-[9px] text-muted-foreground tracking-[0.35em]">SHOOTERS LEAGUE</div>
+              {siteName ? (
+                <div className="text-sm font-extrabold tracking-[0.18em] gradient-gold-text uppercase max-w-[160px] truncate">{siteName}</div>
+              ) : (
+                <>
+                  <div className="text-sm font-extrabold tracking-[0.25em] gradient-gold-text">LOMITA</div>
+                  <div className="text-[9px] text-muted-foreground tracking-[0.35em]">SHOOTERS LEAGUE</div>
+                </>
+              )}
             </div>
           </Link>
           <nav className="hidden lg:flex flex-1 items-center justify-center gap-1 flex-nowrap">
             <NavLink to="/matches" icon={MatchIcon} label="Matches" />
             <NavLink to="/virtual" icon={Dice5} label="Virtual" />
+            <NavLink to="/lottery" icon={Clover} label="Lottery" />
+            <NavLink to="/arcade" icon={Gamepad2} label="Arcade" />
+            <NavLink to="/shop" icon={ShoppingBag} label="Shop" />
             <NavLink to="/leaderboard" icon={Trophy} label="Leaderboard" />
             <NavLink to="/tournament" icon={Swords} label="Tournament" />
             {user && <NavLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" />}
+            {user && <NavLink to="/tasks" icon={ListChecks} label="Tasks" />}
+            {user && <NavLink to="/surveys" icon={ClipboardList} label="Surveys" />}
             {user && <NavLink to="/checkout" icon={Coins} label="Buy" />}
             {user && <NavLink to="/withdraw" icon={Wallet} label="Withdraw" />}
             {user && <NavLink to="/support" icon={LifeBuoy} label="Support" />}
             {user && <NavLink to="/settings" icon={SettingsIcon} label="Settings" />}
-            {(isAdmin || isMod) && <NavLink to="/admin" icon={Shield} label={isAdmin ? "Admin" : "Mod"} danger />}
+            {isAdmin && <NavLink to="/admin" icon={Shield} label="Admin" danger />}
+            {!isAdmin && isMod && <NavLink to="/mod" icon={Shield} label="Mod" danger />}
           </nav>
           <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
             {user && profile ? (
@@ -118,10 +172,14 @@ export const Layout = ({ children }: { children: ReactNode }) => {
       </header>
       <main className="relative lg:pl-0 pl-16 overflow-x-hidden">{children}</main>
       <LevelUpModal />
+      <GlobalWinAnimation />
+      <BetSuccessPopout />
+      <SurveyPopout />
+      <PushPermissionPrompt />
       <nav
         className="lg:hidden fixed left-0 inset-y-0 pt-16 z-40 w-16 overflow-y-auto bg-transparent border-0 shadow-none"
       >
-        <div className="flex flex-col items-stretch gap-2.5 py-3 px-1">
+        <div className="flex flex-col items-stretch gap-4 py-4 px-1">
           <button
             type="button"
             onClick={() => setRailOpen((v) => !v)}
@@ -130,8 +188,8 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             className="group relative flex flex-col items-center justify-center gap-1 px-0 py-1 rounded-xl text-[10px] font-semibold tracking-wide text-primary transition-all hover:text-foreground active:scale-95"
             title="Menu"
           >
-            <span className="relative grid place-items-center h-11 w-11 rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 shadow-[0_0_18px_-4px_rgba(212,175,55,0.55)]">
-              <SettingsIcon className={`h-[22px] w-[22px] transition-transform ${railOpen ? "rotate-180" : ""}`} />
+            <span className="relative grid place-items-center h-[52px] w-[52px] rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 shadow-[0_0_18px_-4px_rgba(212,175,55,0.55)]">
+              <SettingsIcon className={`h-7 w-7 transition-transform ${railOpen ? "rotate-180" : ""}`} />
             </span>
             <span className="leading-none text-[9px]">{railOpen ? "Less" : "More"}</span>
           </button>
@@ -139,15 +197,20 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           {railOpen && <>
           <MobLink to="/matches" icon={MatchIcon} label="Matches" />
           <MobLink to="/virtual" icon={Dice5} label="Virtual" />
+          <MobLink to="/lottery" icon={Clover} label="Lottery" />
+          <MobLink to="/arcade" icon={Gamepad2} label="Arcade" />
           <MobLink to="/leaderboard" icon={Trophy} label="Top" />
           <MobLink to="/tournament" icon={Swords} label="Bracket" />
           {user && <>
-            <MobLink to="/dashboard" icon={Ticket} label="Bets" />
+            <MobLink to="/dashboard" icon={Ticket} label="ME" />
+            <MobLink to="/tasks" icon={ListChecks} label="Tasks" />
+            <MobLink to="/surveys" icon={ClipboardList} label="Surveys" />
             <MobLink to="/profile" icon={UserIcon} label="Profile" />
             <MobLink to="/settings" icon={SettingsIcon} label="Settings" />
             <MobLink to="/support" icon={LifeBuoy} label="Help" />
           </>}
-          {(isAdmin || isMod) && <MobLink to="/admin" icon={Shield} label={isAdmin ? "Admin" : "Mod"} />}
+          {isAdmin && <MobLink to="/admin" icon={Shield} label="Admin" />}
+          {!isAdmin && isMod && <MobLink to="/mod" icon={Shield} label="Mod" />}
           </>}
         </div>
       </nav>
@@ -162,12 +225,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 function SiteFooter() {
   const [s, setS] = useState<any>(null);
   const [open, setOpen] = useState<"terms" | "about" | null>(null);
-  useEffect(() => { supabase.from("app_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => setS(data)); }, []);
+  useEffect(() => {
+    supabase.from("app_settings")
+      .select("site_name,about_us,why_trust_us,terms_content,contact_email,contact_phone,contact_whatsapp")
+      .eq("id", 1).maybeSingle().then(({ data }) => setS(data));
+  }, []);
   return (
     <footer className="border-t border-border mt-20 backdrop-blur-xl bg-card/40 lg:pl-0 pl-16">
       <div className="container mx-auto px-4 py-10 grid md:grid-cols-3 gap-6 text-sm">
         <div>
-          <div className="flex items-center gap-2 mb-2"><GangLogo size={28} withGlow={false} /><span className="font-bold tracking-widest gradient-gold-text">LOMITA SHOOTERS LEAGUE</span></div>
+          <div className="flex items-center gap-2 mb-2"><GangLogo size={28} withGlow={false} /><span className="font-bold tracking-widest gradient-gold-text uppercase">{s?.site_name || "LOMITA SHOOTERS LEAGUE"}</span></div>
           <p className="text-muted-foreground text-xs">Virtual token-only platform · No real money gambling.</p>
         </div>
         <div>
@@ -209,8 +276,8 @@ function MobLink({ to, icon: Icon, label, badge }: { to: string; icon: any; labe
       title={label}
     >
       <span className="pointer-events-none absolute left-0 inset-y-2 w-[2px] rounded-full bg-gradient-to-b from-transparent via-primary to-transparent opacity-0 group-[.active]:opacity-100 transition-opacity" />
-      <span className="relative grid place-items-center h-11 w-11 rounded-xl transition-all group-[.active]:bg-gradient-to-br group-[.active]:from-primary/25 group-[.active]:to-primary/5 group-[.active]:shadow-[0_0_18px_-4px_rgba(212,175,55,0.55)]">
-        <Icon className="h-[22px] w-[22px] transition-transform group-[.active]:scale-110" />
+      <span className="relative grid place-items-center h-[52px] w-[52px] rounded-xl transition-all group-[.active]:bg-gradient-to-br group-[.active]:from-primary/25 group-[.active]:to-primary/5 group-[.active]:shadow-[0_0_18px_-4px_rgba(212,175,55,0.55)]">
+        <Icon className="h-7 w-7 transition-transform group-[.active]:scale-110" />
         {badge && badge > 0 ? (
           <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-black grid place-items-center ring-2 ring-card animate-pulse">
             {badge > 9 ? "9+" : badge}

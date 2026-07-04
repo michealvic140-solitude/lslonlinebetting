@@ -115,13 +115,8 @@
     background: #07080a;
     color: var(--foreground);
     font-family: var(--font-sans);
-    background-image:
-      linear-gradient(180deg, oklch(0.03 0.01 200 / 0.55) 0%, oklch(0.03 0.01 200 / 0.45) 50%, oklch(0.03 0.01 200 / 0.55) 100%),
-      url("/__l5e/assets-v1/68077c95-ba43-4727-a74a-ce2f78e2a397/lsl-global-bg.png");
-    background-size: cover, cover;
-    background-position: center, center;
-    background-attachment: fixed, fixed;
-    background-repeat: no-repeat, no-repeat;
+    background-image: linear-gradient(180deg, #07080a 0%, #050507 52%, #07080a 100%);
+    background-attachment: fixed;
     min-height: 100vh;
     min-height: 100dvh;
     overflow-x: hidden;
@@ -227,45 +222,49 @@
 @layer utilities {
   .voucher-bg {
     background:
-      radial-gradient(ellipse at top left, oklch(0.44 0.12 75 / 0.55), transparent 60%),
-      radial-gradient(ellipse at bottom right, oklch(0.34 0.11 158 / 0.45), transparent 65%),
-      linear-gradient(165deg, oklch(0.30 0.09 75) 0%, oklch(0.22 0.07 95) 40%, oklch(0.18 0.07 140) 75%, oklch(0.16 0.08 158) 100%);
-    backdrop-filter: blur(18px) saturate(160%);
+      radial-gradient(ellipse at top left, oklch(0.40 0.13 152 / 0.55), transparent 60%),
+      radial-gradient(ellipse at bottom right, oklch(0.42 0.11 78 / 0.45), transparent 64%),
+      radial-gradient(ellipse at center, oklch(0.22 0.08 158 / 0.40), transparent 72%),
+      linear-gradient(160deg,
+        oklch(0.18 0.07 158) 0%,
+        oklch(0.15 0.06 156) 38%,
+        oklch(0.16 0.06 110) 62%,
+        oklch(0.18 0.07 78) 85%,
+        oklch(0.13 0.06 70) 100%);
+    backdrop-filter: blur(22px) saturate(180%);
   }
   .voucher-frame {
+    border-radius: 32px;
     box-shadow:
-      0 0 0 1.5px oklch(0.85 0.16 88 / 0.85),
-      0 0 0 4px oklch(0.14 0.04 60 / 0.95),
-      0 0 0 5px oklch(0.62 0.14 80 / 0.65),
-      0 14px 28px -8px oklch(0 0 0 / 0.75),
-      0 28px 60px -14px oklch(0 0 0 / 0.65),
-      0 0 28px -2px oklch(0.78 0.15 80 / 0.55),
-      0 0 70px -10px oklch(0.62 0.16 158 / 0.45),
-      inset 0 2px 0 oklch(0.95 0.10 92 / 0.22),
-      inset 0 -4px 0 oklch(0 0 0 / 0.7),
-      inset 8px 0 16px -10px oklch(0.95 0.10 92 / 0.18),
-      inset -8px 0 16px -10px oklch(0 0 0 / 0.55);
+      0 0 0 2px oklch(0.85 0.22 152 / 0.80),
+      0 0 0 5px oklch(0.10 0.04 158 / 0.95),
+      0 0 0 8px oklch(0.62 0.15 82 / 0.70),
+      0 0 0 10px oklch(0.45 0.12 80 / 0.55),
+      0 18px 34px -8px oklch(0 0 0 / 0.85),
+      0 34px 70px -14px oklch(0 0 0 / 0.75),
+      0 0 34px -2px oklch(0.85 0.22 152 / 0.55),
+      0 0 90px -8px oklch(0.60 0.16 82 / 0.45),
+      inset 0 3px 0 oklch(0.95 0.16 152 / 0.22),
+      inset 0 -5px 0 oklch(0 0 0 / 0.75),
+      inset 10px 0 18px -10px oklch(0.90 0.18 152 / 0.20),
+      inset -10px 0 18px -10px oklch(0.62 0.15 82 / 0.20);
     transition: transform .4s ease, box-shadow .4s ease;
   }
   .voucher-circuit {
-    background-image:
-      linear-gradient(oklch(0.82 0.17 90 / 0.18) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(0.82 0.17 90 / 0.18) 1px, transparent 1px),
-      radial-gradient(circle, oklch(0.82 0.17 90 / 0.35) 1.6px, transparent 1.7px);
-    background-size: 32px 32px, 32px 32px, 64px 64px;
-    background-position: 0 0, 0 0, 16px 16px;
-    opacity: 0.25;
+    /* Sketch/grid lines removed per design request */
+    background-image: none;
+    opacity: 0;
   }
   .voucher-inner {
-    background: linear-gradient(180deg, oklch(0.26 0.07 70 / 0.55), oklch(0.18 0.06 60 / 0.75));
-    border: 1px solid oklch(0.82 0.17 90 / 0.30);
+    background: linear-gradient(180deg, oklch(0.24 0.07 158 / 0.55), oklch(0.15 0.05 158 / 0.78));
+    border: 1px solid oklch(0.82 0.20 152 / 0.30);
     backdrop-filter: blur(12px);
-    box-shadow: inset 0 1px 0 oklch(0.95 0.10 92 / 0.10), inset 0 0 18px oklch(0.82 0.17 90 / 0.12);
+    box-shadow: inset 0 1px 0 oklch(0.95 0.16 152 / 0.10), inset 0 0 18px oklch(0.82 0.20 152 / 0.12);
   }
   .voucher-pill-gold {
-    background: oklch(0.18 0.06 158 / 0.95);
-    border: 2px solid oklch(0.82 0.17 90 / 0.85);
-    box-shadow: inset 0 1px 0 oklch(0.95 0.05 90 / 0.20), 0 0 16px -2px oklch(0.82 0.17 90 / 0.45);
+    background: oklch(0.16 0.06 158 / 0.95);
+    border: 2px solid oklch(0.85 0.22 152 / 0.80);
+    box-shadow: inset 0 1px 0 oklch(0.95 0.10 152 / 0.20), 0 0 16px -2px oklch(0.85 0.22 152 / 0.45);
   }
   .voucher-holo {
     background:
@@ -302,6 +301,18 @@
     color: transparent;
     filter: drop-shadow(0 1px 0 oklch(0 0 0 / 0.4));
   }
+  .green-foil {
+    background: linear-gradient(135deg,
+      oklch(0.95 0.14 152) 0%,
+      oklch(0.85 0.22 152) 28%,
+      oklch(0.68 0.20 152) 52%,
+      oklch(0.92 0.18 152) 76%,
+      oklch(0.70 0.20 152) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 10px oklch(0.85 0.22 152 / 0.45)) drop-shadow(0 1px 0 oklch(0 0 0 / 0.4));
+  }
   .neon-green {
     color: oklch(0.85 0.22 152);
     text-shadow:
@@ -314,16 +325,16 @@
       0 0 14px -2px oklch(0.85 0.22 152 / 0.6);
   }
   .voucher-row {
-    background: linear-gradient(180deg, oklch(0.26 0.07 70 / 0.45), oklch(0.18 0.06 60 / 0.70));
-    border: 1px solid oklch(0.78 0.15 88 / 0.35);
-    border-radius: 14px;
-    backdrop-filter: blur(10px) saturate(140%);
+    background: linear-gradient(135deg, oklch(0.22 0.07 158 / 0.58), oklch(0.17 0.06 110 / 0.62), oklch(0.18 0.06 80 / 0.55));
+    border: 1px solid oklch(0.72 0.16 110 / 0.34);
+    border-radius: 18px;
+    backdrop-filter: blur(10px) saturate(150%);
     box-shadow:
-      inset 0 1px 0 oklch(0.95 0.10 92 / 0.12),
-      0 0 16px -4px oklch(0.78 0.15 80 / 0.35);
+      inset 0 1px 0 oklch(0.95 0.16 152 / 0.12),
+      0 0 16px -4px oklch(0.72 0.18 110 / 0.35);
   }
   .voucher-dashed {
-    background-image: linear-gradient(90deg, oklch(0.82 0.17 90 / 0.7) 50%, transparent 50%);
+    background-image: linear-gradient(90deg, oklch(0.85 0.22 152 / 0.7) 50%, transparent 50%);
     background-size: 14px 2px;
     background-repeat: repeat-x;
     background-position: 0 50%;
@@ -439,6 +450,7 @@
       radial-gradient(35% 28% at 70% 15%, oklch(0.72 0.20 120 / 0.30), transparent 70%);
     filter: blur(40px) saturate(150%);
     animation: admin-aurora 16s ease-in-out infinite alternate;
+    will-change: transform;
     z-index: 0;
   }
   .admin-shell-logo {
@@ -453,6 +465,7 @@
     mix-blend-mode: screen;
     z-index: 0;
     animation: admin-logo-float 12s ease-in-out infinite;
+    will-change: transform;
   }
   .admin-hero-frame {
     border: 1px solid oklch(0.78 0.16 88 / 0.45);
@@ -472,7 +485,7 @@
     background:
       linear-gradient(135deg, oklch(0.08 0.04 165 / 0.54), oklch(0.05 0.03 185 / 0.38)) !important;
     border-color: oklch(0.78 0.16 88 / 0.38) !important;
-    backdrop-filter: blur(22px) saturate(165%);
+    backdrop-filter: none !important;
     box-shadow:
       inset 0 1px 0 oklch(0.95 0.10 92 / 0.10),
       0 18px 52px -30px oklch(0 0 0 / 0.88),
@@ -486,7 +499,7 @@
       radial-gradient(120% 90% at 18% 0%, oklch(0.54 0.15 158 / 0.16), transparent 64%),
       linear-gradient(145deg, oklch(0.08 0.04 165 / 0.58), oklch(0.04 0.03 190 / 0.34)) !important;
     border: 1px solid oklch(0.78 0.16 88 / 0.42) !important;
-    backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: none !important;
   }
 
   .admin-console-page input,
@@ -494,7 +507,50 @@
   .admin-console-page [role="combobox"] {
     background: oklch(0.04 0.03 170 / 0.34) !important;
     border-color: oklch(0.78 0.16 88 / 0.22) !important;
-    backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: none !important;
+  }
+
+  /* Curved edges & borderlines across the entire admin console */
+  .admin-console-page .rounded-xl,
+  .admin-console-page .rounded-2xl,
+  .admin-console-page [class*="bg-card"],
+  .admin-console-page .glass,
+  .admin-console-page .glass-strong,
+  .admin-console-page .glass-ice,
+  .admin-console-page .admin-hero-frame,
+  .admin-console-page table,
+  .admin-console-page [role="tablist"],
+  .admin-console-page .border {
+    border-radius: 18px !important;
+  }
+  .admin-console-page input,
+  .admin-console-page textarea,
+  .admin-console-page select,
+  .admin-console-page [role="combobox"],
+  .admin-console-page button {
+    border-radius: 14px !important;
+  }
+  .admin-console-page button.rounded-full,
+  .admin-console-page .rounded-full {
+    border-radius: 9999px !important;
+  }
+
+  /* Unblurred mode — strip the frosted-glass blur so admins can verify
+     sensitive-data alignment & layout against a clean, solid surface. */
+  .admin-console-page.admin-unblurred .admin-hero-frame,
+  .admin-console-page.admin-unblurred .rounded-xl,
+  .admin-console-page.admin-unblurred .rounded-2xl,
+  .admin-console-page.admin-unblurred [class*="bg-card"],
+  .admin-console-page.admin-unblurred [class*="bg-background"],
+  .admin-console-page.admin-unblurred .glass,
+  .admin-console-page.admin-unblurred .glass-strong,
+  .admin-console-page.admin-unblurred .glass-ice,
+  .admin-console-page.admin-unblurred input,
+  .admin-console-page.admin-unblurred textarea,
+  .admin-console-page.admin-unblurred [role="combobox"] {
+    backdrop-filter: none !important;
+    background:
+      linear-gradient(135deg, oklch(0.10 0.03 165 / 0.96), oklch(0.07 0.02 190 / 0.96)) !important;
   }
 }
 
@@ -667,4 +723,93 @@
   background: linear-gradient(110deg, transparent 20%, oklch(0.92 0.14 92 / 0.12) 48%, transparent 76%);
   transform: translateX(-120%);
   animation: shimmer 7s ease-in-out infinite;
+}
+
+/* ===== Global users count — 3D golden showcase ===== */
+.count-3d {
+  border: 1px solid oklch(0.82 0.17 90 / 0.5);
+  border-radius: 28px;
+  background:
+    radial-gradient(120% 90% at 20% 0%, oklch(0.60 0.13 80 / 0.20), transparent 55%),
+    linear-gradient(160deg, oklch(0.16 0.02 80 / 0.92), oklch(0.08 0.01 70 / 0.96));
+  box-shadow:
+    inset 0 1px 0 oklch(0.95 0.10 92 / 0.25),
+    inset 0 -2px 0 oklch(0 0 0 / 0.55),
+    0 26px 60px -28px oklch(0 0 0 / 0.85),
+    0 0 50px -14px oklch(0.82 0.17 90 / 0.5);
+}
+.count-foil {
+  background: linear-gradient(135deg,
+    oklch(0.97 0.10 95) 0%,
+    oklch(0.80 0.18 88) 28%,
+    oklch(0.62 0.14 80) 52%,
+    oklch(0.95 0.14 95) 74%,
+    oklch(0.66 0.15 82) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 1px oklch(0 0 0 / 0.55)) drop-shadow(0 0 18px oklch(0.82 0.17 90 / 0.45));
+}
+
+/* ===== Seasonal tournament — golden banner ===== */
+.seasonal-golden {
+  border: 1px solid oklch(0.82 0.17 90 / 0.55);
+  background:
+    radial-gradient(120% 140% at 85% 0%, oklch(0.70 0.15 75 / 0.55), transparent 60%),
+    radial-gradient(120% 140% at 0% 100%, oklch(0.55 0.12 70 / 0.45), transparent 60%),
+    linear-gradient(135deg, oklch(0.45 0.11 72), oklch(0.22 0.05 68));
+  box-shadow:
+    inset 0 1px 0 oklch(0.95 0.12 92 / 0.30),
+    0 22px 50px -26px oklch(0 0 0 / 0.8),
+    0 0 40px -16px oklch(0.82 0.17 90 / 0.55);
+}
+.seasonal-golden-shine {
+  background: linear-gradient(110deg, transparent 25%, oklch(0.95 0.14 92 / 0.18) 50%, transparent 72%);
+  transform: translateX(-120%);
+  animation: shimmer 6s ease-in-out infinite;
+}
+.seasonal-golden-title {
+  background: linear-gradient(135deg, oklch(0.99 0.06 95), oklch(0.82 0.18 88) 55%, oklch(0.66 0.15 82));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 1px oklch(0 0 0 / 0.6));
+}
+.seasonal-golden-btn {
+  color: oklch(0.20 0.03 70);
+  background: linear-gradient(135deg, oklch(0.95 0.12 95), oklch(0.78 0.18 88));
+  border: 1px solid oklch(0.95 0.10 92 / 0.6);
+  box-shadow: 0 8px 22px -10px oklch(0.82 0.17 90 / 0.8);
+}
+.seasonal-golden-btn:hover {
+  background: linear-gradient(135deg, oklch(0.98 0.12 95), oklch(0.82 0.18 88));
+}
+
+/* ===== Pop-up ad — 3D golden ice border ===== */
+.popup-ice-frame {
+  padding: 10px;
+  border-radius: 26px;
+  background:
+    linear-gradient(135deg,
+      oklch(0.97 0.05 200 / 0.85) 0%,
+      oklch(0.88 0.16 92) 22%,
+      oklch(0.62 0.14 80) 48%,
+      oklch(0.95 0.06 210 / 0.85) 60%,
+      oklch(0.80 0.17 88) 82%,
+      oklch(0.60 0.13 78) 100%);
+  box-shadow:
+    inset 0 0 0 1px oklch(0.99 0.02 200 / 0.6),
+    inset 0 2px 6px oklch(0.99 0.04 200 / 0.5),
+    inset 0 -3px 8px oklch(0 0 0 / 0.45),
+    0 20px 50px -22px oklch(0 0 0 / 0.85),
+    0 0 50px -12px oklch(0.82 0.17 90 / 0.6);
+}
+.popup-ice-frame::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 22px;
+  pointer-events: none;
+  background: linear-gradient(120deg, oklch(0.99 0.03 200 / 0.45) 0%, transparent 30%, transparent 70%, oklch(0.99 0.03 200 / 0.3) 100%);
+  z-index: 15;
 }
