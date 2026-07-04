@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Ticket, X, Trash2, Coins, CheckCircle2, Copy, Share2, ExternalLink, Gem, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { DraggableFab } from "@/components/DraggableFab";
+import { showBetSuccess } from "@/components/BetSuccessPopout";
 
 export function BetSlipFab() {
   const { selections, open, setOpen } = useBetSlip();
@@ -109,6 +110,21 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
       toast.error(`Maximum ${maxSel} selections per ticket (you have ${selections.length}).`);
       return;
     }
+    // Re-bet guardrail: when admins turn OFF re-betting, members may not stack
+    // another active ticket on a match they already have an open bet on.
+    if (!allowRebet && !isVirtualTicket) {
+      const matchIds = Array.from(new Set(selections.map((s) => s.match_id)));
+      const { data: prior } = await supabase
+        .from("bet_selections")
+        .select("match_id, bets!inner(user_id,status)")
+        .in("match_id", matchIds)
+        .eq("bets.user_id", user.id);
+      const active = (prior ?? []).filter((p: any) => p.bets?.status === "open");
+      if (active.length) {
+        toast.error("Re-betting is turned off. You already have an active ticket on one of these matches.");
+        return;
+      }
+    }
     // Future tournaments: allow many tickets, but block betting the same contender twice when enabled by admin.
     if (isFutureTicket) {
       const matchIds = Array.from(new Set(selections.map((s) => s.match_id)));
@@ -155,6 +171,14 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
         const snapshot = { ...(freshBet ?? placedVirtual), id: betId, _selections: selections, _payout: placedVirtual?.payout ?? payout, _is_virtual: true };
         clear(); refresh();
         setPlaced(snapshot);
+        showBetSuccess({
+          betId,
+          trackingId: placedVirtual?.tracking_id ?? snapshot?.tracking_id,
+          bookingCode: snapshot?.booking_code,
+          stake,
+          potentialWin: Number(placedVirtual?.payout ?? payout),
+          kind: "Virtual matches",
+        });
         return;
       }
       const { data: bet, error: be } = await supabase.from("bets").insert({
@@ -178,6 +202,14 @@ function BetSlipDrawer({ open, onClose }: { open: boolean; onClose: () => void }
       const snapshot = { ...bet, _selections: selections, _payout: payout, _is_virtual: false };
       clear(); refresh();
       setPlaced(snapshot);
+      showBetSuccess({
+        betId: bet.id,
+        trackingId: bet.tracking_id,
+        bookingCode: bet.booking_code,
+        stake,
+        potentialWin: Number(payout),
+        kind: isFutureTicket ? "Tournament futures" : "Real matches",
+      });
     } catch (e: any) {
       toast.error(e.message || "Failed to place bet");
     } finally { setSubmitting(false); }

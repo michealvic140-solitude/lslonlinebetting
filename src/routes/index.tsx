@@ -8,14 +8,16 @@ import { Input } from "@/components/ui/input";
 import { MatchCardLive } from "@/components/MatchCardLive";
 import { EventBanner } from "@/components/EventBanner";
 import { AnnouncementSlider, HighlightsRow, AdsRow } from "@/components/HomeContent";
+import { HomeBannerSlider } from "@/components/HomeBannerSlider";
 import { GrandPrizeWinners } from "@/components/GrandPrizeWinners";
 import { HotBets } from "@/components/HotBets";
 import { SeasonBanner } from "@/components/SeasonBanner";
 import { Spotlight } from "@/components/Spotlight";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import { Crosshair, Flame, Trophy, ChevronRight, Skull, Coins, Ticket as TicketIcon, ClipboardPaste, X } from "lucide-react";
+import { Crosshair, Flame, Trophy, ChevronRight, Coins, Ticket as TicketIcon, ClipboardPaste, X } from "lucide-react";
 import { Countdown } from "@/components/Countdown";
+import { TeamLogo } from "@/components/TeamLogo";
 import hero from "@/assets/hero.jpg";
 import { fetchMatches, fetchSettings, type MatchRow } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,13 +53,25 @@ function Index() {
 
   useEffect(() => {
     Promise.all([fetchMatches(), fetchSettings()]).then(([m, s]) => { setMatches(m); setSettings(s); }).finally(() => setLoading(false));
+    // Debounce refetches so a burst of realtime row changes (odds/markets
+    // updating together) only triggers one network round-trip, not dozens.
+    let matchTimer: ReturnType<typeof setTimeout> | undefined;
+    const refetchMatches = () => {
+      clearTimeout(matchTimer);
+      matchTimer = setTimeout(() => { fetchMatches().then(setMatches); }, 600);
+    };
+    let settingsTimer: ReturnType<typeof setTimeout> | undefined;
+    const refetchSettings = () => {
+      clearTimeout(settingsTimer);
+      settingsTimer = setTimeout(() => { fetchSettings().then(setSettings); }, 600);
+    };
     const ch = supabase.channel("home-feed")
-      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, () => fetchMatches().then(setMatches))
-      .on("postgres_changes", { event: "*", schema: "public", table: "odds" }, () => fetchMatches().then(setMatches))
-      .on("postgres_changes", { event: "*", schema: "public", table: "markets" }, () => fetchMatches().then(setMatches))
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "app_settings" }, () => fetchSettings().then(setSettings))
+      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, refetchMatches)
+      .on("postgres_changes", { event: "*", schema: "public", table: "odds" }, refetchMatches)
+      .on("postgres_changes", { event: "*", schema: "public", table: "markets" }, refetchMatches)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "app_settings" }, refetchSettings)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { clearTimeout(matchTimer); clearTimeout(settingsTimer); supabase.removeChannel(ch); };
   }, []);
 
   const futures = matches.filter((m) => m.match_kind === "future" && m.status === "scheduled");
@@ -80,28 +94,43 @@ function Index() {
 
   return (
     <Layout>
+      <HomeBannerSlider />
       <section className="relative overflow-hidden">
-        <img
-          src={hero}
-          alt=""
-          width={1920}
-          height={1080}
-          fetchPriority="high"
-          decoding="async"
-          className="absolute inset-0 h-full w-full object-cover opacity-40"
-        />
+        {settings?.hero_bg_url && (
+          <img
+            src={settings.hero_bg_url}
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+            className="absolute inset-0 h-full w-full opacity-40"
+            style={{ objectFit: (settings.hero_bg_fit as any) || "cover", objectPosition: settings.hero_bg_position || "center" }}
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background" />
         <div className="container relative py-20 md:py-32">
+          {settings?.site_logo_url && (
+            <img
+              src={settings.site_logo_url}
+              alt={settings?.site_name || "Platform logo"}
+              className="mb-6 h-20 md:h-28 w-auto object-contain drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
+            />
+          )}
           <Badge variant="outline" className="border-primary/50 text-primary mb-4">
             <Flame className="h-3 w-3 mr-1" /> {tagline}
           </Badge>
-          <h1 className="text-4xl md:text-7xl font-bold leading-tight max-w-3xl">
-            Where gangs clash and{" "}
-            <span className="gradient-gold-text">legends</span> are{" "}
-            <span className="gradient-emerald-text">gold-plated</span>.
-          </h1>
+          {settings?.hero_title ? (
+            <h1 className="text-4xl md:text-7xl font-bold leading-tight max-w-3xl uppercase gradient-gold-text">
+              {settings.hero_title}
+            </h1>
+          ) : (
+            <h1 className="text-4xl md:text-7xl font-bold leading-tight max-w-3xl uppercase">
+              Where gangs clash and{" "}
+              <span className="gradient-gold-text">legends</span> are{" "}
+              <span className="gradient-emerald-text">gold-plated</span>.
+            </h1>
+          )}
           <p className="mt-5 max-w-xl text-lg text-muted-foreground">
-            The Lomita Shooters League is a virtual-token competitive shooting circuit. Pick your gang, place your wagers, and climb the leaderboard.
+            {settings?.hero_subtitle || "The Lomita Shooters League is a virtual-token competitive shooting circuit. Pick your gang, place your wagers, and climb the leaderboard."}
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link to="/matches"><Button size="lg" className="btn-luxury">View Matches <ChevronRight className="h-4 w-4 ml-1" /></Button></Link>
@@ -119,7 +148,9 @@ function Index() {
       <HighlightsRow />
       <AnnouncementSlider />
       <AdsRow />
-      <FuturesSection title={settings?.futures_section_title || "TOURNAMENT FUTURES"} markets={futures} maxSelections={Number(settings?.futures_max_selections ?? 1)} />
+      {futures.length > 0 && (
+        <FuturesSection title={settings?.futures_section_title || "TOURNAMENT FUTURES"} markets={futures} maxSelections={Number(settings?.futures_max_selections ?? 1)} featured={featuredAll} />
+      )}
 
       <BookingCodeFab />
 
@@ -135,17 +166,7 @@ function Index() {
         </div>
       </section>
 
-      <section className="container mt-10 grid lg:grid-cols-[300px_1fr] gap-6">
-        <aside className="lg:sticky lg:top-20 self-start space-y-4 lg:order-first">
-          <Card className="glass p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Skull className="h-4 w-4 text-primary" />
-              <div className="font-bold tracking-widest text-sm">LEAGUE STATS</div>
-            </div>
-            <Stat label="Active matches" value={matches.filter((m) => m.status !== "ended").length.toString()} />
-            <Stat label="Live now" value={live.length.toString()} />
-          </Card>
-        </aside>
+      <section className="container mt-10">
         <div className="space-y-10">
           {loading && <p className="text-muted-foreground">Loading league…</p>}
           {!loading && featuredFallback.length > 0 && (
@@ -171,16 +192,12 @@ function Index() {
               </div>
             </div>
           )}
-          {!loading && (
+          {!loading && upcoming.length > 0 && (
             <div>
               <SectionHeader icon={Crosshair} title="Upcoming Matches" subtitle="Lock your picks before the round starts." />
-              {upcoming.length === 0 ? (
-                <p className="text-muted-foreground mt-4 text-sm">No upcoming matches scheduled.</p>
-              ) : (
-                <div className="grid md:grid-cols-2 gap-4 mt-4">
-                  {upcoming.slice(0, 6).map((m) => <MatchCardLive key={m.id} match={m} />)}
-                </div>
-              )}
+              <div className="grid md:grid-cols-2 gap-4 mt-4">
+                {upcoming.slice(0, 6).map((m) => <MatchCardLive key={m.id} match={m} />)}
+              </div>
             </div>
           )}
           {categoryGroups.map(([id, g]) => (
@@ -198,22 +215,36 @@ function Index() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between py-1.5 border-b border-border last:border-0 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-bold text-primary">{value}</span>
-    </div>
-  );
-}
-
-function FuturesSection({ title, markets, maxSelections }: { title: string; markets: MatchRow[]; maxSelections: number }) {
+function FuturesSection({ title, markets, maxSelections, featured = [] }: { title: string; markets: MatchRow[]; maxSelections: number; featured?: MatchRow[] }) {
   const { selections, add, remove, setOpen } = useBetSlip();
   return (
     <section className="container mt-10">
-      <div className="flex items-end justify-between gap-3 mb-4">
-        <SectionHeader icon={Trophy} title={title} subtitle={`Season-long markets · pick up to ${maxSelections} contender${maxSelections === 1 ? "" : "s"}.`} />
-        <Badge variant="outline" className="border-accent/40 text-accent">Seasonal</Badge>
+      <div className="seasonal-golden relative overflow-hidden rounded-3xl mb-5 px-5 py-6 md:px-8 md:py-8">
+        <div className="pointer-events-none absolute -right-10 -top-10 opacity-25">
+          <Trophy className="h-44 w-44 text-amber-200" />
+        </div>
+        <div className="pointer-events-none absolute inset-0 seasonal-golden-shine" />
+        <div className="relative flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-black/30 backdrop-blur px-3 py-1 text-[10px] uppercase tracking-[0.32em] font-black text-amber-100">
+              <Trophy className="h-3.5 w-3.5" /> Seasonal Tournament
+            </div>
+            <h2 className="mt-2 font-display text-3xl md:text-5xl font-black uppercase tracking-tight seasonal-golden-title">
+              {title}
+            </h2>
+            <p className="mt-1 text-sm md:text-base font-semibold text-amber-50/90">
+              Season-long markets · pick up to {maxSelections} contender{maxSelections === 1 ? "" : "s"}.
+            </p>
+          </div>
+          <Link to="/tournament">
+            <Button className="seasonal-golden-btn font-black tracking-wide">
+              Go to Tournament <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </Link>
+        </div>
+        {featured.length > 0 && (
+          <FeaturedGoldenMatches matches={featured} />
+        )}
       </div>
       {markets.length === 0 && (
         <Card className="glass-strong p-5 border-accent/30">
@@ -284,6 +315,75 @@ function FutureEmblem({ label, url }: { label: string; url?: string | null }) {
     <span className="h-10 w-10 shrink-0 rounded-full border border-primary/35 bg-primary/10 grid place-items-center overflow-hidden text-[11px] font-black text-primary">
       {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : initials}
     </span>
+  );
+}
+
+// Featured matches rendered as SportyBet-style golden rows inside the
+// Seasonal Tournament banner, under the "Go to Tournament" header.
+function FeaturedGoldenMatches({ matches }: { matches: MatchRow[] }) {
+  const { selections, add, remove, setOpen } = useBetSlip();
+  if (matches.length === 0) return null;
+  return (
+    <div className="relative mt-5 space-y-2.5">
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] font-black text-amber-100">
+        <Flame className="h-3.5 w-3.5" /> Featured Matches
+      </div>
+      {matches.map((m) => {
+        const market = m.markets?.find((mk) => mk.is_open) ?? m.markets?.[0];
+        const odds = market?.odds ?? [];
+        const live = m.status === "live";
+        return (
+          <div key={m.id} className="rounded-2xl border border-amber-300/30 bg-black/35 backdrop-blur-sm overflow-hidden shadow-[0_8px_30px_-12px_rgba(0,0,0,0.7)]">
+            <div className="flex items-center justify-between gap-2 px-3 pt-2.5 text-[10px] uppercase tracking-widest">
+              <span className="inline-flex items-center gap-1.5 font-black text-amber-200">
+                {live ? (
+                  <><span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" /><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" /></span> Live</>
+                ) : "Upcoming"}
+              </span>
+              <span className="font-mono text-amber-50/70">
+                {live ? "Round in play" : <>Starts in <Countdown target={m.start_time} /></>}
+              </span>
+            </div>
+            <Link to="/matches/$matchId" params={{ matchId: m.id }} className="flex items-center gap-3 px-3 py-2 hover:bg-amber-400/5 transition">
+              <TeamLogo name={m.home_team?.name} url={m.home_team?.logo_url} size={30} rounded="full" />
+              <div className="min-w-0 flex-1">
+                <div className="font-extrabold text-sm text-amber-50 leading-tight truncate uppercase">
+                  {m.home_team?.name ?? m.name}
+                  {m.away_team && <span className="text-amber-100/50 font-normal lowercase"> vs </span>}
+                  {m.away_team?.name}
+                </div>
+                <div className="text-[10px] text-amber-100/60 truncate">{market?.name ?? "Match winner"}</div>
+              </div>
+              {m.away_team && <TeamLogo name={m.away_team?.name} url={m.away_team?.logo_url} size={30} rounded="full" />}
+            </Link>
+            {odds.length > 0 && (
+              <div className="grid gap-px px-3 pb-3" style={{ gridTemplateColumns: `repeat(${Math.min(odds.length, 3)}, minmax(0,1fr))` }}>
+                {odds.slice(0, 3).map((o) => {
+                  const selected = selections.some((s) => s.odd_id === o.id);
+                  const blocked = !market?.is_open || m.status === "ended";
+                  return (
+                    <button
+                      key={o.id}
+                      disabled={blocked && !selected}
+                      onClick={() => {
+                        if (selected) { remove(o.id); return; }
+                        if (blocked) return;
+                        add({ match_id: m.id, match_name: m.name, market_id: market!.id, market_name: market!.name, odd_id: o.id, selection_label: o.label, odds: Number(o.value) });
+                        setOpen(true);
+                      }}
+                      className={`flex flex-col items-center justify-center gap-0.5 rounded-lg bg-black/40 py-2 px-1 transition hover:bg-amber-400/15 disabled:opacity-40 disabled:hover:bg-black/40 ${selected ? "ring-2 ring-amber-300 bg-amber-400/20" : "border border-amber-300/15"}`}
+                    >
+                      <span className="text-[9px] uppercase tracking-wider text-amber-100/70 truncate max-w-full">{o.label}</span>
+                      <span className="font-mono font-black text-amber-200">{Number(o.value).toFixed(2)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

@@ -135,7 +135,7 @@ export function BetVoucher({ bet, sels, statusBadge, copy, shareCode }: {
       {/* Outer ambient glow */}
       <div className="absolute -inset-6 rounded-[40px] bg-[radial-gradient(circle_at_30%_20%,oklch(0.85_0.22_152/0.30),transparent_60%),radial-gradient(circle_at_80%_80%,oklch(0.82_0.17_90/0.22),transparent_60%)] blur-3xl pointer-events-none" />
 
-      <div className="relative rounded-[28px] voucher-frame voucher-bg overflow-hidden transition-transform duration-500 hover:[transform:perspective(1600px)_rotateX(0.6deg)_rotateY(-0.6deg)_translateY(-2px)]">
+      <div className="relative rounded-[32px] voucher-frame voucher-bg overflow-hidden transition-transform duration-500 hover:[transform:perspective(1600px)_rotateX(0.6deg)_rotateY(-0.6deg)_translateY(-2px)]">
         {/* LSL logo watermark behind everything */}
         <div
           className="pointer-events-none absolute inset-0 grid place-items-center opacity-[0.08]"
@@ -167,11 +167,11 @@ export function BetVoucher({ bet, sels, statusBadge, copy, shareCode }: {
               <span className="text-[10px] sm:text-[11px] tracking-[0.32em] text-muted-foreground font-bold">LOMITA SHOOTERS LEAGUE</span>
             </div>
               <h2 className="font-display text-3xl sm:text-5xl font-black tracking-[0.08em] leading-none">
-              <Sparkles className="inline h-4 w-4 text-primary mr-2 -mt-2" />
-                <span className="gold-foil">BET</span> <span className="gold-foil">VOUCHER</span>
-              <Sparkles className="inline h-4 w-4 text-primary ml-2 -mt-2" />
+              <Sparkles className="inline h-4 w-4 text-emerald-300 mr-2 -mt-2" />
+                <span className="gold-foil">BET</span> <span className="green-foil">VOUCHER</span>
+              <Sparkles className="inline h-4 w-4 text-emerald-300 ml-2 -mt-2" />
             </h2>
-            <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary uppercase tracking-[0.22em] text-[10px]">
+            <Badge variant="outline" className="border-emerald-400/40 bg-emerald-500/10 text-emerald-300 uppercase tracking-[0.22em] text-[10px]">
               {isVirtualTicket ? "Virtual Matches Voucher" : isFutureTicket ? "Tournament Futures Voucher" : "Real Matches Voucher"}
             </Badge>
           </div>
