@@ -614,7 +614,7 @@ type Fighter = {
 type Tracer = { x1: number; y1: number; x2: number; y2: number; side: "h" | "a"; born: number };
 type Blast = { x: number; y: number; born: number; size: number };
 
-function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: number }) {
+function LiveMatchTicker({ match, animSec, embedded = false }: { match: VirtualMatch; animSec: number; embedded?: boolean }) {
   const lockMs = match.locked_at
     ? new Date(match.locked_at).getTime()
     : match.lock_time
@@ -750,7 +750,7 @@ function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: num
   const showA = settled ? match.away_score : liveA;
 
   return (
-    <div className="mt-3 rounded-xl border border-primary/40 bg-background/50 overflow-hidden shadow-gold">
+    <div className={`${embedded ? "mt-0 rounded-none border-x-0 border-b-0" : "mt-3 rounded-xl"} border border-primary/40 bg-background/50 overflow-hidden shadow-gold`}>
       {/* Top-down combat zone (gang shooting battlefield) */}
       <div className="relative w-full aspect-[16/9] overflow-hidden bg-[#0b0f0a]">
         {/* Urban ground texture */}
@@ -1059,6 +1059,54 @@ function PhaseChip({ phase }: { phase: Phase }) {
   );
 }
 
+const LINEUP_TAGS = ["Ace", "Shot Caller", "Lookout", "Runner", "Enforcer", "Driver", "Rookie", "Backup"];
+
+function makeLineups(match: VirtualMatch | undefined) {
+  const homeBase = match?.home_team?.name ?? "Gang A";
+  const awayBase = match?.away_team?.name ?? "Gang B";
+  return {
+    home: LINEUP_TAGS.slice(0, 6).map((tag, i) => `${homeBase} ${tag} ${i + 1}`),
+    away: LINEUP_TAGS.slice(0, 6).map((tag, i) => `${awayBase} ${tag} ${i + 1}`),
+  };
+}
+
+function LineupList({ names, tone }: { names: string[]; tone: "home" | "away" }) {
+  return (
+    <div className="space-y-1.5">
+      {names.map((name, idx) => (
+        <div key={name} className="grid grid-cols-[18px_1fr_22px] items-center gap-2 border-b border-white/10 pb-1 text-[10px]">
+          <span className={`font-mono ${tone === "home" ? "text-red-400" : "text-sky-400"}`}>{idx + 1}</span>
+          <span className="truncate font-bold text-white/85">{name}</span>
+          <span className="text-right font-mono text-primary">{Math.max(4, 9 - idx)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PreviousScores({ matches, now }: { matches: VirtualMatch[]; now: number }) {
+  void now;
+  const rows = matches.slice(0, 6);
+  if (rows.length === 0) {
+    return <div className="py-4 text-center text-[11px] text-muted-foreground">No previous shootouts yet.</div>;
+  }
+  return (
+    <div className="space-y-1.5">
+      {rows.map((m) => (
+        <div key={m.id} className="grid grid-cols-[1fr_auto] gap-2 border-b border-white/10 pb-1 text-[10px]">
+          <div className="min-w-0">
+            <div className="truncate font-bold text-white/85">{m.home_team?.name ?? "Gang A"}</div>
+            <div className="truncate text-muted-foreground">{m.away_team?.name ?? "Gang B"}</div>
+          </div>
+          <div className="font-mono font-black text-primary tabular-nums">
+            {m.status === "ended" ? `${m.home_score}-${m.away_score}` : "--"}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function VideoStage({
   featured,
   matches,
@@ -1192,28 +1240,33 @@ function FixturesGrid({ matches, phase }: { matches: VirtualMatch[]; phase: Phas
               <span className="text-center">FT</span>
               <span className="text-center">HT</span>
             </div>
-            {col.map((m) => {
-              const score = phase === "match" ? useLiveScore(m, 35) : { h: m.home_score, a: m.away_score };
-              const halfH = phase === "pre" ? "-" : Math.floor((phase === "match" ? score.h : m.home_score) * 0.45);
-              const halfA = phase === "pre" ? "-" : Math.floor((phase === "match" ? score.a : m.away_score) * 0.45);
-              return (
-              <div key={m.id} className="grid grid-cols-[1fr_28px_28px] px-2 py-1 border-b border-border/20">
-                <div className="min-w-0">
-                  <div className="truncate">{m.home_team?.name ?? "Home"}</div>
-                  <div className="truncate">{m.away_team?.name ?? "Away"}</div>
-                </div>
-                <div className="text-center font-mono tabular-nums">
-                  <div>{phase === "pre" ? "-" : phase === "match" ? score.h : m.home_score}</div>
-                  <div>{phase === "pre" ? "-" : phase === "match" ? score.a : m.away_score}</div>
-                </div>
-                <div className="text-center font-mono tabular-nums text-muted-foreground">
-                  <div>{halfH}</div>
-                  <div>{halfA}</div>
-                </div>
-              </div>
-            );})}
+            {col.map((m) => <FixtureScoreRow key={m.id} match={m} phase={phase} />)}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function FixtureScoreRow({ match, phase }: { match: VirtualMatch; phase: Phase }) {
+  const score = useLiveScore(match, 35);
+  const ftH = phase === "pre" ? "-" : phase === "match" ? score.h : match.home_score;
+  const ftA = phase === "pre" ? "-" : phase === "match" ? score.a : match.away_score;
+  const halfH = phase === "pre" ? "-" : Math.floor(Number(ftH) * 0.45);
+  const halfA = phase === "pre" ? "-" : Math.floor(Number(ftA) * 0.45);
+  return (
+    <div className="grid grid-cols-[1fr_28px_28px] px-2 py-1 border-b border-border/20">
+      <div className="min-w-0">
+        <div className="truncate">{match.home_team?.name ?? "Gang A"}</div>
+        <div className="truncate">{match.away_team?.name ?? "Gang B"}</div>
+      </div>
+      <div className="text-center font-mono tabular-nums">
+        <div>{ftH}</div>
+        <div>{ftA}</div>
+      </div>
+      <div className="text-center font-mono tabular-nums text-muted-foreground">
+        <div>{halfH}</div>
+        <div>{halfA}</div>
       </div>
     </div>
   );
@@ -1294,7 +1347,7 @@ function VirtualBetRow({
   marketName: string;
   cycle: CycleState;
 }) {
-  const { add, setOpen, selections } = useBetSlip();
+  const { add, selections } = useBetSlip();
   const home = match.home_team?.name ?? "Home";
   const away = match.away_team?.name ?? "Away";
   const cd = useCountdown(match.lock_time);
@@ -1319,7 +1372,7 @@ function VirtualBetRow({
       is_virtual: true,
       virtual_round_batch_id: match.virtual_round_batch_id ?? match.id,
     });
-    setOpen(true);
+    toast.success("Selection added to bet slip");
   };
 
   void cycle;
