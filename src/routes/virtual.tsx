@@ -17,6 +17,10 @@ import {
   CheckCircle2,
   PauseCircle,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  BarChart3,
+  Play,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { TeamLogo } from "@/components/TeamLogo";
