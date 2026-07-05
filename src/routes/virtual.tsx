@@ -114,8 +114,13 @@ function VirtualPage() {
       const activeRows = [...((liveRows ?? []) as unknown as VirtualMatch[]), ...((upRows ?? []) as unknown as VirtualMatch[])];
       const activeBatch = newestVirtualBatch(activeRows);
       const batchIsLive = activeBatch.some((m) => m.status === "live");
-      setLive(batchIsLive ? activeBatch.map((m) => ({ ...m, status: "live" })) : []);
-      setUpcoming(batchIsLive ? [] : activeBatch.filter((m) => m.status === "scheduled"));
+      const now = serverNow();
+      const liveBatch = activeBatch.map((m) => {
+        const lockMs = m.lock_time ? new Date(m.lock_time).getTime() : 0;
+        return batchIsLive && lockMs > 0 && lockMs <= now ? { ...m, status: "live" as const } : m;
+      });
+      setLive(liveBatch.filter((m) => m.status === "live"));
+      setUpcoming(liveBatch.filter((m) => m.status === "scheduled"));
       setRecent((recRows ?? []) as unknown as VirtualMatch[]);
       if (cfg) {
         const settings = cfg as VirtualSettings;
