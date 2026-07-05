@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { Layout } from "@/components/Layout";
 import { PageShell } from "@/components/PageShell";
 import { Card } from "@/components/ui/card";
@@ -236,8 +236,17 @@ function useCountdown(target: string | null | undefined) {
   return { secs, mm, ss, done: secs <= 0 };
 }
 
+function useNowTick(interval = 500) {
+  const [now, setNow] = useState(serverNow());
+  useEffect(() => {
+    const t = setInterval(() => setNow(serverNow()), interval);
+    return () => clearInterval(t);
+  }, [interval]);
+  return now;
+}
+
 function VirtualRoundCard({ match, animSec }: { match: VirtualMatch; animSec: number }) {
-  const { add, setOpen, selections } = useBetSlip();
+  const { add, selections } = useBetSlip();
   const home = match.home_team?.name ?? "Home";
   const away = match.away_team?.name ?? "Away";
   const lockTime = match.lock_time;
@@ -279,7 +288,7 @@ function VirtualRoundCard({ match, animSec }: { match: VirtualMatch; animSec: nu
       is_virtual: true,
       virtual_round_batch_id: match.virtual_round_batch_id ?? match.id,
     });
-    setOpen(true);
+    toast.success("Selection added to bet slip");
   }
 
   return (
