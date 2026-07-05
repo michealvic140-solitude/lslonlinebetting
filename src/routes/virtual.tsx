@@ -1071,14 +1071,14 @@ function VideoStage({
             <span className="px-1.5 py-0.5 bg-black/60 border border-white/10 rounded text-[10px] font-mono">
               {Math.min(90, Math.round(cd.secs ? 0 : 15))}&#39;
             </span>
-            <TeamLogo name={featured.home_team?.name ?? ""} url={featured.home_team?.logo_url ?? null} size={18} rounded="sm" />
+            <TeamLogo name={featured.home_team?.name ?? ""} url={featured.home_team?.logo_url ?? null} size={18} rounded="md" />
             <span className="font-black truncate">{featured.home_team?.name}</span>
           </div>
           <span className="font-mono font-black tabular-nums text-primary px-2">
             {featured.home_score}:{featured.away_score}
           </span>
           <div className="flex items-center gap-2 min-w-0 flex-row-reverse text-right">
-            <TeamLogo name={featured.away_team?.name ?? ""} url={featured.away_team?.logo_url ?? null} size={18} rounded="sm" />
+            <TeamLogo name={featured.away_team?.name ?? ""} url={featured.away_team?.logo_url ?? null} size={18} rounded="md" />
             <span className="font-black truncate">{featured.away_team?.name}</span>
           </div>
         </div>
@@ -1266,12 +1266,12 @@ function VirtualBetRow({
       <div className="min-w-0 text-[11px] leading-tight">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="text-muted-foreground font-mono w-4 text-right">{rankOf(match, "h")}</span>
-          <TeamLogo name={home} url={match.home_team?.logo_url ?? null} size={16} rounded="sm" />
+          <TeamLogo name={home} url={match.home_team?.logo_url ?? null} size={16} rounded="md" />
           <span className="font-bold truncate">{home}</span>
         </div>
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="text-muted-foreground font-mono w-4 text-right">{rankOf(match, "a")}</span>
-          <TeamLogo name={away} url={match.away_team?.logo_url ?? null} size={16} rounded="sm" />
+          <TeamLogo name={away} url={match.away_team?.logo_url ?? null} size={16} rounded="md" />
           <span className="font-bold truncate">{away}</span>
         </div>
         <Link
