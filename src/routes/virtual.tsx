@@ -916,3 +916,428 @@ function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: num
     </div>
   );
 }
+
+// ============================================================================
+// Bet9ja-style Virtual Stadium layout
+// ============================================================================
+
+type Phase = "pre" | "match" | "post";
+
+function VirtualStadium({
+  live,
+  upcoming,
+  recent,
+  cycle,
+}: {
+  live: MatchRow[];
+  upcoming: MatchRow[];
+  recent: MatchRow[];
+  cycle: CycleState;
+}) {
+  const activeBatch = (live.length ? live : upcoming) as VirtualMatch[];
+  const featured = (live[0] ?? upcoming[0]) as VirtualMatch | undefined;
+  const phase: Phase = live.length > 0 ? "match" : upcoming.length > 0 ? "pre" : "post";
+  const roundNo = featured?.virtual_round_batch_id
+    ? Math.abs(hashStr(featured.virtual_round_batch_id)) % 90000 + 10000
+    : 45000;
+  const matchDay = featured
+    ? (Math.floor(new Date(featured.start_time).getTime() / (cycle.durSec * 1000)) % 20) + 1
+    : 1;
+
+  // Distinct market names across the batch, in preferred order.
+  const marketNames = Array.from(
+    new Set(activeBatch.flatMap((m) => (m.markets ?? []).map((mk) => mk.name))),
+  ).sort((a, b) => marketOrder(a) - marketOrder(b));
+  const [marketIdx, setMarketIdx] = useState(0);
+  useEffect(() => {
+    if (marketIdx >= marketNames.length) setMarketIdx(0);
+  }, [marketNames.length, marketIdx]);
+  const activeMarketName = marketNames[marketIdx] ?? "Match Winner";
+
+  return (
+    <div className="virtual-stadium max-w-5xl mx-auto pb-24">
+      {/* Top control bar */}
+      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-background/80 border-b border-primary/30">
+        <Link to="/" className="p-1.5 -ml-1 text-muted-foreground hover:text-foreground">
+          <ChevronLeft className="h-5 w-5" />
+        </Link>
+        <div className="font-black tracking-wider text-primary text-lg gradient-gold-text">LSL</div>
+        <Link to="/virtual/history" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+          <History className="h-3.5 w-3.5" /> Rounds
+        </Link>
+      </div>
+
+      {/* Round header */}
+      <div className="bg-secondary/60 border-b border-primary/20 px-4 py-3 text-center">
+        <div className="text-sm font-black text-foreground">LSL Virtual Football League</div>
+        <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center justify-center gap-2">
+          <span>{roundNo} / Match Day {matchDay}</span>
+          <PhaseChip phase={phase} />
+        </div>
+      </div>
+
+      {/* Video / animation stage */}
+      <VideoStage featured={featured} phase={phase} animSec={cycle.animSec} cycle={cycle} />
+
+      {/* Fixtures preview grid */}
+      <FixturesGrid matches={activeBatch} phase={phase} />
+
+      {/* Place Your Bets divider + market pager */}
+      <div className="bg-background/80 border-y border-primary/20 mt-1">
+        <div className="text-center py-1.5 text-[11px] font-black tracking-[0.3em] uppercase text-primary bg-secondary/40 border-b border-primary/20">
+          Place Your Bets
+        </div>
+        {marketNames.length > 0 && (
+          <MarketPager
+            names={marketNames}
+            idx={marketIdx}
+            setIdx={setMarketIdx}
+          />
+        )}
+      </div>
+
+      {/* Match Day group with bet rows */}
+      {activeBatch.length > 0 ? (
+        <MatchDayBoard
+          label={`Match Day ${matchDay}`}
+          countdownTarget={featured?.lock_time ?? null}
+          matches={activeBatch}
+          activeMarketName={activeMarketName}
+          cycle={cycle}
+        />
+      ) : (
+        <div className="text-center py-10 text-muted-foreground text-sm">
+          <Dice5 className="h-8 w-8 mx-auto mb-2 opacity-40" />
+          {cycle.running ? "Spinning up next round…" : "Cycle paused — waiting for admin."}
+        </div>
+      )}
+
+      {/* Recent results */}
+      {recent.length > 0 && (
+        <div className="mt-4 border-t border-primary/20">
+          <div className="text-center py-1.5 text-[11px] font-black tracking-[0.3em] uppercase text-amber-400 bg-secondary/40 border-b border-primary/20">
+            Recent Results
+          </div>
+          <div className="divide-y divide-border/40">
+            {recent.slice(0, 8).map((m) => (
+              <div key={m.id} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-2 text-xs">
+                <div className="truncate font-semibold">{m.home_team?.name}</div>
+                <div className="font-mono font-black text-primary tabular-nums text-sm">
+                  {m.home_score} - {m.away_score}
+                </div>
+                <div className="truncate font-semibold text-right">{m.away_team?.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PhaseChip({ phase }: { phase: Phase }) {
+  const label = phase === "match" ? "MATCH" : phase === "pre" ? "PRE MATCH" : "POST MATCH";
+  const tone =
+    phase === "match"
+      ? "bg-destructive/20 text-destructive border-destructive/40"
+      : phase === "pre"
+        ? "bg-primary/20 text-primary border-primary/40"
+        : "bg-amber-500/20 text-amber-400 border-amber-500/40";
+  return (
+    <span className={`px-1.5 py-0.5 rounded-sm border text-[10px] font-black tracking-widest ${tone}`}>
+      {label}
+    </span>
+  );
+}
+
+function VideoStage({
+  featured,
+  phase,
+  animSec,
+  cycle,
+}: {
+  featured: VirtualMatch | undefined;
+  phase: Phase;
+  animSec: number;
+  cycle: CycleState;
+}) {
+  const cd = useCountdown(featured?.lock_time ?? null);
+  // While live, show the shooter battle animation as the stage
+  if (phase === "match" && featured) {
+    return (
+      <div className="bg-black">
+        <div className="flex items-center justify-between px-2.5 py-1 text-[11px] font-bold bg-black/80 border-b border-primary/20">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="px-1.5 py-0.5 bg-black/60 border border-white/10 rounded text-[10px] font-mono">
+              {Math.min(90, Math.round(cd.secs ? 0 : 15))}&#39;
+            </span>
+            <TeamLogo name={featured.home_team?.name ?? ""} url={featured.home_team?.logo_url ?? null} size={18} rounded="sm" />
+            <span className="font-black truncate">{featured.home_team?.name}</span>
+          </div>
+          <span className="font-mono font-black tabular-nums text-primary px-2">
+            {featured.home_score}:{featured.away_score}
+          </span>
+          <div className="flex items-center gap-2 min-w-0 flex-row-reverse text-right">
+            <TeamLogo name={featured.away_team?.name ?? ""} url={featured.away_team?.logo_url ?? null} size={18} rounded="sm" />
+            <span className="font-black truncate">{featured.away_team?.name}</span>
+          </div>
+        </div>
+        <LiveMatchTicker match={featured} animSec={animSec} />
+      </div>
+    );
+  }
+  // Pre-match placeholder — dark video pane with play glyph + countdown
+  return (
+    <div className="relative bg-black aspect-[16/9] overflow-hidden flex items-center justify-center">
+      <div
+        className="absolute inset-0 opacity-40"
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at 30% 40%, rgba(80,140,60,0.35), transparent 55%),
+            radial-gradient(circle at 70% 60%, rgba(40,80,40,0.35), transparent 55%),
+            repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 40px)`,
+        }}
+      />
+      <div className="relative z-10 text-center">
+        <div className="h-20 w-20 mx-auto rounded-full bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-sm">
+          <Play className="h-9 w-9 text-white/80 fill-white/80 translate-x-0.5" />
+        </div>
+        {featured?.lock_time && !cd.done ? (
+          <div className="mt-4">
+            <div className="text-[10px] uppercase tracking-widest text-white/60">Kick-off in</div>
+            <div className="font-mono font-black text-3xl tabular-nums text-white">{cd.mm}:{cd.ss}</div>
+          </div>
+        ) : (
+          <div className="mt-4 text-[11px] uppercase tracking-widest text-white/60">
+            {cycle.running ? "Preparing round…" : "Cycle paused"}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FixturesGrid({ matches, phase }: { matches: VirtualMatch[]; phase: Phase }) {
+  // Two column table of all matches in the round (like the bet9ja stage table)
+  const half = Math.ceil(matches.length / 2);
+  const cols = [matches.slice(0, half), matches.slice(half)];
+  return (
+    <div className="bg-black/70 border-b border-primary/20 text-[10px]">
+      <div className="grid grid-cols-2 divide-x divide-border/40">
+        {cols.map((col, ci) => (
+          <div key={ci}>
+            <div className="grid grid-cols-[1fr_28px_28px] px-2 py-1 text-muted-foreground uppercase tracking-widest border-b border-border/40">
+              <span>Team</span>
+              <span className="text-center">FT</span>
+              <span className="text-center">HT</span>
+            </div>
+            {col.map((m) => (
+              <div key={m.id} className="grid grid-cols-[1fr_28px_28px] px-2 py-1 border-b border-border/20">
+                <div className="min-w-0">
+                  <div className="truncate">{m.home_team?.name ?? "Home"}</div>
+                  <div className="truncate">{m.away_team?.name ?? "Away"}</div>
+                </div>
+                <div className="text-center font-mono tabular-nums">
+                  <div>{phase === "pre" ? "-" : m.home_score}</div>
+                  <div>{phase === "pre" ? "-" : m.away_score}</div>
+                </div>
+                <div className="text-center font-mono tabular-nums text-muted-foreground">
+                  <div>-</div>
+                  <div>-</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MarketPager({ names, idx, setIdx }: { names: string[]; idx: number; setIdx: (n: number) => void }) {
+  const cur = names[idx] ?? names[0];
+  return (
+    <div className="flex items-center px-2 py-2">
+      <button
+        onClick={() => setIdx((idx - 1 + names.length) % names.length)}
+        className="p-1 text-muted-foreground hover:text-primary"
+        aria-label="Previous market"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <div className="flex-1 text-center">
+        <div className="text-sm font-bold">{cur}</div>
+        <div className="flex justify-center gap-1 mt-1">
+          {names.map((_, i) => (
+            <span
+              key={i}
+              className={`h-1 w-1 rounded-full ${i === idx ? "bg-primary" : "bg-muted-foreground/40"}`}
+            />
+          ))}
+        </div>
+      </div>
+      <button
+        onClick={() => setIdx((idx + 1) % names.length)}
+        className="p-1 text-muted-foreground hover:text-primary"
+        aria-label="Next market"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
+    </div>
+  );
+}
+
+function MatchDayBoard({
+  label,
+  countdownTarget,
+  matches,
+  activeMarketName,
+  cycle,
+}: {
+  label: string;
+  countdownTarget: string | null;
+  matches: VirtualMatch[];
+  activeMarketName: string;
+  cycle: CycleState;
+}) {
+  const cd = useCountdown(countdownTarget);
+  return (
+    <div>
+      <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-secondary/50 border-b border-border/40 text-xs">
+        <span className="font-bold">{label}</span>
+        {countdownTarget && !cd.done && (
+          <span className="px-1.5 py-0.5 bg-black rounded font-mono font-black tabular-nums text-primary text-[11px]">
+            {cd.mm.padStart(2, "0")}:{cd.ss}
+          </span>
+        )}
+      </div>
+      <div className="divide-y divide-border/40">
+        {matches.map((m) => (
+          <VirtualBetRow key={m.id} match={m} marketName={activeMarketName} cycle={cycle} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function VirtualBetRow({
+  match,
+  marketName,
+  cycle,
+}: {
+  match: VirtualMatch;
+  marketName: string;
+  cycle: CycleState;
+}) {
+  const { add, setOpen, selections } = useBetSlip();
+  const home = match.home_team?.name ?? "Home";
+  const away = match.away_team?.name ?? "Away";
+  const cd = useCountdown(match.lock_time);
+  const locked = match.status !== "scheduled" || cd.done;
+  const market = (match.markets ?? []).find((mk) => mk.name === marketName) ?? match.markets?.[0];
+  const isPicked = (oid: string) => selections.some((s) => s.odd_id === oid);
+
+  const pick = (mk: MarketRow, o: OddRow) => {
+    if (locked || !mk.is_open) return;
+    if (selections.length > 0 && selections.some((s) => !s.is_virtual)) {
+      toast.error("Clear your slip before adding virtual selections.");
+      return;
+    }
+    add({
+      match_id: match.id,
+      match_name: `${home} vs ${away}`,
+      market_id: mk.id,
+      market_name: mk.name,
+      odd_id: o.id,
+      selection_label: o.label,
+      odds: Number(o.value),
+      is_virtual: true,
+      virtual_round_batch_id: match.virtual_round_batch_id ?? match.id,
+    });
+    setOpen(true);
+  };
+
+  void cycle;
+  const odds = (market?.odds ?? []).slice(0, 3);
+  const labels = ["1", "X", "2"];
+
+  return (
+    <div className="grid grid-cols-[1fr_auto_28px] items-center gap-2 px-2 py-2 hover:bg-primary/5">
+      <div className="min-w-0 text-[11px] leading-tight">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-muted-foreground font-mono w-4 text-right">{rankOf(match, "h")}</span>
+          <TeamLogo name={home} url={match.home_team?.logo_url ?? null} size={16} rounded="sm" />
+          <span className="font-bold truncate">{home}</span>
+        </div>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-muted-foreground font-mono w-4 text-right">{rankOf(match, "a")}</span>
+          <TeamLogo name={away} url={match.away_team?.logo_url ?? null} size={16} rounded="sm" />
+          <span className="font-bold truncate">{away}</span>
+        </div>
+        <Link
+          to="/matches/$matchId"
+          params={{ matchId: match.id }}
+          className="text-[9px] uppercase tracking-widest text-primary/80 hover:text-primary mt-0.5 inline-block"
+        >
+          More bets ›
+        </Link>
+      </div>
+      <div className="grid grid-cols-3 gap-1">
+        {odds.map((o, i) => {
+          const picked = isPicked(o.id);
+          return (
+            <button
+              key={o.id}
+              disabled={locked || !market?.is_open}
+              onClick={() => market && pick(market, o)}
+              className={`h-11 min-w-[54px] rounded-md text-white font-bold flex flex-col items-center justify-center leading-none transition ${
+                locked
+                  ? "bg-muted/50 text-muted-foreground cursor-not-allowed"
+                  : picked
+                    ? "bg-primary text-primary-foreground shadow-gold"
+                    : "bg-emerald-600 hover:bg-emerald-500"
+              }`}
+            >
+              <span className="text-[9px] opacity-80">{labels[i] ?? o.label}</span>
+              <span className="text-sm tabular-nums font-mono flex items-center gap-1">
+                {locked && <Lock className="h-2.5 w-2.5" />}
+                {Number(o.value).toFixed(2)}
+              </span>
+            </button>
+          );
+        })}
+        {odds.length === 0 && (
+          <div className="col-span-3 text-[10px] text-muted-foreground italic px-2">No odds</div>
+        )}
+      </div>
+      <Link
+        to="/matches/$matchId"
+        params={{ matchId: match.id }}
+        className="h-8 w-8 rounded-full border border-emerald-500/60 text-emerald-500 hover:bg-emerald-500/10 flex items-center justify-center"
+        aria-label="More markets"
+      >
+        <BarChart3 className="h-4 w-4" />
+      </Link>
+    </div>
+  );
+}
+
+function marketOrder(n: string) {
+  if (/match\s*winner|1x2|3\s*way/i.test(n)) return 0;
+  if (/double\s*chance/i.test(n)) return 1;
+  if (/first\s*blood|first\s*(goal|kill)/i.test(n)) return 2;
+  if (/total/i.test(n)) return 3;
+  if (/correct\s*score/i.test(n)) return 4;
+  return 9;
+}
+
+function hashStr(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return h;
+}
+
+function rankOf(m: VirtualMatch, side: "h" | "a") {
+  const seed = (m.virtual_round_batch_id ?? m.id) + side;
+  return (Math.abs(hashStr(seed)) % 16) + 1;
+}
