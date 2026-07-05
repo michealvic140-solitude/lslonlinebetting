@@ -989,7 +989,7 @@ function VirtualStadium({
       <VideoStage featured={featured} matches={activeBatch} recent={recent as VirtualMatch[]} phase={phase} animSec={cycle.animSec} cycle={cycle} />
 
       {/* Fixtures preview grid */}
-      <FixturesGrid matches={activeBatch} phase={phase} />
+      <FixturesGrid matches={activeBatch} phase={phase} animSec={cycle.animSec} />
 
       {/* Place Your Bets divider + market pager */}
       <div className="bg-background/80 border-y border-primary/20 mt-1">
@@ -1133,29 +1133,7 @@ function VideoStage({
     : "Next shootout";
   // While live, show the shooter battle animation as the stage
   if (phase === "match" && featured) {
-    const liveScore = useLiveScore(featured, animSec);
-    const minute = Math.min(90, Math.max(1, Math.floor(liveScore.ratio * 90)));
-    return (
-      <div className="bg-black">
-        <div className="flex items-center justify-between px-2.5 py-1 text-[11px] font-bold bg-black/80 border-b border-primary/20">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="px-1.5 py-0.5 bg-black/60 border border-white/10 rounded text-[10px] font-mono">
-              {minute}&#39;
-            </span>
-            <TeamLogo name={featured.home_team?.name ?? ""} url={featured.home_team?.logo_url ?? null} size={18} rounded="md" />
-            <span className="font-black truncate">{featured.home_team?.name}</span>
-          </div>
-          <span className="font-mono font-black tabular-nums text-primary px-2">
-            {liveScore.h}:{liveScore.a}
-          </span>
-          <div className="flex items-center gap-2 min-w-0 flex-row-reverse text-right">
-            <TeamLogo name={featured.away_team?.name ?? ""} url={featured.away_team?.logo_url ?? null} size={18} rounded="md" />
-            <span className="font-black truncate">{featured.away_team?.name}</span>
-          </div>
-        </div>
-        <LiveMatchTicker match={featured} animSec={animSec} embedded />
-      </div>
-    );
+    return <LiveStage featured={featured} animSec={animSec} />;
   }
   // Pre-match staging area — countdown left, recent scores right, lineups over the shootout field.
   return (
@@ -1226,7 +1204,33 @@ function VideoStage({
   );
 }
 
-function FixturesGrid({ matches, phase }: { matches: VirtualMatch[]; phase: Phase }) {
+function LiveStage({ featured, animSec }: { featured: VirtualMatch; animSec: number }) {
+  const liveScore = useLiveScore(featured, animSec);
+  const minute = Math.min(90, Math.max(1, Math.floor(liveScore.ratio * 90)));
+  return (
+    <div className="bg-black">
+      <div className="flex items-center justify-between px-2.5 py-1 text-[11px] font-bold bg-black/80 border-b border-primary/20">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="px-1.5 py-0.5 bg-black/60 border border-white/10 rounded text-[10px] font-mono">
+            {minute}&#39;
+          </span>
+          <TeamLogo name={featured.home_team?.name ?? ""} url={featured.home_team?.logo_url ?? null} size={18} rounded="md" />
+          <span className="font-black truncate">{featured.home_team?.name}</span>
+        </div>
+        <span className="font-mono font-black tabular-nums text-primary px-2">
+          {liveScore.h}:{liveScore.a}
+        </span>
+        <div className="flex items-center gap-2 min-w-0 flex-row-reverse text-right">
+          <TeamLogo name={featured.away_team?.name ?? ""} url={featured.away_team?.logo_url ?? null} size={18} rounded="md" />
+          <span className="font-black truncate">{featured.away_team?.name}</span>
+        </div>
+      </div>
+      <LiveMatchTicker match={featured} animSec={animSec} embedded />
+    </div>
+  );
+}
+
+function FixturesGrid({ matches, phase, animSec }: { matches: VirtualMatch[]; phase: Phase; animSec: number }) {
   // Two column table of all matches in the round (like the bet9ja stage table)
   const half = Math.ceil(matches.length / 2);
   const cols = [matches.slice(0, half), matches.slice(half)];
@@ -1240,7 +1244,7 @@ function FixturesGrid({ matches, phase }: { matches: VirtualMatch[]; phase: Phas
               <span className="text-center">FT</span>
               <span className="text-center">HT</span>
             </div>
-            {col.map((m) => <FixtureScoreRow key={m.id} match={m} phase={phase} />)}
+            {col.map((m) => <FixtureScoreRow key={m.id} match={m} phase={phase} animSec={animSec} />)}
           </div>
         ))}
       </div>
@@ -1248,8 +1252,8 @@ function FixturesGrid({ matches, phase }: { matches: VirtualMatch[]; phase: Phas
   );
 }
 
-function FixtureScoreRow({ match, phase }: { match: VirtualMatch; phase: Phase }) {
-  const score = useLiveScore(match, 35);
+function FixtureScoreRow({ match, phase, animSec }: { match: VirtualMatch; phase: Phase; animSec: number }) {
+  const score = useLiveScore(match, animSec);
   const ftH = phase === "pre" ? "-" : phase === "match" ? score.h : match.home_score;
   const ftA = phase === "pre" ? "-" : phase === "match" ? score.a : match.away_score;
   const halfH = phase === "pre" ? "-" : Math.floor(Number(ftH) * 0.45);
