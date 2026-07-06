@@ -135,17 +135,12 @@ function VirtualPage() {
     };
     load();
     const t = setInterval(load, 1000);
-    // Fallback ping while signed in, in case the scheduled backend tick lags.
-    const ping = setInterval(() => {
-      supabase.rpc("virtual_tick").then(
-        () => {},
-        () => {},
-      );
-    }, 8000);
-    supabase.rpc("virtual_tick").then(
-      () => {},
-      () => {},
-    );
+    // Fallback ping in case the scheduled backend tick lags.
+    const tick = () => {
+      fetch("/api/public/virtual-tick", { cache: "no-store" }).catch(() => {});
+    };
+    const ping = setInterval(tick, 8000);
+    tick();
     const ch = supabase
       .channel("virtual-rounds-v2")
       .on(
