@@ -11,6 +11,7 @@ import { AnnouncementSlider, HighlightsRow, AdsRow } from "@/components/HomeCont
 import { HomeBannerSlider } from "@/components/HomeBannerSlider";
 import { GrandPrizeWinners } from "@/components/GrandPrizeWinners";
 import { HotBets } from "@/components/HotBets";
+import { LotteryResults } from "@/components/LotteryResults";
 import { SeasonBanner } from "@/components/SeasonBanner";
 import { Spotlight } from "@/components/Spotlight";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -154,13 +155,25 @@ function Index() {
 
       <BookingCodeFab />
 
-      {/* Match feed on the left · Hot Bets + Hall of Fame stacked on the right */}
+      {/* Match feed on the left · Hot Bets → Lottery Results → Hall of Fame on the right */}
       <section className="container mt-10">
-        <div className="grid gap-6 lg:grid-cols-[1fr_340px] items-start">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_340px] items-start">
           <div className="space-y-10 min-w-0">
           {loading && <p className="text-muted-foreground">Loading league…</p>}
           {!loading && featuredFallback.length > 0 && (
-            <div>
+            <div className="relative overflow-hidden rounded-2xl">
+              {settings?.featured_bg_url && futures.length === 0 && (
+                <>
+                  <img
+                    src={settings.featured_bg_url}
+                    alt=""
+                    className="absolute inset-0 h-full w-full opacity-30 pointer-events-none"
+                    style={{ objectFit: (settings.featured_bg_fit as any) || "cover", objectPosition: settings.featured_bg_position || "center" }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background/80 pointer-events-none" />
+                </>
+              )}
+              <div className="relative p-3 md:p-4">
               <SectionHeader icon={Trophy} title="Featured Matches" subtitle="The biggest matchups of the round." />
               <div className="mt-4">
                 <Carousel opts={{ loop: featuredFallback.length > 1 }} plugins={featuredFallback.length > 1 ? [Autoplay({ delay: 5000, stopOnInteraction: false })] : []}>
@@ -171,6 +184,7 @@ function Index() {
                   </CarouselContent>
                   {featuredFallback.length > 1 && (<><CarouselPrevious /><CarouselNext /></>)}
                 </Carousel>
+              </div>
               </div>
             </div>
           )}
@@ -199,10 +213,14 @@ function Index() {
             </div>
           ))}
           </div>
-          <aside className="space-y-8 min-w-0 lg:sticky lg:top-20 self-start">
+          <aside className="space-y-8 min-w-0 md:sticky md:top-20 self-start">
             <div>
               <SectionHeader icon={Flame} title="Hot Bets" subtitle="What the league is backing right now." />
               <div className="mt-4"><HotBets /></div>
+            </div>
+            <div>
+              <SectionHeader icon={Trophy} title="Lottery Results" subtitle="Latest winning numbers — auto-drawn every 30 min." />
+              <div className="mt-4"><LotteryResults /></div>
             </div>
             <div>
               <SectionHeader icon={Trophy} title="Hall of Fame" subtitle="Grand prize winners — most tokens won." />
