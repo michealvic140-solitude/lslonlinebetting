@@ -15,7 +15,7 @@ export function LotteryAdminPanel() {
   const confirm = useConfirm();
   const [settings, setSettings] = useState({ lottery_enabled: false, lottery_min_stake: 100000, lottery_max_stake: 50000000, lottery_intro: "" });
   const [draws, setDraws] = useState<any[]>([]);
-  const [draft, setDraft] = useState({ title: "Lucky Numbers Draw", number_max: 9, multiplier: 2 });
+  const [draft, setDraft] = useState({ title: "Lucky Numbers Draw", number_max: 9, multiplier: 2, picks_count: 1 });
   const [drawDialog, setDrawDialog] = useState<any | null>(null);
   const [winningNumber, setWinningNumber] = useState<string>("");
   const [saving, setSaving] = useState(false);
@@ -54,10 +54,11 @@ export function LotteryAdminPanel() {
       title: draft.title.trim(),
       number_max: Math.max(1, draft.number_max),
       multiplier: Math.max(1, draft.multiplier),
-    });
+      picks_count: Math.max(1, Math.min(5, draft.picks_count)),
+    } as any);
     if (error) return toast.error(error.message);
     toast.success("Draw created");
-    setDraft({ title: "Lucky Numbers Draw", number_max: 9, multiplier: 2 });
+    setDraft({ title: "Lucky Numbers Draw", number_max: 9, multiplier: 2, picks_count: 1 });
     load();
   }
 
@@ -100,9 +101,10 @@ export function LotteryAdminPanel() {
 
       <Card className="p-5">
         <h3 className="font-bold flex items-center gap-2 mb-4"><Plus className="h-5 w-5 text-primary" />Create a Draw</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Title</label><Input value={draft.title} onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))} /></div>
           <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Highest number (0–N)</label><Input type="number" min={1} value={draft.number_max} onChange={(e) => setDraft((d) => ({ ...d, number_max: Number(e.target.value) }))} /></div>
+          <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Numbers to pick (1–5)</label><Input type="number" min={1} max={5} value={draft.picks_count} onChange={(e) => setDraft((d) => ({ ...d, picks_count: Number(e.target.value) }))} /></div>
           <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Payout multiplier</label><Input type="number" min={1} step={0.5} value={draft.multiplier} onChange={(e) => setDraft((d) => ({ ...d, multiplier: Number(e.target.value) }))} /></div>
         </div>
         <Button className="btn-luxury mt-4" onClick={createDraw}><Plus className="h-4 w-4 mr-1" />Create Draw</Button>
@@ -121,7 +123,7 @@ export function LotteryAdminPanel() {
                   <div className="font-bold flex items-center gap-2">{dr.title}
                     <Badge variant="outline" className={dr.status === "drawn" ? "border-emerald-500/50 text-emerald-300" : "border-primary/50 text-primary"}>{dr.status.toUpperCase()}</Badge>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">Pick 0–{dr.number_max} · x{dr.multiplier} · {tickets.length} ticket(s) · pot {pot.toLocaleString()}{dr.status === "drawn" && <> · winner: <span className="text-emerald-300 font-bold">{dr.winning_number}</span></>}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Pick {dr.picks_count ?? 1} from 0–{dr.number_max} · x{dr.multiplier} · {tickets.length} ticket(s) · pot {pot.toLocaleString()}{dr.status === "drawn" && <> · winner: <span className="text-emerald-300 font-bold">{(Array.isArray(dr.winning_numbers) && dr.winning_numbers.length ? dr.winning_numbers : [dr.winning_number]).filter((n: any) => n != null).join(", ")}</span></>}</div>
                 </div>
                 <div className="flex gap-2">
                   {dr.status !== "drawn" && (

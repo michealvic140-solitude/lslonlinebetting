@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // Public heartbeat for the virtual engine. Safe to call from any
 // uptime monitor / cron; it only invokes the SECURITY DEFINER
@@ -7,7 +8,6 @@ export const Route = createFileRoute("/api/public/virtual-tick")({
   server: {
     handlers: {
       GET: async () => {
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data, error } = await supabaseAdmin.rpc("virtual_tick");
         if (error) {
           return new Response(JSON.stringify({ ok: false, error: error.message }), {
@@ -21,7 +21,6 @@ export const Route = createFileRoute("/api/public/virtual-tick")({
         });
       },
       POST: async () => {
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data, error } = await supabaseAdmin.rpc("virtual_tick");
         if (error) {
           return new Response(JSON.stringify({ ok: false, error: error.message }), {

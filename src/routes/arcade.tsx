@@ -80,25 +80,34 @@ function CoinFlip({ s, onDone }: { s: any; onDone: () => void }) {
   async function play() {
     setBusy(true); setLast(null);
     const { data, error } = await (supabase.rpc as any)("play_coinflip", { _choice: choice, _stake: stake });
+    if (error) { setBusy(false); return toast.error(error.message); }
+    // Let the flip animation play before revealing the result.
+    await new Promise((r) => setTimeout(r, 1100));
     setBusy(false);
-    if (error) return toast.error(error.message);
     setLast(data);
     if (data.payout > 0) toast.success(`It's ${data.outcome}! You won ${Number(data.payout).toLocaleString()} tokens 🎉`);
     else toast.error(`It's ${data.outcome}. Better luck next time.`);
     onDone();
   }
   return (
-    <Card className="p-6 max-w-md mx-auto border-primary/30 text-center space-y-4">
-      <div className="text-6xl">{last ? (last.outcome === "heads" ? "🪙" : "🌝") : "🪙"}</div>
+    <Card className={`p-6 max-w-md mx-auto border-primary/30 text-center space-y-4 ${last?.payout > 0 ? "animate-win-glow" : ""}`}>
+      <div className="grid place-items-center py-4" style={{ perspective: "800px" }}>
+        <div
+          key={busy ? "flip" : last ? last.outcome : "idle"}
+          className={`grid place-items-center h-32 w-32 rounded-full bg-gradient-to-br from-amber-300 to-yellow-600 shadow-[0_10px_40px_-8px_rgba(212,175,55,0.7)] text-6xl ${busy ? "animate-coin-flip" : "animate-coin-idle"}`}
+        >
+          {busy ? "🪙" : last ? (last.outcome === "heads" ? "👑" : "⚡") : "🪙"}
+        </div>
+      </div>
       <div className="flex gap-2 justify-center">
         {(["heads", "tails"] as const).map((c) => (
-          <Button key={c} variant={choice === c ? "default" : "outline"} onClick={() => setChoice(c)} className="capitalize w-28">{c}</Button>
+          <Button key={c} variant={choice === c ? "default" : "outline"} onClick={() => setChoice(c)} disabled={busy} className="capitalize w-28">{c === "heads" ? "👑 Heads" : "⚡ Tails"}</Button>
         ))}
       </div>
-      <Input type="number" value={stake} min={min} onChange={(e) => setStake(Number(e.target.value))} />
+      <Input type="number" value={stake} min={min} disabled={busy} onChange={(e) => setStake(Number(e.target.value))} />
       <div className="text-xs text-muted-foreground">Win pays <span className="text-emerald-300 font-bold">{(stake * Number(s.coinflip_payout ?? 1.95)).toLocaleString()}</span> ({Number(s.coinflip_payout ?? 1.95)}x)</div>
       <Button className="btn-luxury w-full" onClick={play} disabled={busy}>{busy ? "Flipping…" : "Flip Coin"}</Button>
-      {last && <Badge variant="outline" className={last.payout > 0 ? "border-emerald-500/50 text-emerald-300" : "border-destructive/50 text-destructive"}>{last.payout > 0 ? `WON ${Number(last.payout).toLocaleString()}` : "LOST"}</Badge>}
+      {last && !busy && <div className="animate-prize-pop"><Badge variant="outline" className={last.payout > 0 ? "border-emerald-500/50 text-emerald-300 text-sm px-3 py-1" : "border-destructive/50 text-destructive text-sm px-3 py-1"}>{last.payout > 0 ? `🎉 WON ${Number(last.payout).toLocaleString()}` : "😔 LOST"}</Badge></div>}
     </Card>
   );
 }
@@ -112,20 +121,30 @@ function Wheel({ s, onDone }: { s: any; onDone: () => void }) {
   async function play() {
     setBusy(true); setLast(null);
     const { data, error } = await (supabase.rpc as any)("play_wheel", { _stake: stake });
+    if (error) { setBusy(false); return toast.error(error.message); }
+    await new Promise((r) => setTimeout(r, 2400));
     setBusy(false);
-    if (error) return toast.error(error.message);
     setLast(data);
     if (data.payout > 0) toast.success(`Landed on ${data.outcome}! Won ${Number(data.payout).toLocaleString()} 🎉`);
     else toast.error(`Landed on ${data.outcome}. No win this time.`);
     onDone();
   }
   return (
-    <Card className="p-6 max-w-md mx-auto border-primary/30 text-center space-y-4">
-      <div className={`text-6xl transition-transform ${busy ? "animate-spin" : ""}`}>🎡</div>
+    <Card className={`p-6 max-w-md mx-auto border-primary/30 text-center space-y-4 ${last?.payout > 0 ? "animate-win-glow" : ""}`}>
+      <div className="relative grid place-items-center py-4">
+        <div className="absolute -top-1 z-10 text-2xl drop-shadow-lg">🔻</div>
+        <div
+          key={busy ? "spin" : "still"}
+          className={`h-40 w-40 rounded-full grid place-items-center text-5xl shadow-[0_10px_40px_-8px_rgba(217,70,239,0.6)] ${busy ? "animate-wheel-spin" : ""}`}
+          style={{ background: "conic-gradient(#f59e0b 0 45deg,#d946ef 45deg 90deg,#10b981 90deg 135deg,#3b82f6 135deg 180deg,#ef4444 180deg 225deg,#a855f7 225deg 270deg,#eab308 270deg 315deg,#06b6d4 315deg 360deg)" }}
+        >
+          <span className="h-14 w-14 rounded-full bg-background/90 grid place-items-center text-2xl">🎯</span>
+        </div>
+      </div>
       <div className="text-xs text-muted-foreground">Multipliers: 0x · 0.5x · 1.2x · 1.5x · 2x · 3x · 5x</div>
-      <Input type="number" value={stake} min={min} onChange={(e) => setStake(Number(e.target.value))} />
+      <Input type="number" value={stake} min={min} disabled={busy} onChange={(e) => setStake(Number(e.target.value))} />
       <Button className="btn-luxury w-full" onClick={play} disabled={busy}>{busy ? "Spinning…" : "Spin the Wheel"}</Button>
-      {last && <Badge variant="outline" className={last.payout > 0 ? "border-emerald-500/50 text-emerald-300" : "border-destructive/50 text-destructive"}>{last.outcome} · {last.payout > 0 ? `WON ${Number(last.payout).toLocaleString()}` : "NO WIN"}</Badge>}
+      {last && !busy && <div className="animate-prize-pop"><Badge variant="outline" className={last.payout > 0 ? "border-emerald-500/50 text-emerald-300 text-sm px-3 py-1" : "border-destructive/50 text-destructive text-sm px-3 py-1"}>{last.outcome} · {last.payout > 0 ? `🎉 WON ${Number(last.payout).toLocaleString()}` : "NO WIN"}</Badge></div>}
     </Card>
   );
 }
@@ -138,18 +157,19 @@ function Scratch({ s, onDone }: { s: any; onDone: () => void }) {
   async function play() {
     setBusy(true); setLast(null);
     const { data, error } = await (supabase.rpc as any)("play_scratch", {});
+    if (error) { setBusy(false); return toast.error(error.message); }
+    await new Promise((r) => setTimeout(r, 1200));
     setBusy(false);
-    if (error) return toast.error(error.message);
     setLast(data);
     if (data.payout > 0) toast.success(`You revealed ${data.outcome}! Won ${Number(data.payout).toLocaleString()} 🎉`);
     else toast.error(`No prize this card. Try again!`);
     onDone();
   }
   return (
-    <Card className="p-6 max-w-md mx-auto border-primary/30 text-center space-y-4">
-      <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-amber-500/10 to-fuchsia-500/10 p-8">
-        <div className="text-5xl mb-2">{last ? (last.payout > 0 ? "💎" : "🃏") : "🎫"}</div>
-        <div className="text-sm font-bold">{last ? (last.payout > 0 ? `${last.outcome} — ${Number(last.payout).toLocaleString()} tokens!` : "No prize") : "Buy a card to reveal your prize"}</div>
+    <Card className={`p-6 max-w-md mx-auto border-primary/30 text-center space-y-4 ${last?.payout > 0 ? "animate-win-glow" : ""}`}>
+      <div className={`relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-amber-500/10 to-fuchsia-500/10 p-10 ${busy ? "animate-scratch-shimmer" : ""}`}>
+        <div className={`text-7xl mb-2 ${last && !busy ? "animate-prize-pop" : ""}`}>{busy ? "✨" : last ? (last.payout > 0 ? "💎" : "🃏") : "🎫"}</div>
+        <div className="text-sm font-bold">{busy ? "Scratching…" : last ? (last.payout > 0 ? `${last.outcome} — ${Number(last.payout).toLocaleString()} tokens!` : "No prize") : "Buy a card to reveal your prize"}</div>
       </div>
       <div className="text-xs text-muted-foreground">Card price: <span className="text-primary font-bold">{price.toLocaleString()}</span> tokens · prizes up to 10x</div>
       <Button className="btn-luxury w-full" onClick={play} disabled={busy}><CircleDollarSign className="h-4 w-4 mr-1" />{busy ? "Revealing…" : "Buy & Scratch"}</Button>

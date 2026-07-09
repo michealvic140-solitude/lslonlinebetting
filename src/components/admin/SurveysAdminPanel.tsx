@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ClipboardList, Plus, Trash2, Send, Users, User, Eye } from "lucide-react";
+import { ClipboardList, Plus, Trash2, Send, Users, User, Eye, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +26,8 @@ export function SurveysAdminPanel() {
   const [questions, setQuestions] = useState<Q[]>([{ id: uid(), label: "", type: "text" }]);
   const [saving, setSaving] = useState(false);
   const [viewResp, setViewResp] = useState<any | null>(null);
+  const [giftAmt, setGiftAmt] = useState<Record<string, string>>({});
+  const [gifting, setGifting] = useState<string | null>(null);
 
   async function load() {
     const [{ data: s }, { data: u }] = await Promise.all([
@@ -102,6 +104,26 @@ export function SurveysAdminPanel() {
     }
     const responses = rows.map((r: any) => ({ ...r, profiles: profMap[r.user_id] ?? null }));
     setViewResp({ survey: s, responses });
+  }
+
+  async function giftUser(r: any, surveyTitle: string) {
+    const amount = Math.floor(Number(giftAmt[r.id] || 0));
+    if (!amount || amount <= 0) return toast.error("Enter a token amount");
+    if (!r.user_id) return toast.error("Missing user");
+    setGifting(r.id);
+    const { data: prof } = await supabase.from("profiles").select("token_balance").eq("id", r.user_id).maybeSingle();
+    const newBal = Number((prof as any)?.token_balance ?? 0) + amount;
+    const { error } = await supabase.from("profiles").update({ token_balance: newBal }).eq("id", r.user_id);
+    if (error) { setGifting(null); return toast.error(error.message); }
+    await supabase.from("notifications").insert({
+      user_id: r.user_id,
+      title: "Tokens credited 🎁",
+      body: `You received ${amount.toLocaleString()} tokens for completing the "${surveyTitle}" survey. Thank you!`,
+      link: "/dashboard",
+    });
+    setGifting(null);
+    setGiftAmt((m) => ({ ...m, [r.id]: "" }));
+    toast.success(`Gifted ${amount.toLocaleString()} tokens`);
   }
 
   return (
@@ -184,7 +206,21 @@ export function SurveysAdminPanel() {
           {viewResp.responses.filter((r: any) => r.status === "submitted").length === 0 && <p className="text-sm text-muted-foreground">No submitted responses yet.</p>}
           {viewResp.responses.filter((r: any) => r.status === "submitted").map((r: any) => (
             <div key={r.id} className="rounded-lg border border-border/60 p-3 text-sm">
-              <div className="font-semibold">{r.profiles?.full_name || r.profiles?.email}</div>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="font-semibold">{r.profiles?.full_name || r.profiles?.email}</div>
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    type="number"
+                    placeholder="Tokens"
+                    value={giftAmt[r.id] ?? ""}
+                    onChange={(e) => setGiftAmt((m) => ({ ...m, [r.id]: e.target.value }))}
+                    className="h-8 w-28"
+                  />
+                  <Button size="sm" className="btn-luxury h-8" disabled={gifting === r.id} onClick={() => giftUser(r, viewResp.survey.title)}>
+                    <Gift className="h-3.5 w-3.5 mr-1" />{gifting === r.id ? "Gifting…" : "Gift"}
+                  </Button>
+                </div>
+              </div>
               <div className="mt-1 space-y-1">
                 {(viewResp.survey.questions || []).map((q: Q) => (
                   <div key={q.id} className="text-xs"><span className="text-muted-foreground">{q.label}: </span><span className="font-medium">{r.answers?.[q.id] ?? "—"}</span></div>

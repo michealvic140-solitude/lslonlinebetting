@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LifeBuoy, Sparkles } from "lucide-react";
+import { LifeBuoy, Sparkles, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/support")({
@@ -29,6 +29,12 @@ function SupportPage() {
   const [message, setMessage] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [discordUrl, setDiscordUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    (supabase as any).from("app_settings").select("discord_support_url").eq("id", 1).maybeSingle()
+      .then(({ data }: any) => setDiscordUrl(data?.discord_support_url ?? null));
+  }, []);
 
   useEffect(() => { if (!user) nav({ to: "/login" }); }, [user, nav]);
 
@@ -78,6 +84,21 @@ function SupportPage() {
       <div className="container py-10 max-w-3xl">
         <h1 className="text-3xl font-bold gradient-gold-text flex items-center gap-2"><LifeBuoy className="h-6 w-6" />Support</h1>
         <p className="text-muted-foreground text-sm mt-1">Open a ticket and our AI assistant will reply instantly while a human reviews.</p>
+
+        {discordUrl && (
+          <a href={discordUrl} target="_blank" rel="noreferrer" className="block mt-5">
+            <Card className="glass-strong p-4 flex items-center gap-3 border-[#5865F2]/40 hover:border-[#5865F2]/80 transition group">
+              <span className="h-11 w-11 rounded-xl bg-[#5865F2] grid place-items-center shadow-[0_0_20px_-4px_#5865F2] shrink-0">
+                <MessageCircle className="h-6 w-6 text-white" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="font-bold">Join our Discord support server</div>
+                <div className="text-xs text-muted-foreground">Chat with the team and community directly — click to open our server.</div>
+              </div>
+              <Sparkles className="h-4 w-4 text-[#5865F2] group-hover:scale-110 transition" />
+            </Card>
+          </a>
+        )}
 
         <Card className="glass-strong p-5 mt-6 space-y-3">
           <div>

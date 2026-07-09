@@ -102,7 +102,7 @@ function LotteryPage() {
               {myTickets.map((t) => (
                 <Card key={t.id} className="p-3 flex items-center justify-between flex-wrap gap-2">
                   <div>
-                    <div className="font-bold text-sm">{t.lottery_draws?.title} · picked <span className="text-primary">{t.number}</span></div>
+                    <div className="font-bold text-sm">{t.lottery_draws?.title} · picked <span className="text-primary">{(Array.isArray(t.numbers) && t.numbers.length ? t.numbers : [t.number]).join(", ")}</span></div>
                     <div className="text-xs text-muted-foreground">Stake {Number(t.stake).toLocaleString()}{t.lottery_draws?.status === "drawn" && <> · winner was {t.lottery_draws?.winning_number}</>}</div>
                   </div>
                   <Badge variant="outline" className={t.status === "won" ? "border-emerald-500/50 text-emerald-300" : t.status === "lost" ? "border-destructive/50 text-destructive" : "border-primary/50 text-primary"}>
@@ -121,7 +121,7 @@ function LotteryPage() {
               {pastDraws.slice(0, 6).map((dr) => (
                 <Card key={dr.id} className="p-4 text-center">
                   <div className="text-xs text-muted-foreground mb-1">{dr.title}</div>
-                  <div className="text-4xl font-extrabold gradient-gold-text">{dr.winning_number}</div>
+                  <div className="text-4xl font-extrabold gradient-gold-text">{(Array.isArray(dr.winning_numbers) && dr.winning_numbers.length ? dr.winning_numbers : [dr.winning_number]).filter((n: any) => n !== null && n !== undefined).join(" · ")}</div>
                   <div className="text-[10px] text-muted-foreground mt-1">x{dr.multiplier} payout</div>
                 </Card>
               ))}
@@ -134,21 +134,36 @@ function LotteryPage() {
 }
 
 function DrawCard({ draw, minStake, maxStake, onDone }: { draw: any; minStake: number; maxStake: number; onDone: () => void }) {
-  const [picked, setPicked] = useState<number | null>(null);
+  const picksNeeded = Math.max(1, Math.min(5, Number(draw.picks_count ?? 1)));
+  const [picked, setPicked] = useState<number[]>([]);
   const [stake, setStake] = useState(minStake);
   const [submitting, setSubmitting] = useState(false);
   const numbers = Array.from({ length: draw.number_max + 1 }, (_, i) => i);
 
+  function toggle(n: number) {
+    setPicked((cur) => {
+      if (cur.includes(n)) return cur.filter((x) => x !== n);
+      if (cur.length >= picksNeeded) {
+        toast.error(`Pick exactly ${picksNeeded} number${picksNeeded === 1 ? "" : "s"}`);
+        return cur;
+      }
+      return [...cur, n];
+    });
+  }
+
   async function play() {
-    if (picked === null) return toast.error("Pick a number first");
+    if (picked.length !== picksNeeded) return toast.error(`Pick exactly ${picksNeeded} number${picksNeeded === 1 ? "" : "s"}`);
     if (stake < minStake) return toast.error(`Minimum stake is ${minStake.toLocaleString()}`);
     if (stake > maxStake) return toast.error(`Maximum stake is ${maxStake.toLocaleString()}`);
     setSubmitting(true);
-    const { error } = await (supabase.rpc as any)("place_lottery_ticket", { _draw_id: draw.id, _number: picked, _stake: stake });
+    const sorted = [...picked].sort((a, b) => a - b);
+    const { error } = picksNeeded === 1
+      ? await (supabase.rpc as any)("place_lottery_ticket", { _draw_id: draw.id, _number: sorted[0], _stake: stake })
+      : await (supabase.rpc as any)("place_lottery_ticket_multi", { _draw_id: draw.id, _numbers: sorted, _stake: stake });
     setSubmitting(false);
     if (error) return toast.error(error.message);
-    toast.success(`Ticket placed on ${picked}! Win x${draw.multiplier} if it's drawn.`);
-    setPicked(null);
+    toast.success(`Ticket placed on ${sorted.join(", ")}! Win x${draw.multiplier} if drawn.`);
+    setPicked([]);
     onDone();
   }
 
@@ -158,13 +173,13 @@ function DrawCard({ draw, minStake, maxStake, onDone }: { draw: any; minStake: n
         <div className="font-bold">{draw.title}</div>
         <Badge variant="outline" className="border-amber-500/50 text-amber-300">x{draw.multiplier}</Badge>
       </div>
-      <div className="text-xs text-muted-foreground mb-3">Pick a number from 0 to {draw.number_max}</div>
+      <div className="text-xs text-muted-foreground mb-3">Pick <span className="text-primary font-bold">{picksNeeded}</span> number{picksNeeded === 1 ? "" : "s"} from 0 to {draw.number_max} <span className="text-primary">({picked.length}/{picksNeeded} selected)</span></div>
       <div className="flex flex-wrap gap-2 mb-4">
         {numbers.map((n) => (
           <button
             key={n}
-            onClick={() => setPicked(n)}
-            className={`h-11 w-11 rounded-xl font-bold border transition ${picked === n ? "bg-gradient-gold text-background border-primary shadow-gold scale-105" : "border-border text-foreground hover:border-primary/60"}`}
+            onClick={() => toggle(n)}
+            className={`h-11 w-11 rounded-xl font-bold border transition ${picked.includes(n) ? "bg-gradient-gold text-background border-primary shadow-gold scale-105" : "border-border text-foreground hover:border-primary/60"}`}
           >{n}</button>
         ))}
       </div>
