@@ -92,6 +92,7 @@ export type Database = {
           daily_login_bonus_per_day: number
           daily_login_enabled: boolean
           daily_login_max_streak: number
+          discord_support_url: string | null
           emblem_auto_approve: boolean
           exposure_warn_pct: number
           force_reload_at: string | null
@@ -216,6 +217,7 @@ export type Database = {
           daily_login_bonus_per_day?: number
           daily_login_enabled?: boolean
           daily_login_max_streak?: number
+          discord_support_url?: string | null
           emblem_auto_approve?: boolean
           exposure_warn_pct?: number
           force_reload_at?: string | null
@@ -340,6 +342,7 @@ export type Database = {
           daily_login_bonus_per_day?: number
           daily_login_enabled?: boolean
           daily_login_max_streak?: number
+          discord_support_url?: string | null
           emblem_auto_approve?: boolean
           exposure_warn_pct?: number
           force_reload_at?: string | null
@@ -1263,6 +1266,7 @@ export type Database = {
           id: string
           multiplier: number
           number_max: number
+          picks_count: number
           status: string
           title: string
           updated_at: string
@@ -1277,6 +1281,7 @@ export type Database = {
           id?: string
           multiplier?: number
           number_max?: number
+          picks_count?: number
           status?: string
           title?: string
           updated_at?: string
@@ -1291,6 +1296,7 @@ export type Database = {
           id?: string
           multiplier?: number
           number_max?: number
+          picks_count?: number
           status?: string
           title?: string
           updated_at?: string
@@ -3871,6 +3877,7 @@ export type Database = {
       redeem_promo_code: { Args: { _code: string }; Returns: Json }
       redeem_referral_code: { Args: { _code: string }; Returns: Json }
       redeem_shop_item: { Args: { _item_id: string }; Returns: Json }
+      refund_shop_redemption: { Args: { _id: string }; Returns: Json }
       resettle_won_bets: { Args: never; Returns: number }
       resolve_special_id: {
         Args: { _special_id: string }
