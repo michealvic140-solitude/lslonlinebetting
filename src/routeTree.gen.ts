@@ -13,6 +13,7 @@ import { Route as WithdrawRouteImport } from './routes/withdraw'
 import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as VirtualRouteImport } from './routes/virtual'
 import { Route as TriviaRouteImport } from './routes/trivia'
+import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as TournamentRouteImport } from './routes/tournament'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SurveysRouteImport } from './routes/surveys'
@@ -36,6 +37,7 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as BetHistoryRouteImport } from './routes/bet-history'
 import { Route as ArcadeRouteImport } from './routes/arcade'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AchievementsRouteImport } from './routes/achievements'
@@ -69,6 +71,11 @@ const VirtualRoute = VirtualRouteImport.update({
 const TriviaRoute = TriviaRouteImport.update({
   id: '/trivia',
   path: '/trivia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TransactionsRoute = TransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TournamentRoute = TournamentRouteImport.update({
@@ -186,6 +193,11 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BetHistoryRoute = BetHistoryRouteImport.update({
+  id: '/bet-history',
+  path: '/bet-history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ArcadeRoute = ArcadeRouteImport.update({
   id: '/arcade',
   path: '/arcade',
@@ -265,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/achievements': typeof AchievementsRoute
   '/admin': typeof AdminRoute
   '/arcade': typeof ArcadeRoute
+  '/bet-history': typeof BetHistoryRoute
   '/chat': typeof ChatRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
@@ -288,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/surveys': typeof SurveysRoute
   '/tasks': typeof TasksRoute
   '/tournament': typeof TournamentRoute
+  '/transactions': typeof TransactionsRoute
   '/trivia': typeof TriviaRoute
   '/virtual': typeof VirtualRouteWithChildren
   '/watchlist': typeof WatchlistRoute
@@ -308,6 +322,7 @@ export interface FileRoutesByTo {
   '/achievements': typeof AchievementsRoute
   '/admin': typeof AdminRoute
   '/arcade': typeof ArcadeRoute
+  '/bet-history': typeof BetHistoryRoute
   '/chat': typeof ChatRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
@@ -331,6 +346,7 @@ export interface FileRoutesByTo {
   '/surveys': typeof SurveysRoute
   '/tasks': typeof TasksRoute
   '/tournament': typeof TournamentRoute
+  '/transactions': typeof TransactionsRoute
   '/trivia': typeof TriviaRoute
   '/virtual': typeof VirtualRouteWithChildren
   '/watchlist': typeof WatchlistRoute
@@ -352,6 +368,7 @@ export interface FileRoutesById {
   '/achievements': typeof AchievementsRoute
   '/admin': typeof AdminRoute
   '/arcade': typeof ArcadeRoute
+  '/bet-history': typeof BetHistoryRoute
   '/chat': typeof ChatRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
@@ -375,6 +392,7 @@ export interface FileRoutesById {
   '/surveys': typeof SurveysRoute
   '/tasks': typeof TasksRoute
   '/tournament': typeof TournamentRoute
+  '/transactions': typeof TransactionsRoute
   '/trivia': typeof TriviaRoute
   '/virtual': typeof VirtualRouteWithChildren
   '/watchlist': typeof WatchlistRoute
@@ -397,6 +415,7 @@ export interface FileRouteTypes {
     | '/achievements'
     | '/admin'
     | '/arcade'
+    | '/bet-history'
     | '/chat'
     | '/checkout'
     | '/dashboard'
@@ -420,6 +439,7 @@ export interface FileRouteTypes {
     | '/surveys'
     | '/tasks'
     | '/tournament'
+    | '/transactions'
     | '/trivia'
     | '/virtual'
     | '/watchlist'
@@ -440,6 +460,7 @@ export interface FileRouteTypes {
     | '/achievements'
     | '/admin'
     | '/arcade'
+    | '/bet-history'
     | '/chat'
     | '/checkout'
     | '/dashboard'
@@ -463,6 +484,7 @@ export interface FileRouteTypes {
     | '/surveys'
     | '/tasks'
     | '/tournament'
+    | '/transactions'
     | '/trivia'
     | '/virtual'
     | '/watchlist'
@@ -483,6 +505,7 @@ export interface FileRouteTypes {
     | '/achievements'
     | '/admin'
     | '/arcade'
+    | '/bet-history'
     | '/chat'
     | '/checkout'
     | '/dashboard'
@@ -506,6 +529,7 @@ export interface FileRouteTypes {
     | '/surveys'
     | '/tasks'
     | '/tournament'
+    | '/transactions'
     | '/trivia'
     | '/virtual'
     | '/watchlist'
@@ -527,6 +551,7 @@ export interface RootRouteChildren {
   AchievementsRoute: typeof AchievementsRoute
   AdminRoute: typeof AdminRoute
   ArcadeRoute: typeof ArcadeRoute
+  BetHistoryRoute: typeof BetHistoryRoute
   ChatRoute: typeof ChatRoute
   CheckoutRoute: typeof CheckoutRoute
   DashboardRoute: typeof DashboardRoute
@@ -550,6 +575,7 @@ export interface RootRouteChildren {
   SurveysRoute: typeof SurveysRoute
   TasksRoute: typeof TasksRoute
   TournamentRoute: typeof TournamentRoute
+  TransactionsRoute: typeof TransactionsRoute
   TriviaRoute: typeof TriviaRoute
   VirtualRoute: typeof VirtualRouteWithChildren
   WatchlistRoute: typeof WatchlistRoute
@@ -591,6 +617,13 @@ declare module '@tanstack/react-router' {
       path: '/trivia'
       fullPath: '/trivia'
       preLoaderRoute: typeof TriviaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transactions': {
+      id: '/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof TransactionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tournament': {
@@ -754,6 +787,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bet-history': {
+      id: '/bet-history'
+      path: '/bet-history'
+      fullPath: '/bet-history'
+      preLoaderRoute: typeof BetHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/arcade': {
       id: '/arcade'
       path: '/arcade'
@@ -883,6 +923,7 @@ const rootRouteChildren: RootRouteChildren = {
   AchievementsRoute: AchievementsRoute,
   AdminRoute: AdminRoute,
   ArcadeRoute: ArcadeRoute,
+  BetHistoryRoute: BetHistoryRoute,
   ChatRoute: ChatRoute,
   CheckoutRoute: CheckoutRoute,
   DashboardRoute: DashboardRoute,
@@ -906,6 +947,7 @@ const rootRouteChildren: RootRouteChildren = {
   SurveysRoute: SurveysRoute,
   TasksRoute: TasksRoute,
   TournamentRoute: TournamentRoute,
+  TransactionsRoute: TransactionsRoute,
   TriviaRoute: TriviaRoute,
   VirtualRoute: VirtualRouteWithChildren,
   WatchlistRoute: WatchlistRoute,
@@ -922,13 +964,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
