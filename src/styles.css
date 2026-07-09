@@ -725,6 +725,29 @@
   animation: shimmer 7s ease-in-out infinite;
 }
 
+/* ===== Virtual Gang League — dark bet-board theme ===== */
+.virtual-page {
+  position: relative;
+  background:
+    radial-gradient(120% 90% at 20% -10%, oklch(0.20 0.05 150 / 0.35), transparent 55%),
+    radial-gradient(120% 90% at 90% 0%, oklch(0.22 0.06 88 / 0.25), transparent 60%),
+    linear-gradient(180deg, #05070a 0%, #04060a 55%, #030407 100%);
+}
+.virtual-panel {
+  border-color: oklch(0.82 0.17 90 / 0.28) !important;
+  background:
+    linear-gradient(150deg, oklch(0.14 0.02 150 / 0.75), oklch(0.08 0.01 220 / 0.88)) !important;
+  backdrop-filter: blur(10px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 oklch(0.95 0.10 92 / 0.10),
+    0 14px 36px -20px oklch(0 0 0 / 0.85) !important;
+}
+.virtual-arena {
+  background:
+    radial-gradient(circle at 50% 45%, oklch(0.18 0.04 150 / 0.30), transparent 60%),
+    linear-gradient(160deg, #0a0d10, #05070a) !important;
+}
+
 /* ===== Global users count — 3D golden showcase ===== */
 .count-3d {
   border: 1px solid oklch(0.82 0.17 90 / 0.5);
@@ -813,3 +836,78 @@
   background: linear-gradient(120deg, oklch(0.99 0.03 200 / 0.45) 0%, transparent 30%, transparent 70%, oklch(0.99 0.03 200 / 0.3) 100%);
   z-index: 15;
 }
+
+/* ===== Arcade game animations ===== */
+@keyframes coin-flip {
+  0%   { transform: rotateX(0deg) scale(1); }
+  20%  { transform: rotateX(720deg) scale(1.15) translateY(-18px); }
+  50%  { transform: rotateX(1800deg) scale(1.25) translateY(-34px); }
+  80%  { transform: rotateX(2880deg) scale(1.15) translateY(-18px); }
+  100% { transform: rotateX(3600deg) scale(1); }
+}
+.animate-coin-flip { animation: coin-flip 1.1s cubic-bezier(.36,.07,.19,.97) both; transform-style: preserve-3d; }
+
+@keyframes coin-idle {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+.animate-coin-idle { animation: coin-idle 2.4s ease-in-out infinite; }
+
+@keyframes wheel-spin-fast {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(2160deg); }
+}
+.animate-wheel-spin { animation: wheel-spin-fast 2.4s cubic-bezier(.17,.67,.16,.99) both; }
+
+@keyframes prize-pop {
+  0%   { transform: scale(0.2) rotate(-12deg); opacity: 0; }
+  60%  { transform: scale(1.25) rotate(6deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.animate-prize-pop { animation: prize-pop 0.6s cubic-bezier(.34,1.56,.64,1) both; }
+
+@keyframes scratch-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-scratch-shimmer {
+  background-image: linear-gradient(110deg, transparent 25%, rgba(255,255,255,.35) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: scratch-shimmer 1.1s linear infinite;
+}
+
+@keyframes win-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+  50%      { box-shadow: 0 0 40px 6px rgba(16,185,129,.45); }
+}
+.animate-win-glow { animation: win-glow 1.4s ease-in-out infinite; }
+
+/* ================= STREAK FIRE CELEBRATION ================= */
+@keyframes streak-flame-rise {
+  0%   { transform: translateY(20%) scale(0.85) rotate(-2deg); opacity: 0; }
+  20%  { opacity: 1; }
+  50%  { transform: translateY(-6%) scale(1.08) rotate(2deg); }
+  100% { transform: translateY(-14%) scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes streak-flicker {
+  0%, 100% { transform: scale(1) translateY(0); filter: brightness(1); }
+  25%      { transform: scale(1.06) translateY(-3%); filter: brightness(1.15); }
+  50%      { transform: scale(0.97) translateY(1%); filter: brightness(0.95); }
+  75%      { transform: scale(1.04) translateY(-2%); filter: brightness(1.1); }
+}
+@keyframes streak-ember {
+  0%   { transform: translateY(0) scale(1); opacity: 0.9; }
+  100% { transform: translateY(-120px) scale(0.2); opacity: 0; }
+}
+@keyframes streak-backdrop {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes streak-ring {
+  0%   { transform: scale(0.6); opacity: 0.8; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.streak-flame { animation: streak-flame-rise 0.5s cubic-bezier(.22,1,.36,1) both, streak-flicker 0.9s ease-in-out 0.5s infinite; }
+.streak-ember { animation: streak-ember 1.4s ease-out forwards; }
+.streak-ring  { animation: streak-ring 1.2s ease-out forwards; }
+.streak-backdrop { animation: streak-backdrop 0.3s ease-out both; }

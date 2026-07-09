@@ -17,7 +17,7 @@ import {
   Shield, Users, Trophy, Coins, Megaphone, Settings as SettingsIcon, Ticket, AlertTriangle,
   Calendar, Tag, Image as ImageIcon, BarChart3, History, Send, Plus, Trash2, Pencil, ChevronRight, ChevronLeft, Wallet, ListOrdered, Sparkles, ClipboardList, Lock, Pause, Play, Check, X, MessageSquare, Eye, RotateCw, Copy, Globe, MapPin, Smartphone, Clock, Filter,
   Dice5, LogOut, Crosshair, Target, Flame, ThumbsUp, ThumbsDown,
-  Gift, BellRing, GalleryHorizontalEnd, Gamepad2,
+  Gift, BellRing, GalleryHorizontalEnd, Gamepad2, Vote, ShoppingBag, LifeBuoy,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import lslLogo from "@/assets/lsl-logo.png";
@@ -52,6 +52,7 @@ import { ClansAdminPanel } from "@/components/admin/ClansAdminPanel";
 import { LotteryAdminPanel } from "@/components/admin/LotteryAdminPanel";
 import { GiftsSpinAdminPanel } from "@/components/admin/GiftsSpinAdminPanel";
 import { SurveysAdminPanel } from "@/components/admin/SurveysAdminPanel";
+import { PollsAdminPanel, ShopAdminPanel, FaqAdminPanel } from "@/components/admin/CommunityAdminPanel";
 import { PushBroadcastPanel } from "@/components/admin/PushBroadcastPanel";
 import { HomeBannersAdminPanel } from "@/components/admin/HomeBannersAdminPanel";
 import { ArcadeAdminPanel } from "@/components/admin/ArcadeAdminPanel";
@@ -208,6 +209,9 @@ export function AdminPage() {
             <TabsContent value="tickets" className="mt-4"><TicketsPanel /></TabsContent>
             <TabsContent value="tasks" className="mt-4"><TasksAchievementsPanel /></TabsContent>
             <TabsContent value="surveys" className="mt-4"><SurveysAdminPanel /></TabsContent>
+            <TabsContent value="polls" className="mt-4"><PollsAdminPanel /></TabsContent>
+            <TabsContent value="shop" className="mt-4"><ShopAdminPanel /></TabsContent>
+            <TabsContent value="faq" className="mt-4"><FaqAdminPanel /></TabsContent>
             <TabsContent value="challenges" className="mt-4"><ChallengesAdminPanel /></TabsContent>
             <TabsContent value="seasons" className="mt-4"><SeasonsAdminPanel /></TabsContent>
             <TabsContent value="bettracker" className="mt-4"><BetTrackerPanel /></TabsContent>
@@ -3346,6 +3350,9 @@ const QUICK_ACTIONS: { i: any; l: string; t: string }[] = [
   { i: Gift, l: "Gifts & Spin", t: "giftsspin" },
   { i: Dice5, l: "Lottery", t: "lottery" },
   { i: ClipboardList, l: "Surveys", t: "surveys" },
+  { i: Vote, l: "Polls", t: "polls" },
+  { i: ShoppingBag, l: "Shop", t: "shop" },
+  { i: LifeBuoy, l: "FAQ / Help", t: "faq" },
   { i: ListOrdered, l: "Leaderboard", t: "leaderboard" },
   { i: Trophy, l: "Matches", t: "matches" },
   { i: Send, l: "Notify", t: "notify" },
@@ -3609,6 +3616,7 @@ function SettingsPanel() {
         <FieldLuxe label="Email"><Input value={s.contact_email ?? ""} onChange={(e) => setS({ ...s, contact_email: e.target.value })} /></FieldLuxe>
         <FieldLuxe label="Phone"><Input value={s.contact_phone ?? ""} onChange={(e) => setS({ ...s, contact_phone: e.target.value })} /></FieldLuxe>
         <FieldLuxe label="WhatsApp"><Input value={s.contact_whatsapp ?? ""} onChange={(e) => setS({ ...s, contact_whatsapp: e.target.value })} /></FieldLuxe>
+        <FieldLuxe label="Discord support server link"><Input placeholder="https://discord.gg/your-invite" value={s.discord_support_url ?? ""} onChange={(e) => setS({ ...s, discord_support_url: e.target.value })} /></FieldLuxe>
       </SettingsSection>
 
       <SettingsSection icon={Megaphone} title="About & Trust" subtitle="Public-facing copy.">

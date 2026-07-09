@@ -4,13 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/Layout";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Ticket as TicketIcon, ChevronRight, Wallet, UserCog, CreditCard, Coins, Tag, Trophy, ListChecks, Sparkles, Lock, History as HistoryIcon, ArrowLeftRight, Gift, Receipt } from "lucide-react";
+import { Ticket as TicketIcon, ChevronRight, Wallet, UserCog, Coins, Tag, Trophy, ListChecks, Sparkles, Lock, ArrowLeftRight, Gift, Receipt } from "lucide-react";
 import { ChallengesPanel } from "@/components/ChallengesPanel";
 import { VipCard } from "@/components/UserHubSections";
 
@@ -32,11 +31,8 @@ export const Route = createFileRoute("/dashboard")({
 function Dashboard() {
   const { user, profile, roles, refresh } = useAuth();
   const [bets, setBets] = useState<any[]>([]);
-  const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [promoOpen, setPromoOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
-  const [betFilter, setBetFilter] = useState<string>("all");
-  const [betSearch, setBetSearch] = useState("");
   const isSponsor = roles?.includes("sponsor") || roles?.includes("admin");
   useEffect(() => {
     if (!user) return;
@@ -47,18 +43,6 @@ function Dashboard() {
     load();
     const ch = supabase.channel(`my-bets-${user.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "bets", filter: `user_id=eq.${user.id}` }, load)
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!user) return;
-    const load = () => supabase.from("withdrawal_requests")
-      .select("*").eq("user_id", user.id).order("created_at", { ascending: false })
-      .then(({ data }) => setWithdrawals(data ?? []));
-    load();
-    const ch = supabase.channel(`my-wds-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "withdrawal_requests", filter: `user_id=eq.${user.id}` }, load)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [user?.id]);
@@ -84,11 +68,12 @@ function Dashboard() {
         {/* Quick panels */}
         <h2 className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">Quick Access</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
-          <PanelCard to="#bets" icon={TicketIcon} title="Bet Slips" subtitle={`${bets.length} total`} />
+          <PanelCard to="/bet-history" icon={TicketIcon} title="Bet Slips" subtitle={`${bets.length} total`} />
           <PanelCard to="/profile" icon={UserCog} title="Edit Profile" subtitle="Update details" />
           <PanelCard to="/withdraw" icon={Wallet} title="Withdrawal" subtitle="Cash out tokens" />
           <PanelCard onClick={() => setTransferOpen(true)} icon={ArrowLeftRight} title="Transfer Tokens" subtitle="Send to a user ID" />
           <PanelCard to="/checkout" icon={Coins} title="Request Tokens" subtitle="Top up balance" />
+          <PanelCard to="/transactions" icon={Receipt} title="Transaction Records" subtitle="Credits & debits" />
           {isSponsor && (
             <PanelCard onClick={() => setPromoOpen(true)} icon={Tag} title="Promo Codes" subtitle="Sponsor only" gold />
           )}
@@ -107,119 +92,6 @@ function Dashboard() {
         <div className="mb-10">
           <GiftsAndSpin onClaimed={refresh} />
         </div>
-
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><HistoryIcon className="h-5 w-5 text-primary" />Bet History</h2>
-        {bets.length > 0 && (
-          <div className="mb-4 space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {[
-                { k: "all", label: "All" },
-                { k: "open", label: "Open" },
-                { k: "won", label: "Won" },
-                { k: "lost", label: "Lost" },
-                { k: "cashed_out", label: "Cashed out" },
-                { k: "suspended", label: "Suspended" },
-                { k: "void", label: "Void" },
-                { k: "refunded", label: "Refunded" },
-              ].map((f) => {
-                const n = f.k === "all" ? bets.length : bets.filter((b) => b.status === f.k).length;
-                if (f.k !== "all" && n === 0) return null;
-                const active = betFilter === f.k;
-                return (
-                  <button
-                    key={f.k}
-                    onClick={() => setBetFilter(f.k)}
-                    className={`text-xs font-semibold rounded-full px-3 py-1.5 border transition ${active ? "bg-primary/20 border-primary/60 text-primary" : "border-border text-muted-foreground hover:text-foreground hover:border-primary/40"}`}
-                  >
-                    {f.label} <span className="opacity-70">({n})</span>
-                  </button>
-                );
-              })}
-            </div>
-            <Input
-              value={betSearch}
-              onChange={(e) => setBetSearch(e.target.value)}
-              placeholder="Search by tracking ID, booking code or match…"
-              className="max-w-md"
-            />
-          </div>
-        )}
-        <div id="bets" className="space-y-3 scroll-mt-24">
-          {bets.length === 0 && <p className="text-muted-foreground text-sm">No bets yet.</p>}
-          {(() => {
-            const q = betSearch.trim().toLowerCase();
-            const filtered = bets.filter((b) => {
-              if (betFilter !== "all" && b.status !== betFilter) return false;
-              if (!q) return true;
-              const hay = [
-                b.tracking_id,
-                b.booking_code,
-                ...(b.bet_selections ?? []).map((s: any) => s.matches?.name || s.selection_label),
-              ].join(" ").toLowerCase();
-              return hay.includes(q);
-            });
-            if (filtered.length === 0) return <p className="text-muted-foreground text-sm">No bets match this filter.</p>;
-            return filtered.map((b) => (
-            <Link key={b.id} to="/ticket/$id" params={{ id: b.id }}>
-              <Card className="p-3 hover:border-primary/60 transition group cursor-pointer">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-primary">{b.tracking_id}</span>
-                      <span className="font-mono text-[10px] text-muted-foreground">· {b.booking_code}</span>
-                    </div>
-                    <div className="font-bold mt-0.5 text-sm">{b.bet_selections?.length ?? 0} selection(s) · stake {b.stake.toLocaleString()}</div>
-                    <div className="text-[11px] text-muted-foreground truncate mt-0.5">
-                      {(b.bet_selections ?? []).map((s: any) => s.matches?.name || s.selection_label).join(" · ")}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant="outline" className={
-                      b.status === 'won' ? 'border-emerald-500/50 text-emerald-300' :
-                      b.status === 'lost' ? 'border-destructive/50 text-destructive' :
-                      b.status === 'suspended' ? 'border-amber-500/50 text-amber-300' :
-                      'border-primary/50 text-primary'
-                    }>{b.status.toUpperCase()}</Badge>
-                    <div className="text-[11px] text-muted-foreground mt-1">Payout {b.potential_payout.toLocaleString()}</div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
-                </div>
-              </Card>
-            </Link>
-            ));
-          })()}
-        </div>
-
-        <div className="mt-10 flex items-center justify-between flex-wrap gap-2">
-          <h2 className="text-xl font-bold flex items-center gap-2"><Wallet className="h-5 w-5 text-primary" />My Withdrawals</h2>
-          <Link to="/withdraw" className="text-xs text-primary hover:underline">Request withdrawal →</Link>
-        </div>
-        <div className="space-y-3 mt-4">
-          {withdrawals.length === 0 && <p className="text-muted-foreground text-sm">No withdrawal requests yet.</p>}
-          {withdrawals.map((w) => (
-            <Card key={w.id} className="p-4">
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="font-bold">{w.amount.toLocaleString()} tokens</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {w.ingame_name} · {w.gang_name}
-                    {w.ticket_ref && <> · ref {w.ticket_ref}</>}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(w.created_at).toLocaleString()}</div>
-                  {w.admin_note && <div className="text-xs mt-1 text-muted-foreground">Admin: {w.admin_note}</div>}
-                </div>
-                <Badge variant="outline" className={
-                  w.status === 'approved' ? 'border-emerald-500/50 text-emerald-300' :
-                  w.status === 'rejected' ? 'border-destructive/50 text-destructive' :
-                  w.status === 'paid' ? 'border-emerald-500/50 text-emerald-300' :
-                  'border-amber-500/50 text-amber-300'
-                }>{String(w.status).toUpperCase()}</Badge>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        <TransactionRecords />
       </div>
       <PromoRequestDialog open={promoOpen} onClose={() => setPromoOpen(false)} userId={user.id} />
       <TransferDialog open={transferOpen} onClose={() => setTransferOpen(false)} onDone={refresh} />
@@ -320,51 +192,6 @@ function GiftsAndSpin({ onClaimed }: { onClaimed: () => void }) {
           </>
         )}
       </Card>
-    </div>
-  );
-}
-
-function TransactionRecords() {
-  const { user } = useAuth();
-  const [txns, setTxns] = useState<any[]>([]);
-  const [filter, setFilter] = useState<"all" | "credit" | "debit">("all");
-  useEffect(() => {
-    if (!user) return;
-    const load = () => supabase.from("token_transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100)
-      .then(({ data }) => setTxns(data ?? []));
-    load();
-    const ch = supabase.channel(`my-txns-${user.id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "token_transactions", filter: `user_id=eq.${user.id}` }, load)
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [user?.id]);
-  const filtered = txns.filter((t) => filter === "all" || (filter === "credit" ? t.amount > 0 : t.amount < 0));
-  return (
-    <div className="mt-10">
-      <h2 className="text-xl font-bold flex items-center gap-2 mb-4"><Receipt className="h-5 w-5 text-primary" />Transaction Records</h2>
-      <div className="flex gap-2 mb-4">
-        {[{ k: "all", l: "All" }, { k: "credit", l: "Credits" }, { k: "debit", l: "Debits" }].map((f) => (
-          <button key={f.k} onClick={() => setFilter(f.k as any)} className={`text-xs font-semibold rounded-full px-3 py-1.5 border transition ${filter === f.k ? "bg-primary/20 border-primary/60 text-primary" : "border-border text-muted-foreground hover:text-foreground hover:border-primary/40"}`}>{f.l}</button>
-        ))}
-      </div>
-      <div className="space-y-2">
-        {filtered.length === 0 && <p className="text-sm text-muted-foreground">No transactions yet.</p>}
-        {filtered.map((t) => (
-          <Card key={t.id} className="p-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="font-semibold text-sm capitalize">{String(t.kind).replace(/_/g, " ")}</div>
-                {t.description && <div className="text-[11px] text-muted-foreground truncate">{t.description}</div>}
-                <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(t.created_at).toLocaleString()}</div>
-              </div>
-              <div className="text-right">
-                <div className={`font-bold ${t.amount >= 0 ? "text-emerald-300" : "text-destructive"}`}>{t.amount >= 0 ? "+" : ""}{Number(t.amount).toLocaleString()}</div>
-                <div className="text-[10px] text-muted-foreground">bal {Number(t.balance_after).toLocaleString()}</div>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
     </div>
   );
 }

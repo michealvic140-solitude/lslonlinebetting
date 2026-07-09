@@ -43,7 +43,7 @@ function TicketPage() {
 
   async function loadBet() {
     const { data, error } = await supabase.from("bets")
-      .select("*, bet_selections(*, matches!match_id(name, status, home_score, away_score, is_virtual, match_kind, home_team:teams!home_team_id(name,logo_url), away_team:teams!away_team_id(name,logo_url)), markets!market_id(name), odds!odd_id(future_status,future_next_title,future_next_at,future_progress,future_emblem_url,future_candidate_type))")
+      .select("*, bet_selections(*, matches!match_id(id, name, status, start_time, home_score, away_score, is_virtual, match_kind, home_team:teams!home_team_id(name,logo_url), away_team:teams!away_team_id(name,logo_url)), markets!market_id(name), odds!odd_id(future_status,future_next_title,future_next_at,future_progress,future_emblem_url,future_candidate_type))")
       .eq("id", id).maybeSingle();
     if (error) { console.error("loadBet error", error); return; }
     if (!data) return;
@@ -108,26 +108,53 @@ export function BetVoucher({ bet, sels, statusBadge, copy, shareCode }: {
     const lead = m.home_score > m.away_score ? m.home_team?.name : m.away_score > m.home_score ? m.away_team?.name : "Draw";
     return s.selection_label === lead;
   }
+  // Resolve a single selection's outcome even before the backend settles the whole bet,
+  // so an ended match never lingers on "PENDING".
+  function selResult(s: any): "won" | "lost" | "pending" {
+    if (s.result === "won") return "won";
+    if (s.result === "lost") return "lost";
+    const m = s.matches;
+    if (m?.match_kind === "future") {
+      if (s.odds?.future_status === "winner") return "won";
+      if (["disqualified", "eliminated", "settled_lost"].includes(s.odds?.future_status)) return "lost";
+      return "pending";
+    }
+    if (!m || m.status !== "ended") return "pending";
+    if (s.markets?.name === "Correct Score") return s.selection_label === `${m.home_score}-${m.away_score}` ? "won" : "lost";
+    const lead = m.home_score > m.away_score ? m.home_team?.name : m.away_score > m.home_score ? m.away_team?.name : "Draw";
+    return s.selection_label === lead ? "won" : "lost";
+  }
   // Cash-out only when every match has ended and every selection won.
   const allWon = sels.length > 0 && sels.every(endedWin);
   const cashoutValue = Number(bet.potential_payout);
   const isVirtualTicket = sels.some((s: any) => s.matches?.is_virtual);
   const isFutureTicket = sels.some((s: any) => s.matches?.match_kind === "future");
+  // Derive an effective ticket status: if the backend hasn't settled yet but every
+  // leg has already resolved, reflect the real result instead of showing PENDING.
+  const resolved = sels.map(selResult);
+  const anyLost = resolved.includes("lost");
+  const allResolvedWon = sels.length > 0 && resolved.every((r) => r === "won");
+  const effectiveStatus =
+    status === "won" || status === "lost" || status === "cashed_out" || status === "void" || status === "refunded" || status === "suspended"
+      ? status
+      : anyLost ? "lost"
+      : allResolvedWon ? "won"
+      : "open";
   const statusBarCls =
-    status === "won" || status === "cashed_out" ? "voucher-status-bar-won"
-    : status === "lost" ? "voucher-status-bar-lost"
+    effectiveStatus === "won" || effectiveStatus === "cashed_out" ? "voucher-status-bar-won"
+    : effectiveStatus === "lost" ? "voucher-status-bar-lost"
     : "voucher-status-bar-pending";
   const statusBarIcon =
-    status === "won" || status === "cashed_out" ? <Trophy className="h-4 w-4" />
-    : status === "lost" ? <X className="h-4 w-4" />
+    effectiveStatus === "won" || effectiveStatus === "cashed_out" ? <Trophy className="h-4 w-4" />
+    : effectiveStatus === "lost" ? <X className="h-4 w-4" />
     : <ClockIcon className="h-4 w-4" />;
   const statusBarText =
-    status === "won" ? "BET STATUS: CONGRATULATIONS, YOU WON!"
-    : status === "cashed_out" ? "BET STATUS: CASHED OUT SUCCESSFULLY"
-    : status === "lost" ? "BET STATUS: BETTER LUCK NEXT ROUND"
-    : status === "void" ? "BET STATUS: TICKET VOIDED"
-    : status === "refunded" ? "BET STATUS: REFUNDED"
-    : status === "suspended" ? "BET STATUS: SUSPENDED BY ADMIN"
+    effectiveStatus === "won" ? (status === "won" ? "BET STATUS: CONGRATULATIONS, YOU WON!" : "BET STATUS: ALL LEGS WON · SETTLING…")
+    : effectiveStatus === "cashed_out" ? "BET STATUS: CASHED OUT SUCCESSFULLY"
+    : effectiveStatus === "lost" ? "BET STATUS: BETTER LUCK NEXT ROUND"
+    : effectiveStatus === "void" ? "BET STATUS: TICKET VOIDED"
+    : effectiveStatus === "refunded" ? "BET STATUS: REFUNDED"
+    : effectiveStatus === "suspended" ? "BET STATUS: SUSPENDED BY ADMIN"
     : "BET STATUS: PENDING SETTLEMENT";
 
   return (
@@ -216,51 +243,74 @@ export function BetVoucher({ bet, sels, statusBadge, copy, shareCode }: {
               const isFuture = m?.match_kind === "future";
               const live = m?.status === "live";
               const ended = m?.status === "ended";
-              const won = s.result === "won";
-              const lost = s.result === "lost";
+              const r = selResult(s);
+              const won = r === "won";
+              const lost = r === "lost";
               const badgeCls = won ? "badge-won" : lost ? "badge-lost" : "badge-pending";
               const badgeLabel = won ? "WON" : lost ? "LOST" : live ? "LIVE" : "PENDING";
               const BadgeIcon = won ? Trophy : lost ? X : ClockIcon;
               const scoreLabel = isFuture ? "PROGRESS" : ended ? "FINAL" : live ? "LIVE" : "SCORE";
               const futureStatus = s.odds?.future_status ?? "active";
+              // Derive a short, stable numeric Game ID from the match uuid (cosmetic, like a bookmaker slip).
+              const gid = m?.id ? (parseInt(m.id.replace(/[^0-9a-f]/gi, "").slice(0, 6) || "0", 16) % 90000) + 10000 : null;
+              const dt = m?.start_time
+                ? new Date(m.start_time).toLocaleString(undefined, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+                : null;
               return (
-                <div key={s.id} className="voucher-row p-3 sm:p-4 transition-all hover:scale-[1.01]">
-                  <div className="flex items-center gap-3">
-                    {/* Logo */}
-                    <div className="shrink-0">
-                      <TeamLogo name={isFuture ? s.selection_label : m?.home_team?.name} url={isFuture ? s.odds?.future_emblem_url : m?.home_team?.logo_url} size={36} rounded="full" />
+                <div key={s.id} className="voucher-row p-3 sm:p-4 transition-all hover:scale-[1.01] space-y-2.5">
+                  {/* META: game id · date + status badge */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground truncate min-w-0">
+                      {isFuture ? "Tournament Future" : gid ? `Game ID: ${gid}` : "Match"}
+                      {dt && <span className="whitespace-nowrap"> <span className="text-emerald-400/50">|</span> {dt}</span>}
                     </div>
-                    {/* Match + pick */}
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs sm:text-sm font-extrabold tracking-wide truncate uppercase">
-                        {isFuture ? m?.name : <>{m?.home_team?.name} <span className="text-muted-foreground font-normal lowercase">vs</span> {m?.away_team?.name}</>}
-                      </div>
-                      <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-muted-foreground mt-0.5 truncate">
-                        Pick: <span className="text-foreground font-bold">{s.selection_label}</span>{isFuture && <span> · {s.odds?.future_candidate_type ?? "Contender"}</span>}
-                      </div>
-                    </div>
-                    {/* Score */}
-                    <div className="text-center shrink-0 hidden sm:block">
-                      <div className="text-[9px] uppercase tracking-widest text-muted-foreground">{scoreLabel}</div>
-                      <div className={`font-mono font-black text-base ${live ? "neon-green animate-pulse" : "text-foreground"}`}>
-                        {isFuture ? futureStatus.toUpperCase() : m ? `${m.home_score}-${m.away_score}` : "—"}
-                      </div>
-                    </div>
-                    {/* Status badge */}
                     <div className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black tracking-widest ${badgeCls}`}>
                       {badgeLabel} <BadgeIcon className="h-3 w-3" />
                     </div>
-                    {/* Odds */}
-                    <div className="text-right shrink-0 w-12 sm:w-14">
-                      <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Odds</div>
-                      <div className="font-mono font-black text-base sm:text-lg gold-foil">{Number(s.locked_odds).toFixed(2)}</div>
+                  </div>
+
+                  {/* TEAMS with logos */}
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex -space-x-2 shrink-0">
+                      <TeamLogo name={isFuture ? s.selection_label : m?.home_team?.name} url={isFuture ? s.odds?.future_emblem_url : m?.home_team?.logo_url} size={30} rounded="full" />
+                      {!isFuture && <TeamLogo name={m?.away_team?.name} url={m?.away_team?.logo_url} size={30} rounded="full" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm sm:text-base font-extrabold tracking-wide uppercase leading-tight">
+                        {isFuture ? m?.name : <>{m?.home_team?.name} <span className="text-muted-foreground font-normal lowercase mx-0.5">v</span> {m?.away_team?.name}</>}
+                      </div>
                     </div>
                   </div>
-                  {/* mobile score row */}
-                  <div className="sm:hidden mt-2 pt-2 border-t border-emerald-500/15 flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
-                    <span>{scoreLabel}</span>
-                    <span className={`font-mono font-black ${live ? "neon-green animate-pulse" : "text-foreground"}`}>{isFuture ? futureStatus.toUpperCase() : m ? `${m.home_score}-${m.away_score}` : "—"}</span>
+
+                  {/* MATCH TRACKER link + score */}
+                  <div className="flex items-center justify-between gap-2">
+                    {m && !isFuture ? (
+                      <Link to="/matches/$matchId" params={{ matchId: m.id }} className="inline-flex items-center gap-1.5 text-xs font-bold neon-green hover:underline">
+                        <TrendingUp className="h-3.5 w-3.5" />Match Tracker
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-muted-foreground font-semibold">Futures market</span>
+                    )}
+                    <div className="text-right shrink-0">
+                      <span className="text-[9px] uppercase tracking-widest text-muted-foreground mr-1.5">{scoreLabel}</span>
+                      <span className={`font-mono font-black text-sm ${live ? "neon-green animate-pulse" : "text-foreground"}`}>
+                        {isFuture ? futureStatus.toUpperCase() : m ? `${m.home_score}-${m.away_score}` : "—"}
+                      </span>
+                    </div>
                   </div>
+
+                  {/* PICK / MARKET box */}
+                  <div className="rounded-xl border border-emerald-500/15 bg-background/40 px-3 py-2.5 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 items-center">
+                    <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Pick</span>
+                    <span className="text-sm font-bold text-foreground truncate">
+                      {s.selection_label}<span className="gold-foil font-mono font-black">@{Number(s.locked_odds).toFixed(2)}</span>
+                    </span>
+                    <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Market</span>
+                    <span className="text-xs font-semibold text-foreground/90 truncate">
+                      {isFuture ? (s.odds?.future_candidate_type ?? "Contender") : (s.markets?.name ?? "—")}
+                    </span>
+                  </div>
+
                   {isFuture && <FutureTicketProgress odd={s.odds} />}
                 </div>
               );

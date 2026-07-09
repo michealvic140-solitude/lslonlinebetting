@@ -154,20 +154,10 @@ function Index() {
 
       <BookingCodeFab />
 
-      {/* Hot Bets & Hall of Fame — prominent full-width sections */}
-      <section className="container mt-10 grid grid-cols-2 gap-3 md:gap-6">
-        <div className="min-w-0">
-          <SectionHeader icon={Flame} title="Hot Bets" subtitle="What the league is backing right now." />
-          <div className="mt-4"><HotBets /></div>
-        </div>
-        <div className="min-w-0">
-          <SectionHeader icon={Trophy} title="Hall of Fame" subtitle="Grand prize winners — most tokens won." />
-          <div className="mt-4"><GrandPrizeWinners /></div>
-        </div>
-      </section>
-
+      {/* Match feed on the left · Hot Bets + Hall of Fame stacked on the right */}
       <section className="container mt-10">
-        <div className="space-y-10">
+        <div className="grid gap-6 lg:grid-cols-[1fr_340px] items-start">
+          <div className="space-y-10 min-w-0">
           {loading && <p className="text-muted-foreground">Loading league…</p>}
           {!loading && featuredFallback.length > 0 && (
             <div>
@@ -187,7 +177,7 @@ function Index() {
           {!loading && live.length > 0 && (
             <div>
               <SectionHeader icon={Flame} title="Live Now" subtitle="Live odds. Markets close round-by-round." />
-              <div className="grid md:grid-cols-2 gap-4 mt-4">
+              <div className="grid xl:grid-cols-2 gap-4 mt-4">
                 {live.map((m) => <MatchCardLive key={m.id} match={m} />)}
               </div>
             </div>
@@ -195,7 +185,7 @@ function Index() {
           {!loading && upcoming.length > 0 && (
             <div>
               <SectionHeader icon={Crosshair} title="Upcoming Matches" subtitle="Lock your picks before the round starts." />
-              <div className="grid md:grid-cols-2 gap-4 mt-4">
+              <div className="grid xl:grid-cols-2 gap-4 mt-4">
                 {upcoming.slice(0, 6).map((m) => <MatchCardLive key={m.id} match={m} />)}
               </div>
             </div>
@@ -203,11 +193,22 @@ function Index() {
           {categoryGroups.map(([id, g]) => (
             <div key={id}>
               <SectionHeader icon={Crosshair} title={g.name} subtitle={`${g.items.length} match${g.items.length === 1 ? "" : "es"} in this category.`} />
-              <div className="grid md:grid-cols-2 gap-4 mt-4">
+              <div className="grid xl:grid-cols-2 gap-4 mt-4">
                 {g.items.map((m) => <MatchCardLive key={m.id} match={m} />)}
               </div>
             </div>
           ))}
+          </div>
+          <aside className="space-y-8 min-w-0 lg:sticky lg:top-20 self-start">
+            <div>
+              <SectionHeader icon={Flame} title="Hot Bets" subtitle="What the league is backing right now." />
+              <div className="mt-4"><HotBets /></div>
+            </div>
+            <div>
+              <SectionHeader icon={Trophy} title="Hall of Fame" subtitle="Grand prize winners — most tokens won." />
+              <div className="mt-4"><GrandPrizeWinners /></div>
+            </div>
+          </aside>
         </div>
       </section>
 

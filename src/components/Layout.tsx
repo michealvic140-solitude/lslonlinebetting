@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, User as UserIcon, Shield, MessageSquare, Home, Trophy, Ticket, LifeBuoy, Wallet, Crosshair as MatchIcon, Settings as SettingsIcon, Coins, LayoutDashboard, Dice5, Swords, Clover, ClipboardList, ListChecks, Gamepad2, ShoppingBag } from "lucide-react";
+import { LogOut, User as UserIcon, Shield, MessageSquare, Home, Trophy, Ticket, LifeBuoy, Wallet, Crosshair as MatchIcon, Settings as SettingsIcon, Coins, LayoutDashboard, Dice5, Swords, Clover, ListChecks, Gamepad2, ShoppingBag } from "lucide-react";
 import { GangLogo } from "@/components/GangLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { LevelUpModal } from "@/components/Spotlight";
 import { GlobalWinAnimation } from "@/components/GlobalWinAnimation";
 import { BetSuccessPopout } from "@/components/BetSuccessPopout";
 import { SurveyPopout } from "@/components/SurveyPopout";
+import { PollPopout } from "@/components/PollPopout";
 import { PushPermissionPrompt } from "@/components/PushPermissionPrompt";
 import { ReactNode, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -130,7 +131,6 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             <NavLink to="/tournament" icon={Swords} label="Tournament" />
             {user && <NavLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" />}
             {user && <NavLink to="/tasks" icon={ListChecks} label="Tasks" />}
-            {user && <NavLink to="/surveys" icon={ClipboardList} label="Surveys" />}
             {user && <NavLink to="/checkout" icon={Coins} label="Buy" />}
             {user && <NavLink to="/withdraw" icon={Wallet} label="Withdraw" />}
             {user && <NavLink to="/support" icon={LifeBuoy} label="Support" />}
@@ -139,6 +139,11 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             {!isAdmin && isMod && <NavLink to="/mod" icon={Shield} label="Mod" danger />}
           </nav>
           <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
+            <Link to="/shop" title="Rewards Shop" aria-label="Rewards Shop">
+              <Button variant="ghost" size="icon" className="rounded-full border border-transparent hover:border-primary/30">
+                <ShoppingBag className="h-4 w-4 text-primary" />
+              </Button>
+            </Link>
             {user && profile ? (
               <>
                 <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/30 bg-gradient-to-r from-primary/10 to-accent/5 shadow-[0_0_15px_-5px_rgba(212,175,55,0.4)]">
@@ -175,6 +180,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
       <GlobalWinAnimation />
       <BetSuccessPopout />
       <SurveyPopout />
+      <PollPopout />
       <PushPermissionPrompt />
       <nav
         className="lg:hidden fixed left-0 inset-y-0 pt-16 z-40 w-16 overflow-y-auto bg-transparent border-0 shadow-none"
@@ -204,7 +210,6 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           {user && <>
             <MobLink to="/dashboard" icon={Ticket} label="ME" />
             <MobLink to="/tasks" icon={ListChecks} label="Tasks" />
-            <MobLink to="/surveys" icon={ClipboardList} label="Surveys" />
             <MobLink to="/profile" icon={UserIcon} label="Profile" />
             <MobLink to="/settings" icon={SettingsIcon} label="Settings" />
             <MobLink to="/support" icon={LifeBuoy} label="Help" />
@@ -243,6 +248,7 @@ function SiteFooter() {
           <div className="flex gap-3 mt-2 text-xs">
             <button className="text-primary hover:underline" onClick={() => setOpen("about")}>Read more</button>
             <button className="text-primary hover:underline" onClick={() => setOpen("terms")}>Terms & Conditions</button>
+            <Link to="/faq" className="text-primary hover:underline">Help & FAQ</Link>
           </div>
         </div>
         <div>
