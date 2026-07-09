@@ -95,6 +95,9 @@ export type Database = {
           discord_support_url: string | null
           emblem_auto_approve: boolean
           exposure_warn_pct: number
+          featured_bg_fit: string | null
+          featured_bg_position: string | null
+          featured_bg_url: string | null
           force_reload_at: string | null
           friends_enabled: boolean
           futures_max_payout: number | null
@@ -220,6 +223,9 @@ export type Database = {
           discord_support_url?: string | null
           emblem_auto_approve?: boolean
           exposure_warn_pct?: number
+          featured_bg_fit?: string | null
+          featured_bg_position?: string | null
+          featured_bg_url?: string | null
           force_reload_at?: string | null
           friends_enabled?: boolean
           futures_max_payout?: number | null
@@ -345,6 +351,9 @@ export type Database = {
           discord_support_url?: string | null
           emblem_auto_approve?: boolean
           exposure_warn_pct?: number
+          featured_bg_fit?: string | null
+          featured_bg_position?: string | null
+          featured_bg_url?: string | null
           force_reload_at?: string | null
           friends_enabled?: boolean
           futures_max_payout?: number | null
@@ -3783,6 +3792,7 @@ export type Database = {
         Returns: string
       }
       auto_resolve_virtual_round: { Args: { _match_id: string }; Returns: Json }
+      auto_settle_lotteries: { Args: never; Returns: Json }
       bracket_generate: { Args: { _tournament_id: string }; Returns: Json }
       bracket_set_winner: {
         Args: {
