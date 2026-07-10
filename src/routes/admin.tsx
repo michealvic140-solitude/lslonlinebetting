@@ -1876,7 +1876,7 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
   const [cats, setCats] = useState<any[]>([]);
   const [teamA, setTeamA] = useState({ id: "", name: "", logoFile: null as File | null, mainPlayers: "", subPlayers: "" });
   const [teamB, setTeamB] = useState({ id: "", name: "", logoFile: null as File | null, mainPlayers: "", subPlayers: "" });
-  const [details, setDetails] = useState({ homeIs: "A" as "A" | "B", oddsA: 2.0, draw: 3.5, oddsB: 2.0, name: "", start_time: "", location: "", category_id: "", featured: false, homePresent: false, awayPresent: false, restrictRepeat: false });
+  const [details, setDetails] = useState({ homeIs: "A" as "A" | "B", oddsA: 2.0, draw: 3.5, oddsB: 2.0, name: "", start_time: "", location: "", category_id: "", featured: false, homePresent: false, awayPresent: false, restrictRepeat: false, featuredBgFile: null as File | null, featuredBgUrl: "" });
   const [csEnabled, setCsEnabled] = useState(true);
   const [csRows, setCsRows] = useState<Array<{ label: string; value: number }>>(
     POPULAR_SCORES.map(([h, a]) => {
@@ -1932,8 +1932,18 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
       location: details.location, status: "scheduled",
       category_id: details.category_id || null, is_featured: details.featured,
       home_present: details.homePresent, away_present: details.awayPresent, restrict_repeat_contender: details.restrictRepeat,
-    }).select().single();
+      featured_bg_url: details.featuredBgUrl || null,
+    } as any).select().single();
     if (error) { toast.error(error.message); return; }
+    if (details.featured && details.featuredBgFile && m?.id) {
+      const ext = details.featuredBgFile.name.split(".").pop() || "jpg";
+      const path = `match-${m.id}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("ads").upload(path, details.featuredBgFile, { upsert: true });
+      if (!upErr) {
+        const url = supabase.storage.from("ads").getPublicUrl(path).data.publicUrl;
+        await (supabase as any).from("matches").update({ featured_bg_url: url }).eq("id", m.id);
+      }
+    }
     const { data: market } = await supabase.from("markets").insert({ match_id: m.id, name: "Match Winner" }).select().single();
     if (market) {
       await supabase.from("odds").insert([
@@ -2039,6 +2049,14 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
             </div>
             <Input placeholder="Location / Venue" value={details.location} onChange={(e) => setDetails({ ...details, location: e.target.value })} />
             <label className="flex items-center gap-2 text-sm"><Switch checked={details.featured} onCheckedChange={(v) => setDetails({ ...details, featured: v })} /> Publish on homepage as Featured</label>
+            {details.featured && (
+              <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                <label className="text-[11px] uppercase tracking-widest text-primary font-bold">Featured background image (optional)</label>
+                <p className="text-[11px] text-muted-foreground">Shown behind this specific match in the homepage Featured Matches carousel.</p>
+                <Input type="file" accept="image/*" onChange={(e) => setDetails({ ...details, featuredBgFile: e.target.files?.[0] ?? null })} />
+                <Input placeholder="…or paste a direct image URL" value={details.featuredBgUrl} onChange={(e) => setDetails({ ...details, featuredBgUrl: e.target.value })} />
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <label className="flex items-center gap-2 rounded-lg border border-primary/20 bg-card/60 p-3 text-sm"><Switch checked={details.homePresent} onCheckedChange={(v) => setDetails({ ...details, homePresent: v })} /> Home team present (counts on Leaderboard)</label>
               <label className="flex items-center gap-2 rounded-lg border border-primary/20 bg-card/60 p-3 text-sm"><Switch checked={details.awayPresent} onCheckedChange={(v) => setDetails({ ...details, awayPresent: v })} /> Away team present (counts on Leaderboard)</label>
