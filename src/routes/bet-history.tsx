@@ -195,3 +195,73 @@ function BetHistoryPage() {
     </Layout>
   );
 }
+
+function LotteryTicketDialog({ ticket, onClose }: { ticket: any | null; onClose: () => void }) {
+  if (!ticket) return null;
+  const draw = ticket.lottery_draws ?? {};
+  const picks: number[] = Array.isArray(ticket.numbers) && ticket.numbers.length ? ticket.numbers : (ticket.number != null ? [ticket.number] : []);
+  const winners: number[] = Array.isArray(draw.winning_numbers) && draw.winning_numbers.length ? draw.winning_numbers : (draw.winning_number != null ? [draw.winning_number] : []);
+  const drawn = draw.status === "drawn";
+  const overall = ticket.status === "won" ? "WON" : ticket.status === "lost" ? "LOST" : "PENDING";
+  const overallColor = ticket.status === "won" ? "text-emerald-300 border-emerald-500/60" : ticket.status === "lost" ? "text-destructive border-destructive/60" : "text-amber-300 border-amber-500/60";
+  return (
+    <Dialog open={!!ticket} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="glass-strong border-primary/40 shadow-gold max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base gradient-gold-text">
+            <Dice5 className="h-5 w-5 text-primary" />Lottery Ticket
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="rounded-xl border border-primary/30 bg-background/40 p-3">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Draw</div>
+            <div className="font-bold">{draw.title ?? "Lottery Draw"}</div>
+            <div className="text-[11px] text-muted-foreground mt-1">
+              Placed {new Date(ticket.created_at).toLocaleString()}
+              {drawn && draw.created_at && <> · Drawn {new Date(draw.created_at).toLocaleString()}</>}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Your numbers</div>
+            <div className="flex flex-wrap gap-2">
+              {picks.map((n, i) => {
+                const hit = winners.includes(n);
+                const cls = !drawn
+                  ? "border-amber-500/50 text-amber-200 bg-amber-500/5"
+                  : hit ? "border-emerald-400/70 text-emerald-200 bg-emerald-500/15 shadow-[0_0_16px_rgba(52,211,153,0.35)]"
+                        : "border-destructive/50 text-destructive bg-destructive/10";
+                return (
+                  <div key={i} className={`h-12 w-12 rounded-xl border-2 grid place-items-center font-black text-lg ${cls}`}>
+                    {n}
+                  </div>
+                );
+              })}
+            </div>
+            {drawn && (
+              <div className="mt-3 text-[11px] text-muted-foreground">
+                Winning number{winners.length > 1 ? "s" : ""}: <span className="text-primary font-bold">{winners.join(", ") || "—"}</span>
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-lg border border-border bg-background/40 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Stake</div>
+              <div className="font-mono font-bold">{Number(ticket.stake).toLocaleString()}</div>
+            </div>
+            <div className="rounded-lg border border-border bg-background/40 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Multiplier</div>
+              <div className="font-mono font-bold text-primary">x{draw.multiplier ?? "—"}</div>
+            </div>
+            <div className="rounded-lg border border-border bg-background/40 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Payout</div>
+              <div className="font-mono font-bold text-emerald-300">{Number(ticket.payout || 0).toLocaleString()}</div>
+            </div>
+          </div>
+          <div className={`rounded-xl border-2 py-3 text-center font-black tracking-widest ${overallColor}`}>
+            {overall}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
