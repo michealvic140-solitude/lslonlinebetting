@@ -3345,6 +3345,7 @@ const QUICK_ACTIONS: { i: any; l: string; t: string }[] = [
   { i: Sparkles, l: "Challenges", t: "challenges" },
   { i: MessageSquare, l: "Chat", t: "chat" },
   { i: Megaphone, l: "Content", t: "content" },
+  { i: Megaphone, l: "News", t: "news" },
   { i: Target, l: "Futures", t: "futures" },
   { i: Trophy, l: "Emblems", t: "emblems" },
   { i: Calendar, l: "Events", t: "events" },
