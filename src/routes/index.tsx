@@ -163,22 +163,8 @@ function Index() {
         <div className="grid gap-3 min-[560px]:gap-5 min-[560px]:grid-cols-[minmax(0,1fr)_minmax(0,200px)] lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_340px] items-start">
           <div className="space-y-10 min-w-0">
           {loading && <p className="text-muted-foreground">Loading league…</p>}
-          {!loading && featuredFallback.length > 0 && (() => {
-            const hasFeaturedBg = futures.length === 0 && !!settings?.featured_bg_url;
-            return (
-            <div className={hasFeaturedBg ? "relative overflow-hidden rounded-3xl border border-primary/25 shadow-gold" : ""}>
-              {hasFeaturedBg && (
-                <>
-                  <img
-                    src={settings.featured_bg_url}
-                    alt=""
-                    className="absolute inset-0 h-full w-full"
-                    style={{ objectFit: (settings.featured_bg_fit as any) || "cover", objectPosition: settings.featured_bg_position || "center" }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/35 to-background/65" />
-                </>
-              )}
-              <div className={hasFeaturedBg ? "relative p-4 md:p-6" : ""}>
+          {!loading && featuredFallback.length > 0 && (
+            <div>
               <SectionHeader icon={Trophy} title="Featured Matches" subtitle="The biggest matchups of the round." />
               <div className="mt-4">
                 <Carousel opts={{ loop: featuredFallback.length > 1 }} plugins={featuredFallback.length > 1 ? [Autoplay({ delay: 5000, stopOnInteraction: false })] : []}>
@@ -190,31 +176,29 @@ function Index() {
                   {featuredFallback.length > 1 && (<><CarouselPrevious /><CarouselNext /></>)}
                 </Carousel>
               </div>
-              </div>
             </div>
-            );
-          })()}
+          )}
           {!loading && live.length > 0 && (
             <div>
               <SectionHeader icon={Flame} title="Live Now" subtitle="Live odds. Markets close round-by-round." />
-              <div className="grid xl:grid-cols-2 gap-4 mt-4">
-                {live.map((m) => <MatchCardLive key={m.id} match={m} />)}
+              <div className="space-y-2 mt-4">
+                {live.map((m) => <MatchCardLive key={m.id} match={m} variant="row" />)}
               </div>
             </div>
           )}
           {!loading && upcoming.length > 0 && (
             <div>
               <SectionHeader icon={Crosshair} title="Upcoming Matches" subtitle="Lock your picks before the round starts." />
-              <div className="grid xl:grid-cols-2 gap-4 mt-4">
-                {upcoming.slice(0, 6).map((m) => <MatchCardLive key={m.id} match={m} />)}
+              <div className="space-y-2 mt-4">
+                {upcoming.slice(0, 6).map((m) => <MatchCardLive key={m.id} match={m} variant="row" />)}
               </div>
             </div>
           )}
           {categoryGroups.map(([id, g]) => (
             <div key={id}>
               <SectionHeader icon={Crosshair} title={g.name} subtitle={`${g.items.length} match${g.items.length === 1 ? "" : "es"} in this category.`} />
-              <div className="grid xl:grid-cols-2 gap-4 mt-4">
-                {g.items.map((m) => <MatchCardLive key={m.id} match={m} />)}
+              <div className="space-y-2 mt-4">
+                {g.items.map((m) => <MatchCardLive key={m.id} match={m} variant="row" />)}
               </div>
             </div>
           ))}
