@@ -54,7 +54,7 @@ export function LotteryAdminPanel() {
       title: draft.title.trim(),
       number_max: Math.max(1, draft.number_max),
       multiplier: Math.max(1, draft.multiplier),
-      picks_count: Math.max(1, Math.min(5, draft.picks_count)),
+      picks_count: Math.max(1, Math.min(10, draft.picks_count)),
     } as any);
     if (error) return toast.error(error.message);
     toast.success("Draw created");
@@ -104,7 +104,7 @@ export function LotteryAdminPanel() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Title</label><Input value={draft.title} onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))} /></div>
           <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Highest number (0–N)</label><Input type="number" min={1} value={draft.number_max} onChange={(e) => setDraft((d) => ({ ...d, number_max: Number(e.target.value) }))} /></div>
-          <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Numbers to pick (1–5)</label><Input type="number" min={1} max={5} value={draft.picks_count} onChange={(e) => setDraft((d) => ({ ...d, picks_count: Number(e.target.value) }))} /></div>
+          <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Numbers to pick (1–10)</label><Input type="number" min={1} max={10} value={draft.picks_count} onChange={(e) => setDraft((d) => ({ ...d, picks_count: Number(e.target.value) }))} /></div>
           <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Payout multiplier</label><Input type="number" min={1} step={0.5} value={draft.multiplier} onChange={(e) => setDraft((d) => ({ ...d, multiplier: Number(e.target.value) }))} /></div>
         </div>
         <Button className="btn-luxury mt-4" onClick={createDraw}><Plus className="h-4 w-4 mr-1" />Create Draw</Button>
