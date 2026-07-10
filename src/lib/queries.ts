@@ -22,6 +22,7 @@ export interface MatchRow {
   start_time: string; location: string | null; is_featured: boolean;
   home_score: number; away_score: number;
   is_virtual?: boolean; lock_time?: string | null; match_kind?: "gang" | "shooter" | "future"; marketing_enabled?: boolean;
+  featured_bg_url?: string | null; featured_bg_fit?: string | null; featured_bg_position?: string | null;
   home_team: TeamRow | null; away_team: TeamRow | null;
   home_player?: { id: string; name: string; avatar_url: string | null; team_id: string | null } | null;
   away_player?: { id: string; name: string; avatar_url: string | null; team_id: string | null } | null;
@@ -31,7 +32,7 @@ export interface MatchRow {
 }
 
 const matchSelect = `
-  id,name,status,start_time,location,is_featured,home_score,away_score,category_id,is_virtual,lock_time,match_kind,marketing_enabled,
+  id,name,status,start_time,location,is_featured,home_score,away_score,category_id,is_virtual,lock_time,match_kind,marketing_enabled,featured_bg_url,featured_bg_fit,featured_bg_position,
   category:categories!category_id(id,name,icon),
   home_team:teams!home_team_id(id,name,logo_url,gang_type),
   away_team:teams!away_team_id(id,name,logo_url,gang_type),
