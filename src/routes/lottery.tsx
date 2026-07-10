@@ -134,7 +134,7 @@ function LotteryPage() {
 }
 
 function DrawCard({ draw, minStake, maxStake, onDone }: { draw: any; minStake: number; maxStake: number; onDone: () => void }) {
-  const picksNeeded = Math.max(1, Math.min(5, Number(draw.picks_count ?? 1)));
+  const picksNeeded = Math.max(1, Math.min(10, Number(draw.picks_count ?? 1)));
   const [picked, setPicked] = useState<number[]>([]);
   const [stake, setStake] = useState(minStake);
   const [submitting, setSubmitting] = useState(false);

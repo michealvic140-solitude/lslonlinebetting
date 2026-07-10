@@ -48,6 +48,7 @@ const NAV: AdminNavItem[] = [
   { key: "leaderboard", label: "Leaderboard",          icon: ListOrdered,     admin: true },
   { key: "lottery",     label: "Lottery",              icon: Dice5,           admin: true },
   { key: "matches",     label: "Matches",              icon: Trophy,          modOk: true },
+  { key: "news",        label: "News",                 icon: Megaphone,       admin: true },
   { key: "notify",      label: "Notify",               icon: Send,            modOk: true },
   { key: "pnl",         label: "P&L",                  icon: BarChart3,       admin: true },
   { key: "promos",      label: "Promo Codes",          icon: Tag,             admin: true },
