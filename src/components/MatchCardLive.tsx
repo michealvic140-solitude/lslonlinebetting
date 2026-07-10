@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
-export function MatchCardLive({ match }: { match: MatchRow }) {
+export function MatchCardLive({ match, variant = "card" }: { match: MatchRow; variant?: "card" | "row" }) {
   const { selections, add, remove } = useBetSlip();
   // Prefer the Match Winner / 1X2 market for inline odds, but surface the Correct Score market as its own CTA.
   const csMarket = match.markets?.find((m) => /correct\s*score/i.test(m.name));
@@ -25,8 +25,101 @@ export function MatchCardLive({ match }: { match: MatchRow }) {
   const [csTab, setCsTab] = useState<"all" | "home" | "draw" | "away">("all");
   const csLocked = match.status !== "scheduled" || !csMarket?.is_open;
 
+  // Compact horizontal Bet9ja-style row for match feeds outside the featured carousel.
+  if (variant === "row") {
+    const odds = market?.odds?.slice(0, 3) ?? [];
+    const labels = ["1", "X", "2"];
+    return (
+      <Card className="glass p-3 hover:border-primary/60 transition-all">
+        <div className="grid grid-cols-[1fr_auto] gap-3 items-center">
+          <Link to="/matches/$matchId" params={{ matchId: match.id }} className="min-w-0 block">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+              {match.status === "live" ? <span className="text-destructive font-bold">● LIVE</span> : <Countdown target={match.start_time} />}
+              <span className="truncate">· {match.name}</span>
+            </div>
+            <div className="mt-1 space-y-0.5">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <TeamLogo name={homeName} url={match.match_kind === "shooter" ? match.home_player?.avatar_url : match.home_team?.logo_url} size={18} rounded="full" />
+                <span className="font-bold text-sm truncate">{homeName}</span>
+                {match.status !== "scheduled" && <span className="ml-auto font-mono text-xs text-primary">{match.home_score}</span>}
+              </div>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <TeamLogo name={awayName} url={match.match_kind === "shooter" ? match.away_player?.avatar_url : match.away_team?.logo_url} size={18} rounded="full" />
+                <span className="font-bold text-sm truncate">{awayName}</span>
+                {match.status !== "scheduled" && <span className="ml-auto font-mono text-xs text-primary">{match.away_score}</span>}
+              </div>
+            </div>
+          </Link>
+          <div className="flex gap-1">
+            {odds.length > 0 ? odds.map((o, i) => {
+              const selected = selectedOdd === o.id;
+              return (
+                <button
+                  key={o.id}
+                  disabled={locked}
+                  onClick={() => {
+                    if (selected) remove(o.id);
+                    else add({ match_id: match.id, match_name: `${homeName} vs ${awayName}`, market_id: market!.id, market_name: market!.name, odd_id: o.id, selection_label: o.label, odds: Number(o.value) });
+                  }}
+                  className={`w-12 sm:w-14 h-12 rounded-md text-xs font-bold border flex flex-col items-center justify-center transition ${
+                    locked ? "bg-secondary/30 text-muted-foreground cursor-not-allowed border-transparent"
+                    : selected ? "bg-primary text-primary-foreground border-transparent"
+                    : "bg-secondary/40 border-border hover:border-primary/60"
+                  }`}
+                >
+                  <span className="text-[9px] uppercase tracking-widest opacity-70">{labels[i]}</span>
+                  <span className="flex items-center gap-1">{locked && <Lock className="h-2.5 w-2.5" />}{Number(o.value).toFixed(2)}</span>
+                </button>
+              );
+            }) : <span className="text-[10px] text-muted-foreground">No odds</span>}
+            {csMarket && csMarket.odds.length > 0 && (
+              <button
+                onClick={() => setCsOpen(true)}
+                className="w-12 sm:w-14 h-12 rounded-md text-xs font-bold border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 flex flex-col items-center justify-center"
+                title="Correct Score"
+              >
+                <Target className="h-3 w-3" />
+                <span className="text-[9px]">CS</span>
+              </button>
+            )}
+          </div>
+        </div>
+        {csMarket && (
+          <Dialog open={csOpen} onOpenChange={setCsOpen}>
+            <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+              <DialogHeader><DialogTitle className="flex items-center gap-2 text-base"><Target className="h-4 w-4 text-primary" />Correct Score · {homeName} vs {awayName}</DialogTitle></DialogHeader>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {csMarket.odds.map((o) => (
+                  <button key={o.id} disabled={csLocked} onClick={() => { add({ match_id: match.id, match_name: `${homeName} vs ${awayName}`, market_id: csMarket.id, market_name: csMarket.name, odd_id: o.id, selection_label: `Correct Score [${o.label}]`, odds: Number(o.value) }); setCsOpen(false); }} className={`rounded-xl border p-2 text-center ${csLocked ? "opacity-50 cursor-not-allowed border-border" : "border-border bg-background/40 hover:border-primary/50"}`}>
+                    <div className="font-mono font-black text-base">{o.label}</div>
+                    <div className="font-mono font-bold text-primary text-sm">{Number(o.value).toFixed(2)}</div>
+                  </button>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </Card>
+    );
+  }
+
+  const featuredBg = match.is_featured ? match.featured_bg_url : null;
+
   return (
     <Card className="glass p-4 hover:border-primary/60 transition-all relative overflow-hidden">
+      {featuredBg && (
+        <>
+          <img
+            src={featuredBg}
+            alt=""
+            className="absolute inset-0 h-full w-full pointer-events-none"
+            style={{ objectFit: (match.featured_bg_fit as any) || "cover", objectPosition: match.featured_bg_position || "center" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/55 via-background/60 to-background/85 pointer-events-none" />
+          <div className="relative">
+          </div>
+        </>
+      )}
       {match.status === "live" && (
         <div className="absolute top-0 right-0 px-2 py-0.5 text-[10px] font-bold tracking-widest text-destructive-foreground bg-destructive rounded-bl-md">
           ● LIVE
