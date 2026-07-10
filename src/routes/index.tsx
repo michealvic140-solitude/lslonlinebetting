@@ -11,12 +11,13 @@ import { AnnouncementSlider, HighlightsRow, AdsRow } from "@/components/HomeCont
 import { HomeBannerSlider } from "@/components/HomeBannerSlider";
 import { GrandPrizeWinners } from "@/components/GrandPrizeWinners";
 import { HotBets } from "@/components/HotBets";
-import { LotteryResults } from "@/components/LotteryResults";
+import { NewsSlider } from "@/components/NewsSlider";
+import { LotteryResultsCard } from "@/components/LotteryResultsCard";
 import { SeasonBanner } from "@/components/SeasonBanner";
 import { Spotlight } from "@/components/Spotlight";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import { Crosshair, Flame, Trophy, ChevronRight, Coins, Ticket as TicketIcon, ClipboardPaste, X } from "lucide-react";
+import { Crosshair, Flame, Trophy, ChevronRight, Coins, Ticket as TicketIcon, ClipboardPaste, X, Dice5 } from "lucide-react";
 import { Countdown } from "@/components/Countdown";
 import { TeamLogo } from "@/components/TeamLogo";
 import hero from "@/assets/hero.jpg";
@@ -155,25 +156,29 @@ function Index() {
 
       <BookingCodeFab />
 
-      {/* Match feed on the left · Hot Bets → Lottery Results → Hall of Fame on the right */}
+      {/* Match feed on the left · Hot Bets + Hall of Fame stacked on the right.
+          The two-column layout kicks in from ~560px so phones in desktop mode
+          keep the sidebar (Hot Bets + Hall of Fame) on the right, scaled small. */}
       <section className="container mt-10">
-        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_340px] items-start">
+        <div className="grid gap-3 min-[560px]:gap-5 min-[560px]:grid-cols-[minmax(0,1fr)_minmax(0,200px)] lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_340px] items-start">
           <div className="space-y-10 min-w-0">
           {loading && <p className="text-muted-foreground">Loading league…</p>}
-          {!loading && featuredFallback.length > 0 && (
-            <div className="relative overflow-hidden rounded-2xl">
-              {settings?.featured_bg_url && futures.length === 0 && (
+          {!loading && featuredFallback.length > 0 && (() => {
+            const hasFeaturedBg = futures.length === 0 && !!settings?.featured_bg_url;
+            return (
+            <div className={hasFeaturedBg ? "relative overflow-hidden rounded-3xl border border-primary/25 shadow-gold" : ""}>
+              {hasFeaturedBg && (
                 <>
                   <img
                     src={settings.featured_bg_url}
                     alt=""
-                    className="absolute inset-0 h-full w-full opacity-30 pointer-events-none"
+                    className="absolute inset-0 h-full w-full"
                     style={{ objectFit: (settings.featured_bg_fit as any) || "cover", objectPosition: settings.featured_bg_position || "center" }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background/80 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/35 to-background/65" />
                 </>
               )}
-              <div className="relative p-3 md:p-4">
+              <div className={hasFeaturedBg ? "relative p-4 md:p-6" : ""}>
               <SectionHeader icon={Trophy} title="Featured Matches" subtitle="The biggest matchups of the round." />
               <div className="mt-4">
                 <Carousel opts={{ loop: featuredFallback.length > 1 }} plugins={featuredFallback.length > 1 ? [Autoplay({ delay: 5000, stopOnInteraction: false })] : []}>
@@ -187,7 +192,8 @@ function Index() {
               </div>
               </div>
             </div>
-          )}
+            );
+          })()}
           {!loading && live.length > 0 && (
             <div>
               <SectionHeader icon={Flame} title="Live Now" subtitle="Live odds. Markets close round-by-round." />
@@ -213,18 +219,19 @@ function Index() {
             </div>
           ))}
           </div>
-          <aside className="space-y-8 min-w-0 md:sticky md:top-20 self-start">
+          <aside className="space-y-6 min-w-0 lg:sticky lg:top-20 self-start">
+            <NewsSlider />
             <div>
               <SectionHeader icon={Flame} title="Hot Bets" subtitle="What the league is backing right now." />
-              <div className="mt-4"><HotBets /></div>
+              <div className="mt-3"><HotBets /></div>
             </div>
             <div>
-              <SectionHeader icon={Trophy} title="Lottery Results" subtitle="Latest winning numbers — auto-drawn every 30 min." />
-              <div className="mt-4"><LotteryResults /></div>
+              <SectionHeader icon={Dice5} title="Lottery Results" subtitle="Latest lucky numbers — auto-drawn every 30 min." />
+              <div className="mt-3"><LotteryResultsCard /></div>
             </div>
             <div>
               <SectionHeader icon={Trophy} title="Hall of Fame" subtitle="Grand prize winners — most tokens won." />
-              <div className="mt-4"><GrandPrizeWinners /></div>
+              <div className="mt-3"><GrandPrizeWinners /></div>
             </div>
           </aside>
         </div>
