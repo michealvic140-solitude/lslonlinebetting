@@ -50,10 +50,10 @@ function FuturesAdminPanel() {
   useEffect(() => { load(); }, []);
 
   async function ensureFutureTeams() {
-    const { data } = await supabase.from("teams").select("id,name").in("name", ["LSL Futures", "Season Field"]);
-    let a = data?.find((t) => t.name === "LSL Futures")?.id;
+    const { data } = await supabase.from("teams").select("id,name").in("name", ["ECB Futures", "Season Field"]);
+    let a = data?.find((t) => t.name === "ECB Futures")?.id;
     let b = data?.find((t) => t.name === "Season Field")?.id;
-    if (!a) { const { data: row } = await supabase.from("teams").insert({ name: "LSL Futures" }).select("id").single(); a = row?.id; }
+    if (!a) { const { data: row } = await supabase.from("teams").insert({ name: "ECB Futures" }).select("id").single(); a = row?.id; }
     if (!b) { const { data: row } = await supabase.from("teams").insert({ name: "Season Field" }).select("id").single(); b = row?.id; }
     return { a, b };
   }

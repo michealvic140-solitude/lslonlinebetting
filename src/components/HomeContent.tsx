@@ -79,7 +79,7 @@ export function HighlightsRow() {
 
   if (items.length === 0) return null;
   return (
-    <section className="container mt-10">
+    <section className="container mt-6">
       <div className="flex items-center gap-2 mb-3"><Film className="h-5 w-5 text-primary" /><h2 className="text-2xl font-bold">Highlights</h2></div>
       <Carousel opts={{ align: "start", dragFree: true }}>
         <CarouselContent>
@@ -126,7 +126,7 @@ export function AdsRow() {
   }, []);
   if (items.length === 0) return null;
   return (
-    <section className="container mt-10">
+    <section className="container mt-6">
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {items.map((a) => {
           const inner = (

@@ -14,8 +14,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/support")({
   head: () => ({
     meta: [
-      { title: "Support — LSL" },
-      { name: "description", content: "Get help with your LSL account. Open a support ticket and our AI assistant will reply instantly." },
+      { title: "Support — ECB" },
+      { name: "description", content: "Get help with your ECB account. Open a support ticket and our AI assistant will reply instantly." },
     ],
   }),
   component: SupportPage,

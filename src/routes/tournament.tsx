@@ -9,9 +9,9 @@ import { TournamentBracket, type TMatch, type TParticipant, type Tournament } fr
 export const Route = createFileRoute("/tournament")({
   head: () => ({
     meta: [
-      { title: "Knockout Bracket — Lomita Shooters League" },
-      { name: "description", content: "Follow the live Lomita Shooters League knockout bracket — every round, matchup, score and the road to the champion." },
-      { property: "og:title", content: "LSL Knockout Bracket" },
+      { title: "Knockout Bracket — E-Football Competition Bet" },
+      { name: "description", content: "Follow the live E-Football Competition Bet knockout bracket — every round, matchup, score and the road to the champion." },
+      { property: "og:title", content: "ECB Knockout Bracket" },
       { property: "og:description", content: "Live tournament bracket — one league, no mercy, respect the game." },
     ],
   }),

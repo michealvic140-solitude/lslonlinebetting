@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Bell, Filter, Send, Users, Clock, CalendarClock, X, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Bell, Filter, Send, Users, Clock, CalendarClock, X, CheckCircle2, AlertTriangle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { broadcastPush, getPushSubscriberCount, listScheduledPushes, cancelScheduledPush } from "@/lib/push-admin.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ImageSettingControl } from "@/components/admin/ImageSettingControl";
 
 const roles = ["any", "viewer", "shooter", "gang_leader", "registered", "moderator", "admin", "sponsor"];
 const activityOptions = [
@@ -35,6 +37,7 @@ export function PushBroadcastPanel() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [link, setLink] = useState("");
+  const [image, setImage] = useState("");
   const [busy, setBusy] = useState(false);
   const [count, setCount] = useState<number | null>(null);
   const [role, setRole] = useState("any");
@@ -44,6 +47,11 @@ export function PushBroadcastPanel() {
   const [mode, setMode] = useState<"now" | "later">("now");
   const [scheduledFor, setScheduledFor] = useState("");
   const [scheduled, setScheduled] = useState<any[]>([]);
+  const [totalRaw, setTotalRaw] = useState<number | null>(null);
+  const [pruning, setPruning] = useState(false);
+  const [subs, setSubs] = useState<Array<{ user_id: string; name: string; ingame: string | null; discord: string | null; last: string | null; ua: string | null; enabled: boolean; devices: number }>>([]);
+  const [showSubs, setShowSubs] = useState(true);
+  const [subSearch, setSubSearch] = useState("");
 
   const filters = {
     role: role === "any" ? "any" : role,
@@ -54,11 +62,87 @@ export function PushBroadcastPanel() {
   const loadCount = () => {
     readCount({ data: filters }).then((r: any) => setCount(r?.count ?? 0)).catch(() => setCount(0));
   };
+  const loadTotal = async () => {
+    const { count: c } = await (supabase as any).from("push_subscriptions").select("id", { count: "exact", head: true });
+    setTotalRaw(typeof c === "number" ? c : null);
+  };
+  const loadSubs = async () => {
+    const { data } = await (supabase as any)
+      .from("push_subscriptions")
+      .select("user_id,last_seen_at,enabled,user_agent")
+      .eq("enabled", true)
+      .order("last_seen_at", { ascending: false })
+      .limit(1000);
+    const rows = (data ?? []) as any[];
+    const ids = Array.from(new Set(rows.map((r) => r.user_id)));
+    if (ids.length === 0) { setSubs([]); return; }
+    const { data: profs } = await (supabase as any)
+      .from("profiles").select("id,full_name,ingame_name,discord_username,email").in("id", ids);
+    const profMap = new Map(
+      (profs ?? []).map((p: any) => [p.id, p]),
+    );
+    const byUser = new Map<string, { user_id: string; name: string; ingame: string | null; discord: string | null; last: string | null; ua: string | null; enabled: boolean; devices: number }>();
+    for (const r of rows) {
+      const p: any = profMap.get(r.user_id) ?? {};
+      const displayName =
+        p.ingame_name || p.full_name || p.discord_username || p.email || `User ${String(r.user_id).slice(0, 8)}`;
+      const existing = byUser.get(r.user_id);
+      if (existing) {
+        existing.devices += 1;
+        if (r.last_seen_at && (!existing.last || r.last_seen_at > existing.last)) existing.last = r.last_seen_at;
+      } else {
+        byUser.set(r.user_id, {
+          user_id: r.user_id,
+          name: displayName,
+          ingame: p.ingame_name ?? null,
+          discord: p.discord_username ?? null,
+          last: r.last_seen_at,
+          ua: r.user_agent ?? null,
+          enabled: r.enabled,
+          devices: 1,
+        });
+      }
+    }
+    setSubs([...byUser.values()]);
+  };
   const loadScheduled = () => {
     readScheduled().then((r: any) => setScheduled(r?.items ?? [])).catch(() => setScheduled([]));
   };
   useEffect(() => { loadCount(); }, [role, locale, lastActiveDays]);
-  useEffect(() => { loadScheduled(); }, []);
+  useEffect(() => { loadScheduled(); loadTotal(); }, []);
+  useEffect(() => { if (showSubs) loadSubs(); }, [showSubs]);
+
+  const filteredSubs = subs.filter((s) => {
+    if (!subSearch.trim()) return true;
+    const q = subSearch.trim().toLowerCase();
+    return (
+      s.name.toLowerCase().includes(q) ||
+      (s.ingame ?? "").toLowerCase().includes(q) ||
+      (s.discord ?? "").toLowerCase().includes(q)
+    );
+  });
+
+  const deviceLabel = (ua: string | null) => {
+    if (!ua) return "Device";
+    const s = ua.toLowerCase();
+    if (s.includes("iphone")) return "iPhone";
+    if (s.includes("ipad")) return "iPad";
+    if (s.includes("android")) return "Android";
+    if (s.includes("windows")) return "Windows";
+    if (s.includes("mac")) return "Mac";
+    if (s.includes("linux")) return "Linux";
+    return "Device";
+  };
+
+  const pruneDead = async () => {
+    if (!window.confirm("Remove push subscriptions that are disabled, unseen for 60+ days, or have failed 10+ times? This tightens the subscriber count to reachable devices only.")) return;
+    setPruning(true);
+    const { data, error } = await (supabase as any).rpc("prune_dead_push_subscriptions");
+    setPruning(false);
+    if (error) return toast.error(error.message);
+    toast.success(`Removed ${data ?? 0} dead subscription${data === 1 ? "" : "s"}`);
+    loadCount(); loadTotal();
+  };
 
   const submit = async () => {
     if (!title.trim()) { toast.error("Add a title for the notification."); return; }
@@ -74,14 +158,14 @@ export function PushBroadcastPanel() {
     }
     setBusy(true);
     try {
-      const res: any = await send({ data: { title: title.trim(), body: body.trim(), link: link.trim(), ...filters, scheduledFor: scheduledIso } });
+      const res: any = await send({ data: { title: title.trim(), body: body.trim(), link: link.trim(), image: image.trim(), ...filters, scheduledFor: scheduledIso } });
       if (res?.ok && res?.scheduled) {
         toast.success(`Push scheduled for ${fmt(res.scheduledFor)}.`);
-        setTitle(""); setBody(""); setLink(""); setScheduledFor("");
+        setTitle(""); setBody(""); setLink(""); setImage(""); setScheduledFor("");
         loadScheduled();
       } else if (res?.ok) {
         toast.success(`Push sent to ${res.sent} of ${res.total} targeted device${res.total === 1 ? "" : "s"}.`);
-        setTitle(""); setBody(""); setLink("");
+        setTitle(""); setBody(""); setLink(""); setImage("");
         loadCount();
       } else {
         toast.error(res?.error || "Failed to send push.");
@@ -119,14 +203,61 @@ export function PushBroadcastPanel() {
         <div className="flex items-center gap-2">
           <Bell className="h-5 w-5 text-primary" />
           <div className="font-bold">Push to subscribers</div>
+          <Button size="sm" variant="ghost" className="ml-auto h-7 text-[11px] text-muted-foreground hover:text-destructive" disabled={pruning} onClick={pruneDead}>
+            <Trash2 className="h-3 w-3 mr-1" />{pruning ? "Pruning…" : "Prune dead"}
+          </Button>
         </div>
         <p className="text-[11px] text-muted-foreground">
           Send instantly or schedule for a future time. Delivered to mobile notification bars.
         </p>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
-          <Users className="h-3.5 w-3.5 text-primary" />
-          <span className="font-semibold text-foreground tabular-nums">{count ?? "—"}</span> subscribed device{count === 1 ? "" : "s"}
+        <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5 text-primary" />
+            <span className="font-semibold text-foreground tabular-nums">{count ?? "—"}</span> active (reachable)
+          </div>
+          {totalRaw != null && totalRaw !== (count ?? -1) && (
+            <div className="text-[11px] opacity-75">
+              <span className="tabular-nums">{totalRaw}</span> total rows in DB
+            </div>
+          )}
+          <Button size="sm" variant="ghost" className="h-6 text-[11px] ml-auto" onClick={() => setShowSubs((v) => !v)}>
+            {showSubs ? "Hide subscribers" : `View subscribers${subs.length ? ` (${subs.length})` : ""}`}
+          </Button>
         </div>
+        {showSubs && (
+          <div className="mt-2 space-y-2">
+            <Input
+              value={subSearch}
+              onChange={(e) => setSubSearch(e.target.value)}
+              placeholder="Search subscribers by name, in-game name, or Discord…"
+              className="h-8 text-[12px]"
+            />
+            <div className="rounded-md border border-border bg-background/40 max-h-80 overflow-y-auto divide-y divide-border/50">
+              {filteredSubs.length === 0 ? (
+                <div className="p-3 text-[11px] text-muted-foreground">
+                  {subs.length === 0 ? "No active subscribers yet." : "No subscribers match that search."}
+                </div>
+              ) : filteredSubs.map((s) => (
+                <div key={s.user_id} className="flex items-start justify-between gap-2 px-3 py-2 text-[11px]">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold truncate text-foreground">{s.name}</div>
+                    <div className="text-muted-foreground truncate flex items-center gap-1.5 mt-0.5">
+                      <span className="rounded border border-border/60 bg-background/60 px-1.5 py-0.5 text-[9px] uppercase tracking-widest">{deviceLabel(s.ua)}</span>
+                      {s.discord && <span className="truncate">@{s.discord}</span>}
+                      {s.devices > 1 && <span className="text-primary/80">· {s.devices} devices</span>}
+                    </div>
+                  </div>
+                  <div className="text-muted-foreground tabular-nums shrink-0 text-right">
+                    {s.last ? new Date(s.last).toLocaleDateString() : "—"}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-[10px] text-muted-foreground">
+              Showing {filteredSubs.length} of {subs.length} subscribed user{subs.length === 1 ? "" : "s"} (deduped across devices).
+            </div>
+          </div>
+        )}
       </Card>
 
       <Card className="p-4 space-y-3">
@@ -176,6 +307,14 @@ export function PushBroadcastPanel() {
           <label className="text-[10px] uppercase text-muted-foreground">Link (optional)</label>
           <Input value={link} onChange={(e) => setLink(e.target.value)} placeholder="/matches" />
         </div>
+        <ImageSettingControl
+          label="Notification image (optional)"
+          value={image}
+          onChange={(url) => setImage(url ?? "")}
+          showFitControls={false}
+          aspect="16 / 9"
+          help="Upload from your device or paste a URL. Shown as a large picture inside the notification on Android/Chrome/desktop."
+        />
 
         <div className="space-y-2 rounded-lg border border-border/60 p-3">
           <div className="flex items-center gap-2">

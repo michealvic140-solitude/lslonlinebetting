@@ -12,8 +12,8 @@ import { Vote } from "lucide-react";
 export const Route = createFileRoute("/polls")({
   head: () => ({
     meta: [
-      { title: "Community Predictions & Polls | LSL" },
-      { name: "description", content: "Vote on LSL community polls and predictions and see what the crowd thinks." },
+      { title: "Community Predictions & Polls | ECB" },
+      { name: "description", content: "Vote on ECB community polls and predictions and see what the crowd thinks." },
     ],
   }),
   component: PollsPage,

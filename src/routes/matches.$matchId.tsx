@@ -14,10 +14,10 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/matches/$matchId")({
   head: ({ params }) => ({
     meta: [
-      { title: `Match ${params.matchId} — Lomita Shooters League` },
-      { name: "description", content: "Live match details, team line-ups, real-time odds, and betting markets for this Lomita Shooters League fixture." },
-      { property: "og:title", content: `Match ${params.matchId} — Lomita Shooters League` },
-      { property: "og:description", content: "Live team line-ups, real-time odds, and betting markets for this LSL fixture." },
+      { title: `Match ${params.matchId} — E-Football Competition Bet` },
+      { name: "description", content: "Live match details, team line-ups, real-time odds, and betting markets for this E-Football Competition Bet fixture." },
+      { property: "og:title", content: `Match ${params.matchId} — E-Football Competition Bet` },
+      { property: "og:description", content: "Live team line-ups, real-time odds, and betting markets for this ECB fixture." },
       { property: "og:type", content: "article" },
       { property: "og:url", content: `https://lslonlinebetting.lovable.app/matches/${params.matchId}` },
     ],
@@ -27,12 +27,12 @@ export const Route = createFileRoute("/matches/$matchId")({
       children: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "SportsEvent",
-        name: `Lomita Shooters League — Match ${params.matchId}`,
+        name: `E-Football Competition Bet — Match ${params.matchId}`,
         sport: "Competitive Shooting",
         url: `https://lslonlinebetting.lovable.app/matches/${params.matchId}`,
         organizer: {
           "@type": "Organization",
-          name: "Lomita Shooters League",
+          name: "E-Football Competition Bet",
           url: "https://lslonlinebetting.lovable.app/",
         },
       }),

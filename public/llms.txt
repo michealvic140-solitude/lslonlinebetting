@@ -1,8 +1,8 @@
-# Lomita Shooters League (LSL)
+# E-Football Competition Bet (ECB)
 
 > Virtual token-only shooting league. Live matches, gang leaderboards, and risk-free wagering using in-app tokens.
 
-LSL is a fan-driven competitive shooting circuit. Users register, join a gang, follow live matches, place virtual-token bets on outcomes, and climb seasonal leaderboards. No real-money gambling.
+ECB is a fan-driven competitive shooting circuit. Users register, join a gang, follow live matches, place virtual-token bets on outcomes, and climb seasonal leaderboards. No real-money gambling.
 
 ## Pages
 

@@ -9,6 +9,7 @@ import { MatchCardLive } from "@/components/MatchCardLive";
 import { EventBanner } from "@/components/EventBanner";
 import { AnnouncementSlider, HighlightsRow, AdsRow } from "@/components/HomeContent";
 import { HomeBannerSlider } from "@/components/HomeBannerSlider";
+import { HomeQuickMenu } from "@/components/HomeQuickMenu";
 import { GrandPrizeWinners } from "@/components/GrandPrizeWinners";
 import { HotBets } from "@/components/HotBets";
 import { NewsSlider } from "@/components/NewsSlider";
@@ -31,18 +32,18 @@ import { DraggableFab } from "@/components/DraggableFab";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Lomita Shooters League — Virtual Token Shooting League" },
-      { name: "description", content: "Live matches, gang leaderboards and virtual-token wagering for the Lomita Shooters League." },
-      { property: "og:title", content: "Lomita Shooters League" },
-      { property: "og:description", content: "Follow live shooting matches, back your gang with virtual tokens, and climb the seasonal leaderboard." },
+      { title: "E-Football Competition Bet — Virtual Token Shooting League" },
+      { name: "description", content: "Live matches, gang leaderboards and virtual-token wagering for the E-Football Competition Bet." },
+      { property: "og:title", content: "E-Football Competition Bet — Virtual Token Shooting League" },
+      { property: "og:description", content: "Live matches, gang leaderboards and virtual-token wagering for the E-Football Competition Bet." },
       { property: "og:url", content: "https://lslonlinebetting.lovable.app/" },
       { property: "og:image", content: hero },
-      { name: "twitter:title", content: "Lomita Shooters League" },
-      { name: "twitter:description", content: "Follow live shooting matches, back your gang with virtual tokens, and climb the seasonal leaderboard." },
+      { name: "twitter:title", content: "E-Football Competition Bet — Virtual Token Shooting League" },
+      { name: "twitter:description", content: "Live matches, gang leaderboards and virtual-token wagering for the E-Football Competition Bet." },
     ],
     links: [
       { rel: "canonical", href: "https://lslonlinebetting.lovable.app/" },
-      { rel: "preload", as: "image", href: hero, fetchpriority: "high" },
+      { rel: "preload", as: "image", href: hero, fetchPriority: "high" },
     ],
   }),
   component: Index,
@@ -96,7 +97,12 @@ function Index() {
 
   return (
     <Layout>
-      <HomeBannerSlider />
+      <section className="container mt-4">
+        <div className="flex items-stretch gap-2 sm:gap-3">
+          <div className="min-w-0 flex-1"><HomeBannerSlider embedded /></div>
+          <HomeQuickMenu />
+        </div>
+      </section>
       <section className="relative overflow-hidden">
         {settings?.hero_bg_url && (
           <img
@@ -109,7 +115,7 @@ function Index() {
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background" />
-        <div className="container relative py-20 md:py-32">
+        <div className="container relative py-8 md:py-14">
           {settings?.site_logo_url && (
             <img
               src={settings.site_logo_url}
@@ -126,13 +132,12 @@ function Index() {
             </h1>
           ) : (
             <h1 className="text-4xl md:text-7xl font-bold leading-tight max-w-3xl uppercase">
-              Where gangs clash and{" "}
-              <span className="gradient-gold-text">legends</span> are{" "}
-              <span className="gradient-emerald-text">gold-plated</span>.
+              Where <span className="gradient-emerald-text">E-Football</span> meets{" "}
+              <span className="gradient-gold-text">gold-plated</span> glory.
             </h1>
           )}
           <p className="mt-5 max-w-xl text-lg text-muted-foreground">
-            {settings?.hero_subtitle || "The Lomita Shooters League is a virtual-token competitive shooting circuit. Pick your gang, place your wagers, and climb the leaderboard."}
+            {settings?.hero_subtitle || "E-Football Competition Bet is a virtual-token e-football league. Pick your squad, place your wagers, and climb the leaderboard — kick-off is instant."}
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link to="/matches"><Button size="lg" className="btn-luxury">View Matches <ChevronRight className="h-4 w-4 ml-1" /></Button></Link>
@@ -157,20 +162,21 @@ function Index() {
       <BookingCodeFab />
 
       {/* Match feed on the left · Hot Bets + Hall of Fame stacked on the right.
-          The two-column layout kicks in from ~560px so phones in desktop mode
+          The two-column layout kicks in from ~500px so phones in desktop mode
           keep the sidebar (Hot Bets + Hall of Fame) on the right, scaled small. */}
-      <section className="container mt-10">
-        <div className="grid gap-3 min-[560px]:gap-5 min-[560px]:grid-cols-[minmax(0,1fr)_minmax(0,200px)] lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_340px] items-start">
-          <div className="space-y-10 min-w-0">
+      <section className="container mt-3">
+        <div className="grid gap-3 min-[500px]:gap-5 min-[500px]:grid-cols-[minmax(0,1fr)_minmax(0,200px)] lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_300px] items-start">
+          <div className="space-y-3 min-w-0">
           {loading && <p className="text-muted-foreground">Loading league…</p>}
           {!loading && featuredFallback.length > 0 && (
             <div>
-              <SectionHeader icon={Trophy} title="Featured Matches" subtitle="The biggest matchups of the round." />
-              <div className="mt-4">
+              <div>
                 <Carousel opts={{ loop: featuredFallback.length > 1 }} plugins={featuredFallback.length > 1 ? [Autoplay({ delay: 5000, stopOnInteraction: false })] : []}>
                   <CarouselContent>
                     {featuredFallback.map((m) => (
-                      <CarouselItem key={m.id}><MatchCardLive match={m} /></CarouselItem>
+                      <CarouselItem key={m.id}>
+                        <FeaturedGoldenMatches matches={[m]} bgImage={m.featured_image_url} bgFit={m.featured_image_fit} bgPos={m.featured_image_position} />
+                      </CarouselItem>
                     ))}
                   </CarouselContent>
                   {featuredFallback.length > 1 && (<><CarouselPrevious /><CarouselNext /></>)}
@@ -206,15 +212,12 @@ function Index() {
           <aside className="space-y-6 min-w-0 lg:sticky lg:top-20 self-start">
             <NewsSlider />
             <div>
-              <SectionHeader icon={Flame} title="Hot Bets" subtitle="What the league is backing right now." />
               <div className="mt-3"><HotBets /></div>
             </div>
             <div>
-              <SectionHeader icon={Dice5} title="Lottery Results" subtitle="Latest lucky numbers — auto-drawn every 30 min." />
               <div className="mt-3"><LotteryResultsCard /></div>
             </div>
             <div>
-              <SectionHeader icon={Trophy} title="Hall of Fame" subtitle="Grand prize winners — most tokens won." />
               <div className="mt-3"><GrandPrizeWinners /></div>
             </div>
           </aside>
@@ -228,7 +231,7 @@ function Index() {
 function FuturesSection({ title, markets, maxSelections, featured = [] }: { title: string; markets: MatchRow[]; maxSelections: number; featured?: MatchRow[] }) {
   const { selections, add, remove, setOpen } = useBetSlip();
   return (
-    <section className="container mt-10">
+    <section className="container mt-6">
       <div className="seasonal-golden relative overflow-hidden rounded-3xl mb-5 px-5 py-6 md:px-8 md:py-8">
         <div className="pointer-events-none absolute -right-10 -top-10 opacity-25">
           <Trophy className="h-44 w-44 text-amber-200" />
@@ -330,20 +333,36 @@ function FutureEmblem({ label, url }: { label: string; url?: string | null }) {
 
 // Featured matches rendered as SportyBet-style golden rows inside the
 // Seasonal Tournament banner, under the "Go to Tournament" header.
-function FeaturedGoldenMatches({ matches }: { matches: MatchRow[] }) {
+function FeaturedGoldenMatches({ matches, bgImage, bgFit, bgPos }: { matches: MatchRow[]; bgImage?: string | null; bgFit?: string | null; bgPos?: string | null }) {
   const { selections, add, remove, setOpen } = useBetSlip();
   if (matches.length === 0) return null;
   return (
-    <div className="relative mt-5 space-y-2.5">
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] font-black text-amber-100">
-        <Flame className="h-3.5 w-3.5" /> Featured Matches
+    <div className="seasonal-golden relative overflow-hidden rounded-3xl px-3 py-3 md:px-5 md:py-4 space-y-2">
+      {bgImage && (
+        <>
+          <img
+            src={bgImage}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 h-full w-full"
+            style={{ objectFit: (bgFit as any) || "cover", objectPosition: bgPos || "center" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+        </>
+      )}
+      <div className="relative flex items-center gap-2">
+        <Trophy className="h-6 w-6 text-amber-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]" />
+        <div>
+          <div className="text-xl md:text-2xl font-black tracking-wider text-amber-100 uppercase drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">FEATURED MATCHES</div>
+          <div className="text-[10px] uppercase tracking-widest text-amber-100/80 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">The biggest matchups of the round.</div>
+        </div>
       </div>
       {matches.map((m) => {
         const market = m.markets?.find((mk) => mk.is_open) ?? m.markets?.[0];
         const odds = market?.odds ?? [];
         const live = m.status === "live";
         return (
-          <div key={m.id} className="rounded-2xl border border-amber-300/30 bg-black/35 backdrop-blur-sm overflow-hidden shadow-[0_8px_30px_-12px_rgba(0,0,0,0.7)]">
+          <div key={m.id} className="relative rounded-2xl border border-amber-300/40 bg-black/25 overflow-hidden shadow-[0_8px_30px_-12px_rgba(0,0,0,0.7)]">
             <div className="flex items-center justify-between gap-2 px-3 pt-2.5 text-[10px] uppercase tracking-widest">
               <span className="inline-flex items-center gap-1.5 font-black text-amber-200">
                 {live ? (
@@ -367,7 +386,7 @@ function FeaturedGoldenMatches({ matches }: { matches: MatchRow[] }) {
               {m.away_team && <TeamLogo name={m.away_team?.name} url={m.away_team?.logo_url} size={30} rounded="full" />}
             </Link>
             {odds.length > 0 && (
-              <div className="grid gap-px px-3 pb-3" style={{ gridTemplateColumns: `repeat(${Math.min(odds.length, 3)}, minmax(0,1fr))` }}>
+              <div className="grid gap-2 px-3 pb-3" style={{ gridTemplateColumns: `repeat(${Math.min(odds.length, 3)}, minmax(0,1fr))` }}>
                 {odds.slice(0, 3).map((o) => {
                   const selected = selections.some((s) => s.odd_id === o.id);
                   const blocked = !market?.is_open || m.status === "ended";
@@ -381,10 +400,14 @@ function FeaturedGoldenMatches({ matches }: { matches: MatchRow[] }) {
                         add({ match_id: m.id, match_name: m.name, market_id: market!.id, market_name: market!.name, odd_id: o.id, selection_label: o.label, odds: Number(o.value) });
                         setOpen(true);
                       }}
-                      className={`flex flex-col items-center justify-center gap-0.5 rounded-lg bg-black/40 py-2 px-1 transition hover:bg-amber-400/15 disabled:opacity-40 disabled:hover:bg-black/40 ${selected ? "ring-2 ring-amber-300 bg-amber-400/20" : "border border-amber-300/15"}`}
+                      className={`flex flex-col items-center justify-center gap-0.5 rounded-md py-1.5 px-1.5 min-h-[36px] backdrop-blur-md transition shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_4px_12px_-8px_rgba(0,0,0,0.7)] disabled:opacity-40 ${
+                        selected
+                          ? "bg-emerald-500/30 border-2 border-emerald-300 ring-2 ring-emerald-300/60 text-emerald-50"
+                          : "bg-emerald-950/70 border-2 border-emerald-600/60 hover:bg-emerald-800/70 hover:border-emerald-400/80 text-emerald-50"
+                      }`}
                     >
-                      <span className="text-[9px] uppercase tracking-wider text-amber-100/70 truncate max-w-full">{o.label}</span>
-                      <span className="font-mono font-black text-amber-200">{Number(o.value).toFixed(2)}</span>
+                      <span className="text-[8px] uppercase tracking-wider font-bold text-emerald-100/80 truncate max-w-full leading-none">{o.label}</span>
+                      <span className="font-mono font-black text-xs text-emerald-50 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] leading-none">{Number(o.value).toFixed(2)}</span>
                     </button>
                   );
                 })}
@@ -540,10 +563,18 @@ function BookingCodeFab() {
 
 function SectionHeader({ icon: Icon, title, subtitle }: { icon: any; title: string; subtitle: string }) {
   return (
-    <div className="flex items-end justify-between border-b border-border pb-2">
-      <div>
-        <h2 className="text-2xl font-bold flex items-center gap-2"><Icon className="h-5 w-5 text-primary" />{title}</h2>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
+    <div className="relative overflow-hidden rounded-2xl border-2 border-primary/50 bg-gradient-to-r from-emerald-950/80 via-background/80 to-emerald-950/80 px-4 py-3 shadow-[0_8px_30px_-12px_rgba(212,175,55,0.5)]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-gold opacity-80" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-gold opacity-60" />
+      <div className="pointer-events-none absolute -left-10 -top-10 h-24 w-24 rounded-full bg-primary/20 blur-2xl" />
+      <div className="relative flex items-center gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-primary/50 bg-background/70 text-primary shadow-inner">
+          <Icon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wide gradient-gold-text truncate">{title}</h2>
+          <p className="text-[11px] sm:text-xs text-muted-foreground truncate">{subtitle}</p>
+        </div>
       </div>
     </div>
   );

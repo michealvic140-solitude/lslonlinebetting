@@ -13,7 +13,7 @@ import { useAuth, ROLE_LABELS, type AppRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/chat")({
-  head: () => ({ meta: [{ title: "Community Chat — LSL" }, { name: "description", content: "Live chat with shooters, your gang, and moderators." }] }),
+  head: () => ({ meta: [{ title: "Community Chat — ECB" }, { name: "description", content: "Live chat with shooters, your gang, and moderators." }] }),
   component: ChatPage,
 });
 

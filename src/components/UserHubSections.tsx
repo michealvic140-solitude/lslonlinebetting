@@ -53,7 +53,7 @@ export function ReferralCard() {
   }
   async function share() {
     if (typeof navigator !== "undefined" && (navigator as any).share) {
-      try { await (navigator as any).share({ title: "Join LSL", text: "Join me on LSL", url: link }); } catch {}
+      try { await (navigator as any).share({ title: "Join ECB", text: "Join me on ECB", url: link }); } catch {}
     } else copyLink();
   }
   async function applyCode() {
@@ -106,7 +106,7 @@ export function ReferralCard() {
             <div className="pt-2 border-t border-border/50">
               <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Have a code? Redeem it</label>
               <div className="flex gap-2 mt-1">
-                <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="LSL-XXXX" />
+                <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="ECB-XXXX" />
                 <Button onClick={applyCode} disabled={busy}>Apply</Button>
               </div>
             </div>
@@ -226,7 +226,7 @@ export function PushNotifSettings() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
         const n: any = payload.new;
         try {
-          new Notification(n.title || "LSL", { body: n.body ?? "", icon: "/favicon.ico", tag: n.id });
+          new Notification(n.title || "ECB", { body: n.body ?? "", icon: "/favicon.ico", tag: n.id });
         } catch {}
       })
       .subscribe();

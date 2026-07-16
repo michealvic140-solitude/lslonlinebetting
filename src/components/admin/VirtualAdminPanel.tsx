@@ -36,6 +36,7 @@ export function VirtualAdminPanel() {
   const [lockConfirm, setLockConfirm] = useState<Round | null>(null);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [actors, setActors] = useState<Record<string, string>>({});
+  const [selectedRounds, setSelectedRounds] = useState<Set<string>>(new Set());
 
   const reload = async () => {
     const [{ data: ts }, { data: rs }, { data: al }] = await Promise.all([
@@ -59,6 +60,7 @@ export function VirtualAdminPanel() {
       (profs ?? []).forEach((p: any) => { map[p.id] = p.ingame_name || p.full_name || p.id.slice(0,6); });
       setActors(map);
     }
+    setSelectedRounds(new Set());
   };
 
   useEffect(() => {
@@ -103,7 +105,27 @@ export function VirtualAdminPanel() {
       <RewardsSettings />
 
       <Card className="glass p-4">
-        <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Rounds ({rounds.length})</div>
+        <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground">Rounds ({rounds.length})</div>
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <input type="checkbox" checked={rounds.length > 0 && selectedRounds.size === rounds.length} onChange={() => setSelectedRounds((s) => s.size === rounds.length ? new Set() : new Set(rounds.map((r) => r.id)))} />
+              Select all
+            </label>
+            {selectedRounds.size > 0 && (
+              <Button size="sm" variant="destructive" onClick={async () => {
+                if (!await confirm({ title: `Delete ${selectedRounds.size} round${selectedRounds.size === 1 ? "" : "s"}?`, description: "All selected virtual rounds and their markets will be permanently removed. Existing user tickets keep their record.", tone: "danger", confirmText: "Delete selected" })) return;
+                const ids = Array.from(selectedRounds);
+                await supabase.from("markets").delete().in("match_id", ids);
+                await supabase.from("matches").delete().in("id", ids);
+                toast.success(`Deleted ${ids.length} round${ids.length === 1 ? "" : "s"}`);
+                reload();
+              }}>
+                <Trash2 className="h-3 w-3 mr-1" />Delete ({selectedRounds.size})
+              </Button>
+            )}
+          </div>
+        </div>
         <div className="space-y-2 max-h-[500px] overflow-y-auto">
           {rounds.length === 0 && <p className="text-sm text-muted-foreground">No virtual rounds yet.</p>}
           {rounds.map((r) => {
@@ -116,6 +138,7 @@ export function VirtualAdminPanel() {
               : "bg-primary/15 border-primary/40 text-primary";
             return (
               <div key={r.id} className="flex items-center justify-between gap-3 rounded-md border border-border bg-background/40 p-2.5 flex-wrap">
+                <input type="checkbox" checked={selectedRounds.has(r.id)} onChange={() => setSelectedRounds((s) => { const n = new Set(s); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; })} className="shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-bold truncate">{r.home_team?.name} vs {r.away_team?.name}</div>
                   <div className="text-[10px] text-muted-foreground">

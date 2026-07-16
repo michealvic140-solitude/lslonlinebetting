@@ -1,8 +1,9 @@
 import { cn } from "@/lib/utils";
-import logoUrl from "@/assets/lsl-logo.png";
+import ecbLogo from "@/assets/ecb-logo.png.asset.json";
+const logoUrl = ecbLogo.url;
 
 /**
- * Official LSL platform logo. Renders the uploaded crest image with optional
+ * Official ECB platform logo. Renders the uploaded crest image with optional
  * radial glow halo. Use `withGlow={false}` for inline / footer usage.
  */
 export function GangLogo({ className, size = 32, withGlow = true }: { className?: string; size?: number; withGlow?: boolean }) {
@@ -10,7 +11,7 @@ export function GangLogo({ className, size = 32, withGlow = true }: { className?
     <span
       className={cn("relative inline-grid place-items-center shrink-0", className)}
       style={{ width: size, height: size }}
-      aria-label="Lomita Shooters League"
+      aria-label="E-Football Competition Bet"
     >
       {withGlow && (
         <span
@@ -23,7 +24,7 @@ export function GangLogo({ className, size = 32, withGlow = true }: { className?
       )}
       <img
         src={logoUrl}
-        alt="LSL — Lomita Shooters League"
+        alt="ECB — E-Football Competition Bet"
         width={size}
         height={size}
         className="relative h-full w-full object-contain rounded-full"

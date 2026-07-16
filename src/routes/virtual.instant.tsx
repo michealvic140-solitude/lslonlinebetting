@@ -36,10 +36,10 @@ type VirtualSettings = {
 type CycleState = { running: boolean; animSec: number; durSec: number; perRound: number; maxScore: number };
 type Phase = "idle" | "pre" | "live";
 
-export const Route = createFileRoute("/virtual")({
+export const Route = createFileRoute("/virtual/instant")({
   head: () => ({
     meta: [
-      { title: "Virtual Gang League — Instant Shootouts | LSL" },
+      { title: "Virtual Gang League — Instant Shootouts | ECB" },
       {
         name: "description",
         content:
@@ -57,7 +57,17 @@ const matchSelect = `
   markets(id,name,is_open,odds(id,label,value,is_winner,market_id))
 `;
 
-function VirtualPage() {
+export function VirtualPage({ title = "ECB Virtual Gang League" }: { title?: string } = {}) {
+  return <VirtualPageInner title={title} sport="gang" />;
+}
+
+export function VirtualFootballPage({ title = "ECB Virtual E-Football League" }: { title?: string } = {}) {
+  return <VirtualPageInner title={title} sport="football" />;
+}
+
+type Sport = "gang" | "football";
+
+function VirtualPageInner({ title, sport }: { title: string; sport: Sport }) {
   const [round, setRound] = useState<VirtualMatch[]>([]);
   const [phase, setPhase] = useState<Phase>("idle");
   const [recent, setRecent] = useState<VirtualMatch[]>([]);
@@ -159,7 +169,12 @@ function VirtualPage() {
     <Layout>
       <div className="virtual-page min-h-[calc(100vh-4rem)]">
         <div className="container py-4 sm:py-6 space-y-4">
-          <RoundHeader featured={featured} phase={phase} round={round} />
+          <RoundHeader featured={featured} phase={phase} round={round} title={title} />
+          <Card className="virtual-panel px-3 py-2 flex items-center gap-2 text-[11px]">
+            <Radio className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
+            <span className="font-black uppercase tracking-widest text-emerald-300">Play as you stake</span>
+            <span className="text-muted-foreground">— your {sport === "football" ? "match kicks off" : "shootout goes live"} automatically the moment your bet is placed. No countdown, no waiting.</span>
+          </Card>
 
           {!featured ? (
             <Card className="virtual-panel p-10 text-center text-muted-foreground">
@@ -173,7 +188,7 @@ function VirtualPage() {
             </Card>
           ) : (
             <>
-              <ShootoutStage featured={featured} phase={phase} animSec={cycle.animSec} recent={recent} />
+              <ShootoutStage featured={featured} phase={phase} animSec={cycle.animSec} recent={recent} sport={sport} />
               <ScoresTable matches={round} phase={phase} />
               <MarketBoard matches={round} phase={phase} />
             </>
@@ -201,7 +216,7 @@ function roundCode(featured?: VirtualMatch) {
   return (10000 + (h % 89999)).toString();
 }
 
-function RoundHeader({ featured, phase, round }: { featured?: VirtualMatch; phase: Phase; round: VirtualMatch[] }) {
+function RoundHeader({ featured, phase, round, title }: { featured?: VirtualMatch; phase: Phase; round: VirtualMatch[]; title: string }) {
   const label = statusLabel(phase, featured);
   const tone =
     label === "MATCH"
@@ -215,7 +230,7 @@ function RoundHeader({ featured, phase, round }: { featured?: VirtualMatch; phas
         </Link>
         <div className="text-center">
           <div className="text-sm sm:text-base font-black tracking-wide gradient-gold-text">
-            LSL Virtual Gang League
+            {title}
           </div>
           <div className="flex items-center justify-center gap-2 mt-0.5">
             <span className="text-[11px] text-muted-foreground font-mono">
@@ -241,15 +256,17 @@ function ShootoutStage({
   phase,
   animSec,
   recent,
+  sport,
 }: {
   featured: VirtualMatch;
   phase: Phase;
   animSec: number;
   recent: VirtualMatch[];
+  sport: Sport;
 }) {
-  const home = featured.home_team?.name ?? "Gang A";
-  const away = featured.away_team?.name ?? "Gang B";
-  const cd = useCountdown(featured.lock_time);
+  const isFoot = sport === "football";
+  const home = featured.home_team?.name ?? (isFoot ? "Home" : "Gang A");
+  const away = featured.away_team?.name ?? (isFoot ? "Away" : "Gang B");
   const live = phase === "live";
   const { h, a } = useLiveScore(featured, animSec);
 
@@ -276,52 +293,25 @@ function ShootoutStage({
 
       {/* Center arena */}
       {live ? (
-        <LiveMatchTicker match={featured} animSec={animSec} />
+        <LiveMatchTicker match={featured} animSec={animSec} sport={sport} />
       ) : (
         <Card className="virtual-panel virtual-arena grid place-items-center py-10">
           <div className="relative grid place-items-center">
             <div className="h-40 w-40 rounded-full border border-primary/25 grid place-items-center bg-[radial-gradient(circle,rgba(0,0,0,0.6),transparent_70%)]">
               <div className="h-24 w-24 rounded-full border border-primary/40 grid place-items-center animate-pulse">
-                <Crosshair className="h-9 w-9 text-primary" />
+                {isFoot ? <span className="text-3xl">⚽</span> : <Crosshair className="h-9 w-9 text-primary" />}
               </div>
             </div>
           </div>
           <div className="mt-4 text-center">
             <div className="text-[11px] font-black tracking-[0.3em] text-primary">▼ PLACE YOUR BETS ▼</div>
-            <div className="text-xs text-muted-foreground mt-1">Gang vs gang shootout begins at lock</div>
+            <div className="text-xs text-muted-foreground mt-1">{isFoot ? "Kick-off the moment your bet is placed" : "Gang vs gang shootout begins at lock"}</div>
           </div>
         </Card>
       )}
 
-      {/* Countdown (left) + Previous scores (right) */}
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="virtual-panel p-3">
-          <div className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/80 mb-1">
-            {live ? "Shootout live" : "Round locks in"}
-          </div>
-          {live ? (
-            <div className="flex items-center gap-2 text-destructive font-black">
-              <Radio className="h-5 w-5 animate-pulse" />
-              <span className="text-lg">In progress</span>
-            </div>
-          ) : (
-            <>
-              <div className="text-3xl sm:text-4xl font-black tabular-nums gradient-gold-text leading-none">
-                {cd.mm}:{cd.ss}
-              </div>
-              <div className="mt-2 h-1.5 rounded-full bg-background overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-500 to-primary transition-all"
-                  style={{ width: `${Math.min(100, 100 - (cd.secs / Math.max(1, cd.secs + 1)) * 0)}%` }}
-                />
-              </div>
-            </>
-          )}
-          <div className="mt-2 text-[10px] text-muted-foreground truncate">
-            {home} vs {away}
-          </div>
-        </Card>
-
+      {/* Previous scores */}
+      <div className="grid grid-cols-1 gap-3">
         <Card className="virtual-panel p-3">
           <div className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/80 mb-2">
             Previous scores
@@ -345,14 +335,15 @@ function ShootoutStage({
 
       {/* Line ups (left) + Opposing line (right) */}
       <div className="grid grid-cols-2 gap-3">
-        <LineUp title="Line ups" team={home} accent="red" />
-        <LineUp title="Opposing line" team={away} accent="sky" align="right" />
+        <LineUp title="Line ups" team={home} accent="red" sport={sport} />
+        <LineUp title="Opposing line" team={away} accent="sky" align="right" sport={sport} />
       </div>
     </div>
   );
 }
 
 const ROLES = ["Ace", "Shot Caller", "Lookout", "Runner", "Enforcer", "Driver"];
+const POSITIONS = ["Striker", "Winger", "Playmaker", "Midfielder", "Defender", "Keeper"];
 const RATINGS = [9, 8, 7, 6, 5, 4];
 
 function LineUp({
@@ -360,20 +351,23 @@ function LineUp({
   team,
   accent,
   align,
+  sport,
 }: {
   title: string;
   team: string;
   accent: "red" | "sky";
   align?: "right";
+  sport: Sport;
 }) {
   const dot = accent === "red" ? "bg-red-500" : "bg-sky-400";
+  const roles = sport === "football" ? POSITIONS : ROLES;
   return (
     <Card className="virtual-panel p-3">
       <div className={`text-[10px] font-black uppercase tracking-[0.25em] text-primary/80 mb-2 ${align === "right" ? "text-right" : ""}`}>
         {title}
       </div>
       <div className="space-y-1.5">
-        {ROLES.map((role, i) => (
+        {roles.map((role, i) => (
           <div
             key={role}
             className={`flex items-center gap-2 text-[11px] ${align === "right" ? "flex-row-reverse text-right" : ""}`}
@@ -640,13 +634,21 @@ function serverNow() {
 
 function newestVirtualBatch(rows: VirtualMatch[]): VirtualMatch[] {
   if (rows.length === 0) return [];
+  // Prefer rows that carry an explicit batch id — stray individual matches
+  // (batch_id = null) otherwise each form their own single-match "batch"
+  // and can silently hide the real round. Fall back to id-per-group only
+  // when nothing in the set has a batch id.
+  const withBatch = rows.filter((r) => r.virtual_round_batch_id);
+  const pool = withBatch.length > 0 ? withBatch : rows;
   const groups = new Map<string, VirtualMatch[]>();
-  rows.forEach((row) => {
+  pool.forEach((row) => {
     const key = row.virtual_round_batch_id ?? row.id;
     groups.set(key, [...(groups.get(key) ?? []), row]);
   });
   return (
     [...groups.values()].sort((a, b) => {
+      // Larger batches beat smaller ones; on a tie, the newer lock/start time wins.
+      if (a.length !== b.length) return b.length - a.length;
       const newestA = Math.max(...a.map((m) => new Date(m.lock_time ?? m.start_time).getTime()));
       const newestB = Math.max(...b.map((m) => new Date(m.lock_time ?? m.start_time).getTime()));
       return newestB - newestA;
@@ -702,6 +704,19 @@ const KILL_LINES = [
   "🔪 Close-quarters knife kill!",
 ];
 
+const GOAL_LINES = [
+  "⚽ Screamer into the top corner!",
+  "⚽ Cool finish one-on-one!",
+  "⚽ Header from the corner — buries it!",
+  "⚽ Curler bends into the far post!",
+  "⚽ Tap-in at the back post!",
+  "⚽ Volley on the swivel — buries it!",
+  "⚽ Counter-attack finish!",
+  "⚽ Long-range rocket, keeper flat-footed!",
+  "⚽ Penalty tucked into the corner!",
+  "⚽ Bicycle kick — outrageous!",
+];
+
 function seedRand(seed: string, i: number) {
   const s = `${seed}:${i}`;
   let h = 0;
@@ -731,7 +746,8 @@ type Fighter = { x: number; y: number; side: "h" | "a"; alive: boolean; flash: n
 type Tracer = { x1: number; y1: number; x2: number; y2: number; side: "h" | "a"; born: number };
 type Blast = { x: number; y: number; born: number; size: number };
 
-function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: number }) {
+function LiveMatchTicker({ match, animSec, sport = "gang" }: { match: VirtualMatch; animSec: number; sport?: Sport }) {
+  const isFoot = sport === "football";
   const lockMs = match.locked_at
     ? new Date(match.locked_at).getTime()
     : match.lock_time
@@ -834,12 +850,13 @@ function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: num
       setBlasts((prev) => prev.filter((b) => now - b.born < 900));
 
       const surfaced: string[] = [];
+      const LINES = isFoot ? GOAL_LINES : KILL_LINES;
       for (let i = 0; i < fh; i++) {
-        const line = KILL_LINES[Math.abs((match.id.charCodeAt(i % match.id.length) + i * 7) % KILL_LINES.length)];
+        const line = LINES[Math.abs((match.id.charCodeAt(i % match.id.length) + i * 7) % LINES.length)];
         surfaced.unshift(`${match.home_team?.name}: ${line}`);
       }
       for (let i = 0; i < fa; i++) {
-        const line = KILL_LINES[Math.abs((match.id.charCodeAt((i + 5) % match.id.length) + i * 11) % KILL_LINES.length)];
+        const line = LINES[Math.abs((match.id.charCodeAt((i + 5) % match.id.length) + i * 11) % LINES.length)];
         surfaced.unshift(`${match.away_team?.name}: ${line}`);
       }
       setFeed(surfaced.slice(0, 4));
@@ -847,10 +864,10 @@ function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: num
     tick();
     const t = setInterval(tick, 220);
     return () => clearInterval(t);
-  }, [lockMs, endMs, match.id, match.status, match.home_team?.name, match.away_team?.name]);
+  }, [lockMs, endMs, match.id, match.status, match.home_team?.name, match.away_team?.name, isFoot]);
 
-  const homeName = match.home_team?.name ?? "Gang A";
-  const awayName = match.away_team?.name ?? "Gang B";
+  const homeName = match.home_team?.name ?? (isFoot ? "Home" : "Gang A");
+  const awayName = match.away_team?.name ?? (isFoot ? "Away" : "Gang B");
   const aliveH = fighters.filter((f) => f.side === "h" && f.alive).length;
   const aliveA = fighters.filter((f) => f.side === "a" && f.alive).length;
   const { h: liveH, a: liveA } = useLiveScore(match, animSec);
@@ -858,6 +875,29 @@ function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: num
   return (
     <Card className="virtual-panel overflow-hidden shadow-gold p-0">
       <div className="relative w-full aspect-[16/10] overflow-hidden bg-[#07090a]">
+        {isFoot ? (
+          <>
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `
+                  radial-gradient(circle at 50% 50%, rgba(20,90,45,0.55), transparent 65%),
+                  repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 8%, rgba(0,0,0,0.15) 8% 16%),
+                  linear-gradient(180deg, #0b3a1e 0%, #062815 100%)`,
+              }}
+            />
+            {/* pitch markings */}
+            <div className="absolute inset-2 border border-white/25 rounded-sm" />
+            <div className="absolute left-1/2 top-2 bottom-2 w-px bg-white/25" />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-16 w-16 rounded-full border border-white/25" />
+            {/* penalty boxes */}
+            <div className="absolute top-1/2 -translate-y-1/2 left-2 h-2/3 w-[14%] border border-white/25 border-l-0" />
+            <div className="absolute top-1/2 -translate-y-1/2 right-2 h-2/3 w-[14%] border border-white/25 border-r-0" />
+            {/* goals */}
+            <div className="absolute top-1/2 -translate-y-1/2 left-0 h-[22%] w-[1.5%] bg-white/40" />
+            <div className="absolute top-1/2 -translate-y-1/2 right-0 h-[22%] w-[1.5%] bg-white/40" />
+          </>
+        ) : (
         <div
           className="absolute inset-0"
           style={{
@@ -869,20 +909,25 @@ function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: num
             linear-gradient(180deg, #14100c 0%, #08060a 100%)`,
           }}
         />
+        )}
+        {!isFoot && (
+          <>
         <div className="absolute bg-black/70 border border-white/10 rounded-sm" style={{ left: "18%", top: "18%", width: "14%", height: "22%" }} />
         <div className="absolute bg-black/70 border border-white/10 rounded-sm" style={{ left: "42%", top: "55%", width: "16%", height: "20%" }} />
         <div className="absolute bg-black/70 border border-white/10 rounded-sm" style={{ left: "68%", top: "20%", width: "12%", height: "28%" }} />
         <div className="absolute bg-black/70 border border-white/10 rounded-sm" style={{ left: "8%", top: "70%", width: "12%", height: "16%" }} />
         <div className="absolute left-1/2 top-2 bottom-2 w-px bg-gradient-to-b from-transparent via-amber-400/40 to-transparent" />
+          </>
+        )}
 
         <div className="absolute top-1 left-2 text-[9px] font-black tracking-widest text-red-400 drop-shadow">
-          RED · {homeName.toUpperCase()}
+          {isFoot ? "HOME" : "RED"} · {homeName.toUpperCase()}
         </div>
         <div className="absolute top-1 right-2 text-[9px] font-black tracking-widest text-sky-400 drop-shadow">
-          {awayName.toUpperCase()} · BLUE
+          {awayName.toUpperCase()} · {isFoot ? "AWAY" : "BLUE"}
         </div>
-        <div className="absolute bottom-1 left-2 text-[9px] font-mono text-red-300/80">ALIVE {aliveH}</div>
-        <div className="absolute bottom-1 right-2 text-[9px] font-mono text-sky-300/80">ALIVE {aliveA}</div>
+        <div className="absolute bottom-1 left-2 text-[9px] font-mono text-red-300/80">{isFoot ? `ON ${aliveH}` : `ALIVE ${aliveH}`}</div>
+        <div className="absolute bottom-1 right-2 text-[9px] font-mono text-sky-300/80">{isFoot ? `ON ${aliveA}` : `ALIVE ${aliveA}`}</div>
 
         <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 100">
           {tracers.map((t, i) => (
@@ -893,18 +938,19 @@ function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: num
               x2={t.x2}
               y2={t.y2}
               stroke={t.side === "h" ? "#ff5252" : "#4dd2ff"}
-              strokeWidth="0.35"
+              strokeWidth={isFoot ? "0.25" : "0.35"}
               strokeLinecap="round"
-              opacity={0.85}
-              style={{ filter: `drop-shadow(0 0 1.2px ${t.side === "h" ? "#ff5252" : "#4dd2ff"})` }}
+              opacity={isFoot ? 0.55 : 0.85}
+              strokeDasharray={isFoot ? "1 1.5" : undefined}
+              style={{ filter: `drop-shadow(0 0 ${isFoot ? "0.6" : "1.2"}px ${t.side === "h" ? "#ff5252" : "#4dd2ff"})` }}
             />
           ))}
         </svg>
 
         {blasts.map((b, i) => (
           <div key={`${b.born}-${i}`} className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: `${b.x}%`, top: `${b.y}%` }}>
-            <div className="rounded-full bg-amber-300/80 animate-ping" style={{ width: b.size, height: b.size, animationDuration: "0.75s" }} />
-            <div className="absolute inset-1 rounded-full bg-orange-500/70 blur-sm" />
+            <div className={`rounded-full ${isFoot ? "bg-white/70" : "bg-amber-300/80"} animate-ping`} style={{ width: b.size, height: b.size, animationDuration: "0.75s" }} />
+            <div className={`absolute inset-1 rounded-full ${isFoot ? "bg-emerald-300/70" : "bg-orange-500/70"} blur-sm`} />
           </div>
         ))}
 
@@ -930,7 +976,7 @@ function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: num
       <div className="p-3 bg-gradient-to-r from-black/80 via-black/60 to-black/80">
         <div className="flex items-center justify-between mb-2">
           <div className="text-[10px] uppercase tracking-widest text-destructive font-bold flex items-center gap-1">
-            <Radio className="h-3 w-3 animate-pulse" /> Live shootout
+            <Radio className="h-3 w-3 animate-pulse" /> {isFoot ? "Live match" : "Live shootout"}
           </div>
           <div className="font-mono font-black text-2xl tabular-nums text-primary tracking-widest">
             {liveH} - {liveA}
@@ -940,10 +986,10 @@ function LiveMatchTicker({ match, animSec }: { match: VirtualMatch; animSec: num
           <div className="h-full bg-gradient-to-r from-red-500 via-amber-400 to-sky-400 transition-all" style={{ width: `${progress * 100}%` }} />
         </div>
         <div className="space-y-1 min-h-[56px]">
-          {feed.length === 0 && <div className="text-[10px] text-muted-foreground">Gangs locking & loading…</div>}
+          {feed.length === 0 && <div className="text-[10px] text-muted-foreground">{isFoot ? "Players warming up on the pitch…" : "Gangs locking & loading…"}</div>}
           {feed.map((line, i) => (
             <div key={i} className="text-[11px] text-foreground/90 animate-fade-in flex items-start gap-1.5">
-              <span className="text-destructive">▸</span>
+              <span className={isFoot ? "text-emerald-400" : "text-destructive"}>▸</span>
               {line}
             </div>
           ))}

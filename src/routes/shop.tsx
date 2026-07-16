@@ -12,8 +12,8 @@ import { ShoppingBag, Gift } from "lucide-react";
 export const Route = createFileRoute("/shop")({
   head: () => ({
     meta: [
-      { title: "Rewards Shop — Redeem Your Tokens | LSL" },
-      { name: "description", content: "Spend your LSL tokens on exclusive rewards in the Rewards Shop." },
+      { title: "Rewards Shop — Redeem Your Tokens | ECB" },
+      { name: "description", content: "Spend your ECB tokens on exclusive rewards in the Rewards Shop." },
     ],
   }),
   component: ShopPage,

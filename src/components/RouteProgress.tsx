@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouterState } from "@tanstack/react-router";
-import lslLogo from "@/assets/lsl-logo.png";
+import ecbLogo from "@/assets/ecb-logo.png.asset.json";
+const lslLogo = ecbLogo.url;
 
 /**
  * Centered overlay that shows the platform logo spinning while TanStack

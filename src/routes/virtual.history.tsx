@@ -12,7 +12,7 @@ import { ArrowLeft, Coins, Trophy, History as HistoryIcon } from "lucide-react";
 export const Route = createFileRoute("/virtual/history")({
   head: () => ({
     meta: [
-      { title: "Virtual Gangs · Rounds History | LSL" },
+      { title: "Virtual Gangs · Rounds History | ECB" },
       { name: "description", content: "All resolved Virtual Gangs rounds with outcomes and payouts." },
     ],
   }),

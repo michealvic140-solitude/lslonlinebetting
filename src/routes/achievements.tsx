@@ -9,8 +9,8 @@ import { Trophy, ArrowLeft, Sparkles, Award } from "lucide-react";
 export const Route = createFileRoute("/achievements")({
   head: () => ({
     meta: [
-      { title: "Achievements — LSL" },
-      { name: "description", content: "Track your unlocked badges and milestones across the Lomita Shooters League." },
+      { title: "Achievements — ECB" },
+      { name: "description", content: "Track your unlocked badges and milestones across the E-Football Competition Bet." },
     ],
   }),
   component: AchievementsPage,

@@ -1,50 +1,59 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 
-type ActionMsg = { title: string; description?: string };
+type ActionMsg = { id: number; title: string; description?: string };
 
 /**
- * Listens for global "admin:action-confirmed" events (fired via notifyAction)
- * and shows a pop-out confirmation dialog for each one. Messages queue so
- * rapid successive actions are each acknowledged.
+ * Listens for global "admin:action-confirmed" events and shows a bold,
+ * non-blocking success banner at the top-left of the page so the admin can
+ * keep working. Banners auto-dismiss after a few seconds and stack when
+ * fired in rapid succession.
  */
 export function ActionConfirmDialog() {
-  const [queue, setQueue] = useState<ActionMsg[]>([]);
+  const [msgs, setMsgs] = useState<ActionMsg[]>([]);
 
   useEffect(() => {
+    let seq = 0;
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as ActionMsg | undefined;
+      const detail = (e as CustomEvent).detail as Omit<ActionMsg, "id"> | undefined;
       if (!detail?.title) return;
-      setQueue((q) => [...q, detail]);
+      const id = ++seq;
+      setMsgs((q) => [...q, { ...detail, id }]);
+      setTimeout(() => setMsgs((q) => q.filter((m) => m.id !== id)), 3500);
     };
     window.addEventListener("admin:action-confirmed", handler);
     return () => window.removeEventListener("admin:action-confirmed", handler);
   }, []);
 
-  const current = queue[0] ?? null;
-  const close = () => setQueue((q) => q.slice(1));
-
+  if (!msgs.length) return null;
   return (
-    <Dialog open={!!current} onOpenChange={(o) => !o && close()}>
-      <DialogContent className="glass-strong border-primary/30 max-w-sm backdrop-blur-2xl shadow-luxury overflow-hidden">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-gold" />
-        <DialogHeader>
-          <div className="h-12 w-12 rounded-full grid place-items-center mb-2 bg-emerald-500/20">
-            <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+    <div className="fixed top-4 left-4 z-[100] flex flex-col gap-2 pointer-events-none max-w-[min(92vw,380px)]">
+      {msgs.map((m) => (
+        <div
+          key={m.id}
+          className="pointer-events-auto relative overflow-hidden rounded-2xl border border-emerald-400/40 bg-background/85 backdrop-blur-xl shadow-2xl animate-fade-in"
+        >
+          <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-emerald-400 to-emerald-600" />
+          <div className="flex items-start gap-3 pl-5 pr-3 py-3">
+            <div className="h-9 w-9 shrink-0 rounded-full bg-emerald-500/20 grid place-items-center">
+              <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-black tracking-tight text-foreground">{m.title}</div>
+              {m.description && (
+                <div className="text-xs text-muted-foreground mt-0.5 truncate">{m.description}</div>
+              )}
+            </div>
+            <button
+              onClick={() => setMsgs((q) => q.filter((x) => x.id !== m.id))}
+              className="text-muted-foreground hover:text-foreground shrink-0"
+              aria-label="Dismiss"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <DialogTitle className="text-xl">{current?.title}</DialogTitle>
-          {current?.description && (
-            <DialogDescription className="text-sm text-muted-foreground">{current.description}</DialogDescription>
-          )}
-        </DialogHeader>
-        <DialogFooter>
-          <Button className="w-full" onClick={close}>
-            {queue.length > 1 ? `Next (${queue.length - 1} more)` : "Got it"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      ))}
+    </div>
   );
 }

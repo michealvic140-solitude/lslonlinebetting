@@ -6,6 +6,7 @@ const schema = z.object({
   title: z.string().trim().min(1).max(120),
   body: z.string().trim().max(400).optional().default(""),
   link: z.string().trim().max(500).optional().default(""),
+  image: z.string().trim().max(1000).optional().default(""),
   role: z.string().trim().optional().default("any"),
   locale: z.string().trim().max(40).optional().default(""),
   lastActiveDays: z.number().int().positive().max(3650).nullable().optional(),
@@ -45,6 +46,7 @@ export const broadcastPush = createServerFn({ method: "POST" })
         title: data.title,
         body: data.body || "",
         link: data.link || "/",
+        image: data.image || null,
         role: data.role || "any",
         locale: data.locale || "",
         last_active_days: data.lastActiveDays ?? null,
@@ -68,6 +70,7 @@ export const broadcastPush = createServerFn({ method: "POST" })
       title: data.title,
       body: data.body,
       link: data.link,
+      image: data.image,
     });
 
     await supabaseAdmin.from("broadcasts").insert({

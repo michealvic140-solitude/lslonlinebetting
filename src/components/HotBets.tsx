@@ -101,9 +101,10 @@ export function HotBets() {
         </span>
       </div>
       {rows.length === 0 && <p className="text-xs text-muted-foreground">No trending bets yet.</p>}
-      <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-        {rows.map((h, i) => (
-          <div key={i} className="rounded-lg border border-border/60 bg-background/40 p-2.5 hover:border-primary/40 transition">
+      {rows.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:thin]">
+          {rows.map((h, i) => (
+            <div key={i} className="snap-start shrink-0 w-[48%] min-w-[150px] rounded-lg border border-border/60 bg-background/40 p-2.5 hover:border-primary/40 transition">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1.5">
@@ -145,9 +146,13 @@ export function HotBets() {
                 );
               })()}
             </div>
-          </div>
-        ))}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {rows.length > 2 && (
+        <p className="mt-1 text-[9px] text-center text-muted-foreground uppercase tracking-widest">Swipe to see more →</p>
+      )}
     </Card>
   );
 }

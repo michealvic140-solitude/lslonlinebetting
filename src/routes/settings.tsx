@@ -8,8 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — LSL" },
-      { name: "description", content: "Manage your LSL account preferences, notifications, and profile settings." },
+      { title: "Settings — ECB" },
+      { name: "description", content: "Manage your ECB account preferences, notifications, and profile settings." },
     ],
   }),
   component: SettingsPage,
