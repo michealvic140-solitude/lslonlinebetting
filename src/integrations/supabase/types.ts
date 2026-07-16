@@ -701,6 +701,8 @@ export type Database = {
           cashout_amount: number | null
           created_at: string
           id: string
+          is_virtual: boolean
+          kind: string | null
           potential_payout: number
           settled_at: string | null
           stake: number
@@ -715,6 +717,8 @@ export type Database = {
           cashout_amount?: number | null
           created_at?: string
           id?: string
+          is_virtual?: boolean
+          kind?: string | null
           potential_payout: number
           settled_at?: string | null
           stake: number
@@ -729,6 +733,8 @@ export type Database = {
           cashout_amount?: number | null
           created_at?: string
           id?: string
+          is_virtual?: boolean
+          kind?: string | null
           potential_payout?: number
           settled_at?: string | null
           stake?: number
@@ -1612,6 +1618,8 @@ export type Database = {
           featured_bg_fit: string | null
           featured_bg_position: string | null
           featured_bg_url: string | null
+          featured_image_fit: string | null
+          featured_image_position: string | null
           featured_image_url: string | null
           home_player_id: string | null
           home_present: boolean
@@ -1653,6 +1661,8 @@ export type Database = {
           featured_bg_fit?: string | null
           featured_bg_position?: string | null
           featured_bg_url?: string | null
+          featured_image_fit?: string | null
+          featured_image_position?: string | null
           featured_image_url?: string | null
           home_player_id?: string | null
           home_present?: boolean
@@ -1694,6 +1704,8 @@ export type Database = {
           featured_bg_fit?: string | null
           featured_bg_position?: string | null
           featured_bg_url?: string | null
+          featured_image_fit?: string | null
+          featured_image_position?: string | null
           featured_image_url?: string | null
           home_player_id?: string | null
           home_present?: boolean
@@ -1774,9 +1786,11 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          idx: number
           image_url: string | null
           kind: string
           sort_order: number
+          text: string | null
           title: string | null
           updated_at: string
         }
@@ -1785,9 +1799,11 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
+          idx?: number
           image_url?: string | null
           kind?: string
           sort_order?: number
+          text?: string | null
           title?: string | null
           updated_at?: string
         }
@@ -1796,9 +1812,11 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
+          idx?: number
           image_url?: string | null
           kind?: string
           sort_order?: number
+          text?: string | null
           title?: string | null
           updated_at?: string
         }
@@ -2384,6 +2402,60 @@ export type Database = {
           p256dh?: string
           user_agent?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      recurring_push_settings: {
+        Row: {
+          body: string
+          created_at: string
+          cycles_content: string | null
+          enabled: boolean
+          end_hour_utc: number
+          hour_utc: number | null
+          key: string
+          last_sent_at: string | null
+          last_sent_slot: string | null
+          link: string | null
+          next_index: number
+          sort_order: number
+          start_hour_utc: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          cycles_content?: string | null
+          enabled?: boolean
+          end_hour_utc?: number
+          hour_utc?: number | null
+          key: string
+          last_sent_at?: string | null
+          last_sent_slot?: string | null
+          link?: string | null
+          next_index?: number
+          sort_order?: number
+          start_hour_utc?: number
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          cycles_content?: string | null
+          enabled?: boolean
+          end_hour_utc?: number
+          hour_utc?: number | null
+          key?: string
+          last_sent_at?: string | null
+          last_sent_slot?: string | null
+          link?: string | null
+          next_index?: number
+          sort_order?: number
+          start_hour_utc?: number
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
