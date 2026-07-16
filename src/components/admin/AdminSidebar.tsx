@@ -15,9 +15,10 @@ import {
   BarChart3, Users, Sparkles, AlertTriangle, History, ClipboardList, Send,
   MessageSquare, Megaphone, Trophy, Calendar, Wallet, ListOrdered, Tag,
   Settings as SettingsIcon, Ticket, Coins, Dice5, Shield, Flame, Target,
-  Gift,
+  Gift, Palette,
 } from "lucide-react";
-import lslLogo from "@/assets/lsl-logo.png";
+import _ecbLogo from "@/assets/ecb-logo.png.asset.json";
+const lslLogo = _ecbLogo.url;
 
 export type AdminNavItem = {
   key: string;
@@ -26,51 +27,68 @@ export type AdminNavItem = {
   admin?: boolean; // admin-only
   modOk?: boolean; // visible to mods
   alertKey?: string;
+  group?: string;
 };
 
 const NAV: AdminNavItem[] = [
-  { key: "analytics",   label: "Analytics",            icon: BarChart3,       modOk: true },
-  { key: "activity",    label: "Activity",             icon: Users,           admin: true },
-  { key: "adminai",     label: "Admin AI",             icon: Sparkles,        admin: true },
-  { key: "appeals",     label: "Appeals",              icon: AlertTriangle,   modOk: true, alertKey: "appeals" },
-  { key: "audit",       label: "Audit",                icon: History,         admin: true },
-  { key: "bettracker",  label: "Bet Tracker",          icon: ClipboardList,   admin: true, alertKey: "bettracker" },
-  { key: "broadcast",   label: "Broadcast",            icon: Send,            admin: true },
-  { key: "challenges",  label: "Challenges",           icon: Sparkles,        admin: true },
-  { key: "chat",        label: "Chat",                 icon: MessageSquare,   modOk: true, alertKey: "chat" },
-  { key: "clans",       label: "Clans",                icon: Shield,          admin: true },
-  { key: "content",     label: "Content",              icon: Megaphone,       modOk: true },
-  { key: "emblems",     label: "Emblems",              icon: Trophy,          admin: true },
-  { key: "events",      label: "Events",               icon: Calendar,        admin: true },
-  { key: "futures",     label: "Futures",              icon: Target,          admin: true },
-  { key: "giftsspin",   label: "Gifts & Spin",         icon: Gift,            admin: true },
-  { key: "housewallet", label: "House Wallet",         icon: Wallet,          admin: true },
-  { key: "leaderboard", label: "Leaderboard",          icon: ListOrdered,     admin: true },
-  { key: "lottery",     label: "Lottery",              icon: Dice5,           admin: true },
-  { key: "matches",     label: "Matches",              icon: Trophy,          modOk: true },
-  { key: "news",        label: "News",                 icon: Megaphone,       admin: true },
-  { key: "notify",      label: "Notify",               icon: Send,            modOk: true },
-  { key: "pnl",         label: "P&L",                  icon: BarChart3,       admin: true },
-  { key: "promos",      label: "Promo Codes",          icon: Tag,             admin: true },
-  { key: "promoreqs",   label: "Promo Requests",       icon: Tag,             admin: true, alertKey: "promoreqs" },
-  { key: "referrals",   label: "Referrals",            icon: Users,           admin: true },
-  { key: "reports",     label: "Reports",              icon: BarChart3,       admin: true },
-  { key: "risk",        label: "Risk",                 icon: AlertTriangle,   admin: true },
-  { key: "seasons",     label: "Seasons",              icon: Trophy,          admin: true },
-  { key: "settings",    label: "Settings",             icon: SettingsIcon,    admin: true },
-  { key: "spotlights",  label: "Spotlights",           icon: Sparkles,        modOk: true },
-  { key: "streakpush",  label: "Streak & Push",        icon: Sparkles,        admin: true },
-  { key: "surveys",     label: "Surveys",              icon: ClipboardList,   admin: true },
-  { key: "tasks",       label: "Tasks & Achievements", icon: ClipboardList,   admin: true },
-  { key: "tickets",     label: "Tickets",              icon: Ticket,          modOk: true, alertKey: "tickets" },
-  { key: "tokens",      label: "Tokens",               icon: Coins,           admin: true, alertKey: "tokens" },
-  { key: "tokenrules",  label: "Token Rules",          icon: Coins,           admin: true },
-  { key: "topbets",     label: "Top Bets",             icon: Flame,           modOk: true },
-  { key: "tournaments", label: "Tournaments",          icon: Trophy,          admin: true },
-  { key: "users",       label: "Users",                icon: Users,           modOk: true, alertKey: "users" },
-  { key: "virtual",     label: "Virtual",              icon: Dice5,           admin: true },
-  { key: "vip",         label: "VIP",                  icon: Trophy,          admin: true },
-  { key: "withdrawals", label: "Withdrawals",          icon: Wallet,          modOk: true, alertKey: "withdrawals" },
+  // Overview
+  { group: "Overview", key: "analytics",   label: "Analytics",            icon: BarChart3,       modOk: true },
+  { group: "Overview", key: "activity",    label: "Activity",             icon: Users,           admin: true },
+  { group: "Overview", key: "reports",     label: "Reports",              icon: BarChart3,       admin: true },
+  { group: "Overview", key: "pnl",         label: "P&L",                  icon: BarChart3,       admin: true },
+  { group: "Overview", key: "audit",       label: "Audit",                icon: History,         admin: true },
+  { group: "Overview", key: "risk",        label: "Risk",                 icon: AlertTriangle,   admin: true },
+  { group: "Overview", key: "adminai",     label: "Admin AI",             icon: Sparkles,        admin: true },
+
+  // Users & Community
+  { group: "Users & Community", key: "users",       label: "Users",                icon: Users,           modOk: true, alertKey: "users" },
+  { group: "Users & Community", key: "appeals",     label: "Appeals",              icon: AlertTriangle,   modOk: true, alertKey: "appeals" },
+  { group: "Users & Community", key: "clans",       label: "Clans",                icon: Shield,          admin: true },
+  { group: "Users & Community", key: "emblems",     label: "Emblems",              icon: Trophy,          admin: true },
+  { group: "Users & Community", key: "referrals",   label: "Referrals",            icon: Users,           admin: true },
+  { group: "Users & Community", key: "chat",        label: "Chat",                 icon: MessageSquare,   modOk: true, alertKey: "chat" },
+  { group: "Users & Community", key: "tickets",     label: "Tickets",              icon: Ticket,          modOk: true, alertKey: "tickets" },
+  { group: "Users & Community", key: "vip",         label: "VIP",                  icon: Trophy,          admin: true },
+
+  // Betting & Battles
+  { group: "Betting & Battles", key: "matches",     label: "Matches",              icon: Trophy,          modOk: true },
+  { group: "Betting & Battles", key: "bettracker",  label: "Bet Tracker",          icon: ClipboardList,   admin: true, alertKey: "bettracker" },
+  { group: "Betting & Battles", key: "topbets",     label: "Top Bets",             icon: Flame,           modOk: true },
+  { group: "Betting & Battles", key: "virtual",     label: "Virtual",              icon: Dice5,           admin: true },
+  { group: "Betting & Battles", key: "tournaments", label: "Tournaments",          icon: Trophy,          admin: true },
+  { group: "Betting & Battles", key: "futures",     label: "Futures",              icon: Target,          admin: true },
+  { group: "Betting & Battles", key: "events",      label: "Events",               icon: Calendar,        admin: true },
+  { group: "Betting & Battles", key: "seasons",     label: "Seasons",              icon: Trophy,          admin: true },
+  { group: "Betting & Battles", key: "leaderboard", label: "Leaderboard",          icon: ListOrdered,     admin: true },
+
+  // Wallet & Payments
+  { group: "Wallet & Payments", key: "housewallet", label: "House Wallet",         icon: Wallet,          admin: true },
+  { group: "Wallet & Payments", key: "withdrawals", label: "Withdrawals",          icon: Wallet,          modOk: true, alertKey: "withdrawals" },
+  { group: "Wallet & Payments", key: "tokens",      label: "Tokens",               icon: Coins,           admin: true, alertKey: "tokens" },
+  { group: "Wallet & Payments", key: "tokenrules",  label: "Token Rules",          icon: Coins,           admin: true },
+  { group: "Wallet & Payments", key: "promos",      label: "Promo Codes",          icon: Tag,             admin: true },
+  { group: "Wallet & Payments", key: "promoreqs",   label: "Promo Requests",       icon: Tag,             admin: true, alertKey: "promoreqs" },
+
+  // Rewards & Games
+  { group: "Rewards & Games", key: "lottery",     label: "Lottery",              icon: Dice5,           admin: true },
+  { group: "Rewards & Games", key: "giftsspin",   label: "Gifts & Spin",         icon: Gift,            admin: true },
+  { group: "Rewards & Games", key: "challenges",  label: "Challenges",           icon: Sparkles,        admin: true },
+  { group: "Rewards & Games", key: "tasks",       label: "Tasks & Achievements", icon: ClipboardList,   admin: true },
+  { group: "Rewards & Games", key: "surveys",     label: "Surveys",              icon: ClipboardList,   admin: true },
+
+  // Content
+  { group: "Content", key: "content",     label: "Content",              icon: Megaphone,       modOk: true },
+  { group: "Content", key: "news",        label: "News",                 icon: Megaphone,       admin: true },
+  { group: "Content", key: "spotlights",  label: "Spotlights",           icon: Sparkles,        modOk: true },
+
+  // Notifications
+  { group: "Notifications", key: "broadcast",   label: "Broadcast",            icon: Send,            admin: true },
+  { group: "Notifications", key: "notify",      label: "Notify",               icon: Send,            modOk: true },
+  { group: "Notifications", key: "streakpush",  label: "Streak & Push",        icon: Sparkles,        admin: true },
+
+  // Configuration
+  { group: "Configuration", key: "branding",    label: "Branding",             icon: Palette,         admin: true },
+  { group: "Configuration", key: "settings",    label: "Settings",             icon: SettingsIcon,    admin: true },
 ];
 
 export function AdminSidebar({
@@ -91,12 +109,18 @@ export function AdminSidebar({
 
   const items = NAV.filter((n) => (n.admin ? isAdmin : true) || (n.modOk && (isAdmin || isMod)));
 
+  const groups = items.reduce<Record<string, AdminNavItem[]>>((acc, it) => {
+    const g = it.group ?? "Other";
+    (acc[g] = acc[g] ?? []).push(it);
+    return acc;
+  }, {});
+
   return (
     <Sidebar collapsible="icon" className="border-r border-primary/20">
       <SidebarHeader className="border-b border-primary/15 px-2 py-3">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-xl bg-gradient-gold grid place-items-center shadow-gold overflow-hidden ring-1 ring-primary/40 shrink-0">
-            <img src={lslLogo} alt="LSL" className="h-7 w-7 object-contain" />
+            <img src={lslLogo} alt="ECB" className="h-7 w-7 object-contain" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
@@ -107,11 +131,12 @@ export function AdminSidebar({
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel className="text-[10px] tracking-[0.25em]">NAVIGATION</SidebarGroupLabel>}
+        {Object.entries(groups).map(([groupLabel, groupItems]) => (
+        <SidebarGroup key={groupLabel}>
+          {!collapsed && <SidebarGroupLabel className="text-[10px] tracking-[0.25em]">{groupLabel.toUpperCase()}</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => {
+              {groupItems.map((item) => {
                 const Icon = item.icon;
                 const active = activeTab === item.key;
                 const count = item.alertKey ? alerts[item.alertKey] ?? 0 : 0;
@@ -141,6 +166,7 @@ export function AdminSidebar({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        ))}
       </SidebarContent>
     </Sidebar>
   );

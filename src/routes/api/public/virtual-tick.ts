@@ -9,6 +9,8 @@ export const Route = createFileRoute("/api/public/virtual-tick")({
     handlers: {
       GET: async () => {
         const { data, error } = await supabaseAdmin.rpc("virtual_tick");
+        await supabaseAdmin.rpc("championship_tick" as any);
+        await supabaseAdmin.rpc("resolve_open_bets" as any);
         if (error) {
           return new Response(JSON.stringify({ ok: false, error: error.message }), {
             status: 500,
@@ -22,6 +24,8 @@ export const Route = createFileRoute("/api/public/virtual-tick")({
       },
       POST: async () => {
         const { data, error } = await supabaseAdmin.rpc("virtual_tick");
+        await supabaseAdmin.rpc("championship_tick" as any);
+        await supabaseAdmin.rpc("resolve_open_bets" as any);
         if (error) {
           return new Response(JSON.stringify({ ok: false, error: error.message }), {
             status: 500, headers: { "Content-Type": "application/json" },

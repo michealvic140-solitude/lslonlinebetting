@@ -10,8 +10,8 @@ import { LifeBuoy, Search } from "lucide-react";
 export const Route = createFileRoute("/faq")({
   head: () => ({
     meta: [
-      { title: "Help Center & FAQ | LSL" },
-      { name: "description", content: "Find answers to frequently asked questions about the LSL platform, betting, tokens and games." },
+      { title: "Help Center & FAQ | ECB" },
+      { name: "description", content: "Find answers to frequently asked questions about the ECB platform, betting, tokens and games." },
     ],
   }),
   component: FaqPage,

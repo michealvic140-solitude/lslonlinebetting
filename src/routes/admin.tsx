@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { RiskPanel, PnLPanel, ReferralsAdminPanel, EmblemModerationPanel, VipAdminPanel, StreakAndPushPanel, TokenRulesPanel, BroadcastPanel, ActivityPanel, ReportsPanel, AdminAILivePanel } from "@/components/admin/AdminExtensions";
+import { UserExperiencePanel } from "@/components/admin/UserExperiencePanel";
 import { VirtualAdminPanel } from "@/components/admin/VirtualAdminPanel";
+import { ChampionshipAdminPanel } from "@/components/admin/ChampionshipAdminPanel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
@@ -17,10 +19,11 @@ import {
   Shield, Users, Trophy, Coins, Megaphone, Settings as SettingsIcon, Ticket, AlertTriangle,
   Calendar, Tag, Image as ImageIcon, BarChart3, History, Send, Plus, Trash2, Pencil, ChevronRight, ChevronLeft, Wallet, ListOrdered, Sparkles, ClipboardList, Lock, Pause, Play, Check, X, MessageSquare, Eye, RotateCw, Copy, Globe, MapPin, Smartphone, Clock, Filter,
   Dice5, LogOut, Crosshair, Target, Flame, ThumbsUp, ThumbsDown,
-  Gift, BellRing, GalleryHorizontalEnd, Gamepad2, Vote, ShoppingBag, LifeBuoy,
+  Gift, BellRing, GalleryHorizontalEnd, Gamepad2, Vote, ShoppingBag, LifeBuoy, Newspaper,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import lslLogo from "@/assets/lsl-logo.png";
+import _ecbLogo from "@/assets/ecb-logo.png.asset.json";
+const lslLogo = _ecbLogo.url;
 import tileBattle from "@/assets/tile-battle.jpg";
 import tileVirtual from "@/assets/tile-virtual.jpg";
 import tileChallenges from "@/assets/tile-challenges.jpg";
@@ -55,11 +58,13 @@ import { SurveysAdminPanel } from "@/components/admin/SurveysAdminPanel";
 import { PollsAdminPanel, ShopAdminPanel, FaqAdminPanel } from "@/components/admin/CommunityAdminPanel";
 import { NewsAdminPanel } from "@/components/admin/NewsAdminPanel";
 import { PushBroadcastPanel } from "@/components/admin/PushBroadcastPanel";
+import { RecurringPushPanel } from "@/components/admin/RecurringPushPanel";
 import { HomeBannersAdminPanel } from "@/components/admin/HomeBannersAdminPanel";
 import { ArcadeAdminPanel } from "@/components/admin/ArcadeAdminPanel";
 import { CasinoHistoryPanel } from "@/components/admin/CasinoHistoryPanel";
 import { TopBetsPanel } from "@/components/admin/TopBetsPanel";
 import { TournamentAdminPanel } from "@/components/admin/TournamentAdminPanel";
+import { BrandingAdminPanel } from "@/components/admin/BrandingAdminPanel";
 import { seedLegacyUsers } from "@/lib/seed-users.functions";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { loadStandings, type LbRow } from "@/lib/leaderboard";
@@ -68,7 +73,7 @@ import { loadStandings, type LbRow } from "@/lib/leaderboard";
 const SILENT_AUDIT_ACTIONS = new Set(["match_live_score", "match_presence"]);
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin — LSL" }, { name: "description", content: "League administration dashboard." }] }),
+  head: () => ({ meta: [{ title: "Admin — ECB" }, { name: "description", content: "League administration dashboard." }] }),
   component: AdminPage,
 });
 
@@ -157,7 +162,7 @@ export function AdminPage() {
                 className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-gradient-gold text-primary-foreground grid place-items-center shadow-gold overflow-hidden ring-2 ring-primary/40 shrink-0 hover:ring-primary/70 transition"
                 title="Open analytics"
               >
-                <img src={lslLogo} alt="LSL" className="h-14 w-14 sm:h-16 sm:w-16 object-contain" />
+                <img src={lslLogo} alt="ECB" className="h-14 w-14 sm:h-16 sm:w-16 object-contain" />
               </button>
               <div>
                 <p className="text-[11px] sm:text-xs uppercase tracking-[0.3em] text-muted-foreground">Command center</p>
@@ -193,6 +198,7 @@ export function AdminPage() {
             <TabsContent value="users" className="mt-4"><UsersPanel /></TabsContent>
             <TabsContent value="bannedusers" className="mt-4"><BannedUsersPanel /></TabsContent>
             <TabsContent value="virtual" className="mt-4"><VirtualAdminPanel /></TabsContent>
+            <TabsContent value="championship" className="mt-4"><ChampionshipAdminPanel /></TabsContent>
             <TabsContent value="matches" className="mt-4"><MatchesPanel /></TabsContent>
             <TabsContent value="futures" className="mt-4"><FuturesAdminPanel /></TabsContent>
             <TabsContent value="events" className="mt-4"><EventsPanel /></TabsContent>
@@ -231,6 +237,7 @@ export function AdminPage() {
             <TabsContent value="tokenrules" className="mt-4"><TokenRulesPanel /></TabsContent>
             <TabsContent value="broadcast" className="mt-4"><BroadcastPanel /></TabsContent>
             <TabsContent value="pushblast" className="mt-4"><PushBroadcastPanel /></TabsContent>
+            <TabsContent value="pushrecurring" className="mt-4"><RecurringPushPanel /></TabsContent>
             <TabsContent value="banners" className="mt-4"><HomeBannersAdminPanel /></TabsContent>
             <TabsContent value="arcade" className="mt-4"><ArcadeAdminPanel /></TabsContent>
             <TabsContent value="casinohistory" className="mt-4"><CasinoHistoryPanel /></TabsContent>
@@ -244,6 +251,8 @@ export function AdminPage() {
             <TabsContent value="topbets" className="mt-4"><TopBetsPanel /></TabsContent>
             <TabsContent value="tournaments" className="mt-4"><TournamentAdminPanel /></TabsContent>
             <TabsContent value="attendance" className="mt-4"><AttendancePanel /></TabsContent>
+            <TabsContent value="branding" className="mt-4"><BrandingAdminPanel /></TabsContent>
+            <TabsContent value="ux" className="mt-4"><UserExperiencePanel /></TabsContent>
           </Tabs>
         </div>
         <ActionConfirmDialog />
@@ -1278,18 +1287,19 @@ function MatchesPanel() {
   }
 
   async function clearEnded() {
-    const endedCount = matches.filter((m) => m.status === "ended").length;
-    if (endedCount === 0) { toast.info("No ended matches to clear."); return; }
+    const clearable = matches.filter((m) => m.status === "ended" || m.status === "cancelled");
+    const endedCount = clearable.length;
+    if (endedCount === 0) { toast.info("No ended or cancelled matches to clear."); return; }
     if (!await confirm({
-      title: `Clear ${endedCount} ended match${endedCount === 1 ? "" : "es"}?`,
-      description: "All matches with status 'ended' will be archived from the panel so you can create new ones. User bet vouchers and history stay intact — only the match listing here is cleared.",
-      tone: "danger", confirmText: "Clear ended matches",
+      title: `Clear ${endedCount} match${endedCount === 1 ? "" : "es"}?`,
+      description: "All matches with status 'ended' or 'cancelled' will be archived from the panel so you can create new ones. User bet vouchers and history stay intact — only the match listing here is cleared.",
+      tone: "danger", confirmText: "Clear ended & cancelled",
     })) return;
     const { data: archived, error } = await supabase
-      .from("matches").update({ is_archived: true }).eq("is_archived", false).eq("status", "ended").select("id");
+      .from("matches").update({ is_archived: true }).eq("is_archived", false).in("status", ["ended", "cancelled"]).select("id");
     if (error) { toast.error(error.message); return; }
     await logAudit("matches_bulk_archive_ended", "matches", undefined, { count: archived?.length ?? 0, match_ids: (archived ?? []).map((m: any) => m.id) });
-    toast.success(`Archived ${archived?.length ?? 0} ended match${archived?.length === 1 ? "" : "es"}`);
+    toast.success(`Archived ${archived?.length ?? 0} match${archived?.length === 1 ? "" : "es"} (ended + cancelled)`);
     load();
   }
 
@@ -1307,9 +1317,9 @@ function MatchesPanel() {
         <Button className="btn-luxury" onClick={() => setShooterWizard(true)}><Crosshair className="h-4 w-4 mr-1" />New Shooter Match</Button>
         <Button className="btn-luxury" onClick={() => window.dispatchEvent(new CustomEvent("admin:set-tab", { detail: "futures" }))}><Target className="h-4 w-4 mr-1" />New Tournament Futures</Button>
         <Button variant="destructive" onClick={clearEnded}>
-          <Trash2 className="h-4 w-4 mr-1" />Clear Ended Matches
+          <Trash2 className="h-4 w-4 mr-1" />Clear Ended & Cancelled
         </Button>
-        <Badge variant="outline" className="ml-auto text-[10px]">Bet history is preserved — only the panel list is cleared.</Badge>
+        <Badge variant="outline" className="ml-auto text-[10px]">Wipes both ended and cancelled matches. Bet history preserved.</Badge>
       </div>
       {wizard && <MatchWizard onClose={() => { setWizard(false); load(); }} />}
       {shooterWizard && <ShooterMatchWizard onClose={() => { setShooterWizard(false); load(); }} />}
@@ -1413,7 +1423,7 @@ async function settleFutureBets(matchId: string, winningOddIds: string[], winnin
   const { data: sels } = await supabase.from("bet_selections").select("*").eq("match_id", matchId);
   if (!sels || sels.length === 0) return;
   for (const s of sels) {
-    await supabase.from("bet_selections").update({ result: winningOddIds.includes(s.odd_id) ? "won" : "lost" }).eq("id", s.id);
+    await supabase.from("bet_selections").update({ result: s.odd_id && winningOddIds.includes(s.odd_id) ? "won" : "lost" }).eq("id", s.id);
   }
   const betIds = Array.from(new Set(sels.map((s: any) => s.bet_id)));
   for (const bid of betIds) {
@@ -1435,7 +1445,7 @@ async function settleFutureBets(matchId: string, winningOddIds: string[], winnin
 function ShooterMatchWizard({ onClose }: { onClose: () => void }) {
   const [players, setPlayers] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
-  const [form, setForm] = useState({ home_player_id: "", away_player_id: "", oddsA: 2, draw: 3.5, oddsB: 2, name: "", start_time: "", location: "", featured: true, marketing: true, homePresent: false, awayPresent: false, restrictRepeat: false });
+  const [form, setForm] = useState({ home_player_id: "", away_player_id: "", oddsA: 2, draw: 3.5, oddsB: 2, name: "", start_time: "", location: "", featured: true, featured_image_url: null as string | null, featured_image_fit: "cover", featured_image_position: "center", marketing: true, homePresent: false, awayPresent: false, restrictRepeat: false });
 
   useEffect(() => {
     Promise.all([
@@ -1461,6 +1471,8 @@ function ShooterMatchWizard({ onClose }: { onClose: () => void }) {
       match_kind: "shooter",
       marketing_enabled: form.marketing,
       is_featured: form.featured,
+      featured_image_url: form.featured ? form.featured_image_url : null,
+      featured_image_fit: form.featured_image_fit, featured_image_position: form.featured_image_position,
       location: form.location || "Shooter 1v1",
       start_time: form.start_time ? new Date(form.start_time).toISOString() : new Date().toISOString(),
       status: "scheduled",
@@ -1497,6 +1509,19 @@ function ShooterMatchWizard({ onClose }: { onClose: () => void }) {
             <label className="flex items-center gap-2 rounded-lg border border-primary/20 bg-card/60 p-3"><Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} />Feature on homepage</label>
             <label className="flex items-center gap-2 rounded-lg border border-accent/20 bg-card/60 p-3"><Switch checked={form.marketing} onCheckedChange={(v) => setForm({ ...form, marketing: v })} />Post for marketing</label>
           </div>
+          {form.featured && (
+            <ImageSettingControl
+              label="Featured match image (optional)"
+              value={form.featured_image_url}
+              onChange={(url) => setForm({ ...form, featured_image_url: url })}
+              fit={form.featured_image_fit}
+              onFitChange={(v) => setForm({ ...form, featured_image_fit: v })}
+              position={form.featured_image_position}
+              onPositionChange={(v) => setForm({ ...form, featured_image_position: v })}
+              aspect="16 / 9"
+              help="Shown as the backdrop of this shooter match in the home page Featured section."
+            />
+          )}
           <div className="grid grid-cols-2 gap-2 text-sm">
             <label className="flex items-center gap-2 rounded-lg border border-primary/20 bg-card/60 p-3"><Switch checked={form.homePresent} onCheckedChange={(v) => setForm({ ...form, homePresent: v })} />Shooter A present (counts on Leaderboard)</label>
             <label className="flex items-center gap-2 rounded-lg border border-primary/20 bg-card/60 p-3"><Switch checked={form.awayPresent} onCheckedChange={(v) => setForm({ ...form, awayPresent: v })} />Shooter B present (counts on Leaderboard)</label>
@@ -1564,10 +1589,10 @@ function FuturesAdminPanel() {
   }, []);
 
   async function ensureFutureTeams() {
-    const { data } = await supabase.from("teams").select("id,name").in("name", ["LSL Futures", "Season Field"]);
-    let a = data?.find((t) => t.name === "LSL Futures")?.id;
+    const { data } = await supabase.from("teams").select("id,name").in("name", ["ECB Futures", "Season Field"]);
+    let a = data?.find((t) => t.name === "ECB Futures")?.id;
     let b = data?.find((t) => t.name === "Season Field")?.id;
-    if (!a) { const { data: row } = await supabase.from("teams").insert({ name: "LSL Futures" }).select("id").single(); a = row?.id; }
+    if (!a) { const { data: row } = await supabase.from("teams").insert({ name: "ECB Futures" }).select("id").single(); a = row?.id; }
     if (!b) { const { data: row } = await supabase.from("teams").insert({ name: "Season Field" }).select("id").single(); b = row?.id; }
     return { a, b };
   }
@@ -1876,7 +1901,7 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
   const [cats, setCats] = useState<any[]>([]);
   const [teamA, setTeamA] = useState({ id: "", name: "", logoFile: null as File | null, mainPlayers: "", subPlayers: "" });
   const [teamB, setTeamB] = useState({ id: "", name: "", logoFile: null as File | null, mainPlayers: "", subPlayers: "" });
-  const [details, setDetails] = useState({ homeIs: "A" as "A" | "B", oddsA: 2.0, draw: 3.5, oddsB: 2.0, name: "", start_time: "", location: "", category_id: "", featured: false, homePresent: false, awayPresent: false, restrictRepeat: false, featuredBgFile: null as File | null, featuredBgUrl: "" });
+  const [details, setDetails] = useState({ homeIs: "A" as "A" | "B", oddsA: 2.0, draw: 3.5, oddsB: 2.0, name: "", start_time: "", location: "", category_id: "", featured: false, featured_image_url: null as string | null, featured_image_fit: "cover", featured_image_position: "center", homePresent: false, awayPresent: false, restrictRepeat: false });
   const [csEnabled, setCsEnabled] = useState(true);
   const [csRows, setCsRows] = useState<Array<{ label: string; value: number }>>(
     POPULAR_SCORES.map(([h, a]) => {
@@ -1931,19 +1956,11 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
       start_time: details.start_time ? new Date(details.start_time).toISOString() : new Date().toISOString(),
       location: details.location, status: "scheduled",
       category_id: details.category_id || null, is_featured: details.featured,
+      featured_image_url: details.featured ? details.featured_image_url : null,
+      featured_image_fit: details.featured_image_fit, featured_image_position: details.featured_image_position,
       home_present: details.homePresent, away_present: details.awayPresent, restrict_repeat_contender: details.restrictRepeat,
-      featured_bg_url: details.featuredBgUrl || null,
-    } as any).select().single();
+    }).select().single();
     if (error) { toast.error(error.message); return; }
-    if (details.featured && details.featuredBgFile && m?.id) {
-      const ext = details.featuredBgFile.name.split(".").pop() || "jpg";
-      const path = `match-${m.id}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("ads").upload(path, details.featuredBgFile, { upsert: true });
-      if (!upErr) {
-        const url = supabase.storage.from("ads").getPublicUrl(path).data.publicUrl;
-        await (supabase as any).from("matches").update({ featured_bg_url: url }).eq("id", m.id);
-      }
-    }
     const { data: market } = await supabase.from("markets").insert({ match_id: m.id, name: "Match Winner" }).select().single();
     if (market) {
       await supabase.from("odds").insert([
@@ -2050,12 +2067,17 @@ function MatchWizard({ onClose }: { onClose: () => void }) {
             <Input placeholder="Location / Venue" value={details.location} onChange={(e) => setDetails({ ...details, location: e.target.value })} />
             <label className="flex items-center gap-2 text-sm"><Switch checked={details.featured} onCheckedChange={(v) => setDetails({ ...details, featured: v })} /> Publish on homepage as Featured</label>
             {details.featured && (
-              <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
-                <label className="text-[11px] uppercase tracking-widest text-primary font-bold">Featured background image (optional)</label>
-                <p className="text-[11px] text-muted-foreground">Shown behind this specific match in the homepage Featured Matches carousel.</p>
-                <Input type="file" accept="image/*" onChange={(e) => setDetails({ ...details, featuredBgFile: e.target.files?.[0] ?? null })} />
-                <Input placeholder="…or paste a direct image URL" value={details.featuredBgUrl} onChange={(e) => setDetails({ ...details, featuredBgUrl: e.target.value })} />
-              </div>
+              <ImageSettingControl
+                label="Featured match image (optional)"
+                value={details.featured_image_url}
+                onChange={(url) => setDetails({ ...details, featured_image_url: url })}
+                fit={details.featured_image_fit}
+                onFitChange={(v) => setDetails({ ...details, featured_image_fit: v })}
+                position={details.featured_image_position}
+                onPositionChange={(v) => setDetails({ ...details, featured_image_position: v })}
+                aspect="16 / 9"
+                help="Shown as the backdrop of this specific match in the home page Featured section (when no Seasonal Tournament is active)."
+              />
             )}
             <div className="grid grid-cols-2 gap-2">
               <label className="flex items-center gap-2 rounded-lg border border-primary/20 bg-card/60 p-3 text-sm"><Switch checked={details.homePresent} onCheckedChange={(v) => setDetails({ ...details, homePresent: v })} /> Home team present (counts on Leaderboard)</label>
@@ -2116,7 +2138,7 @@ function EventsPanel() {
   useEffect(() => { load(); }, []);
 
   async function create() {
-    if (!draft.title || !draft.ends_at) { toast.error("Title and end time required"); return; }
+    if (!draft.title) { toast.error("Title required"); return; }
     let banner_url: string | null = null;
     if (draft.banner) {
       const path = `event-${crypto.randomUUID()}.${draft.banner.name.split(".").pop()}`;
@@ -2124,7 +2146,12 @@ function EventsPanel() {
       if (error) { toast.error(error.message); return; }
       banner_url = supabase.storage.from("ads").getPublicUrl(path).data.publicUrl;
     }
-    const { error } = await supabase.from("events").insert({ title: draft.title, description: draft.description, banner_url, ends_at: new Date(draft.ends_at).toISOString() });
+    const { error } = await supabase.from("events").insert({
+      title: draft.title,
+      description: draft.description,
+      banner_url,
+      ends_at: draft.ends_at ? new Date(draft.ends_at).toISOString() : null,
+    } as any);
     if (error) toast.error(error.message);
     else { setDraft({ title: "", description: "", ends_at: "", banner: null }); load(); logAudit("event_created", "event"); toast.success("Event posted"); }
   }
@@ -2141,7 +2168,8 @@ function EventsPanel() {
   return (
     <div className="space-y-3">
       <Card className="glass-strong p-4 space-y-2">
-        <div className="font-bold">Create event (bold countdown banner)</div>
+        <div className="font-bold">Create event banner</div>
+        <div className="text-xs text-muted-foreground">Leave the end time empty to show an image-only banner (no countdown, no "Upcoming Event" tag).</div>
         <Input placeholder="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
         <Textarea placeholder="Description (optional)" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
         <div>
@@ -2149,7 +2177,7 @@ function EventsPanel() {
           <Input type="file" accept="image/*" onChange={(e) => setDraft({ ...draft, banner: e.target.files?.[0] ?? null })} />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground">Countdown ends at</label>
+          <label className="text-xs text-muted-foreground">Countdown ends at (optional)</label>
           <Input type="datetime-local" value={draft.ends_at} onChange={(e) => setDraft({ ...draft, ends_at: e.target.value })} />
         </div>
         <Button className="btn-luxury" onClick={create}>Post Event</Button>
@@ -2161,7 +2189,7 @@ function EventsPanel() {
             {e.banner_url && <img src={e.banner_url} alt="" className="h-12 w-20 rounded object-cover" />}
             <div className="flex-1 min-w-0">
               <div className="font-bold truncate">{e.title}</div>
-              <div className="text-xs text-muted-foreground">Ends {new Date(e.ends_at).toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">{e.ends_at ? `Ends ${new Date(e.ends_at).toLocaleString()}` : "No countdown"}</div>
             </div>
             <Button size="sm" variant="outline" onClick={() => toggle(e.id, !e.is_active)}>{e.is_active ? "Hide" : "Show"}</Button>
             <Button size="sm" variant="destructive" onClick={() => del(e.id)}><Trash2 className="h-3 w-3" /></Button>
@@ -3348,6 +3376,7 @@ function setActiveTabFromAnalytics(_nav: any, _tab: string) {
 
 const QUICK_ACTIONS: { i: any; l: string; t: string }[] = [
   { i: BarChart3, l: "Analytics", t: "analytics" },
+  { i: Eye, l: "User Experience", t: "ux" },
   { i: Users, l: "Users", t: "users" },
   { i: Shield, l: "Banned", t: "bannedusers" },
   { i: Sparkles, l: "Admin AI", t: "adminai" },
@@ -3357,13 +3386,13 @@ const QUICK_ACTIONS: { i: any; l: string; t: string }[] = [
   { i: Eye, l: "Attendance", t: "attendance" },
   { i: Send, l: "Broadcast", t: "broadcast" },
   { i: BellRing, l: "Push Blast", t: "pushblast" },
+  { i: BellRing, l: "Auto Push", t: "pushrecurring" },
   { i: GalleryHorizontalEnd, l: "Home Banners", t: "banners" },
   { i: Gamepad2, l: "Arcade", t: "arcade" },
   { i: History, l: "Casino History", t: "casinohistory" },
   { i: Sparkles, l: "Challenges", t: "challenges" },
   { i: MessageSquare, l: "Chat", t: "chat" },
   { i: Megaphone, l: "Content", t: "content" },
-  { i: Megaphone, l: "News", t: "news" },
   { i: Target, l: "Futures", t: "futures" },
   { i: Trophy, l: "Emblems", t: "emblems" },
   { i: Calendar, l: "Events", t: "events" },
@@ -3374,8 +3403,10 @@ const QUICK_ACTIONS: { i: any; l: string; t: string }[] = [
   { i: Vote, l: "Polls", t: "polls" },
   { i: ShoppingBag, l: "Shop", t: "shop" },
   { i: LifeBuoy, l: "FAQ / Help", t: "faq" },
+  { i: Newspaper, l: "News", t: "news" },
   { i: ListOrdered, l: "Leaderboard", t: "leaderboard" },
   { i: Trophy, l: "Matches", t: "matches" },
+  { i: Trophy, l: "Championship", t: "championship" },
   { i: Send, l: "Notify", t: "notify" },
   { i: BarChart3, l: "P&L", t: "pnl" },
   { i: Tag, l: "Promo Codes", t: "promos" },
@@ -3628,7 +3659,7 @@ function SettingsPanel() {
           <Textarea rows={2} value={s.hero_title ?? ""} onChange={(e) => setS({ ...s, hero_title: e.target.value })} placeholder="Where gangs clash and legends are gold-plated." />
         </FieldLuxe>
         <FieldLuxe label="Home sub-text (small paragraph below the headline)">
-          <Textarea rows={3} value={s.hero_subtitle ?? ""} onChange={(e) => setS({ ...s, hero_subtitle: e.target.value })} placeholder="The Lomita Shooters League is a virtual-token competitive shooting circuit…" />
+          <Textarea rows={3} value={s.hero_subtitle ?? ""} onChange={(e) => setS({ ...s, hero_subtitle: e.target.value })} placeholder="The E-Football Competition Bet is a virtual-token competitive shooting circuit…" />
         </FieldLuxe>
         <p className="text-[10px] text-muted-foreground">Leave blank to keep the default styled headline. Custom headlines are automatically shown in gold capitals.</p>
       </SettingsSection>
@@ -3666,7 +3697,7 @@ function SettingsPanel() {
 
       <SettingsSection icon={Sparkles} title="Platform Identity" subtitle="Rename the platform and set the home-page logo.">
         <FieldLuxe label="Platform name (shown in header, footer & home page)">
-          <Input value={s.site_name ?? ""} onChange={(e) => setS({ ...s, site_name: e.target.value })} placeholder="Lomita Shooters League" />
+          <Input value={s.site_name ?? ""} onChange={(e) => setS({ ...s, site_name: e.target.value })} placeholder="E-Football Competition Bet" />
         </FieldLuxe>
         <ImageSettingControl
           label="Home page logo"
@@ -3703,17 +3734,9 @@ function SettingsPanel() {
           aspect="21 / 9"
           help="Background image behind the hero headline at the very top of the home page. Leave empty for a clean dark hero (no image)."
         />
-        <ImageSettingControl
-          label="Featured Matches background"
-          value={s.featured_bg_url}
-          onChange={(url) => setS({ ...s, featured_bg_url: url })}
-          fit={s.featured_bg_fit ?? "cover"}
-          onFitChange={(v) => setS({ ...s, featured_bg_fit: v })}
-          position={s.featured_bg_position ?? "center"}
-          onPositionChange={(v) => setS({ ...s, featured_bg_position: v })}
-          aspect="16 / 9"
-          help="Background image shown behind the “Featured Matches” section on the home page. Only appears when there is NO active Seasonal Tournament. Leave empty for the plain dark section."
-        />
+        <div className="rounded-lg border border-primary/15 bg-background/30 p-3 text-[11px] text-muted-foreground">
+          <span className="font-semibold text-foreground">Featured match images</span> are now set per match. Add an image when you create or edit a Featured match (or shooter match / tournament fixture) — it appears as the backdrop of that specific match in the home page Featured section.
+        </div>
         <ImageSettingControl
           label="Admin console header image"
           value={s.admin_hero_url}
@@ -4110,14 +4133,20 @@ function BetTrackerPanel() {
   const [bets, setBets] = useState<any[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [q, setQ] = useState("");
+  const [selectedBets, setSelectedBets] = useState<Set<string>>(new Set());
 
   async function load() {
     let qb = supabase.from("bets")
       .select("*, profiles!user_id(full_name,email,ingame_name), bet_selections(*, matches!match_id(name))")
       .order("created_at", { ascending: false }).limit(200);
-    if (filter !== "all") qb = qb.eq("status", filter as any);
+    if (filter === "virtual") qb = qb.eq("is_virtual", true);
+    else if (filter === "real") qb = qb.eq("is_virtual", false);
+    else if (filter === "championship") qb = qb.eq("kind", "championship");
+    else if (filter === "football_instant") qb = qb.eq("kind", "virtual_football_instant");
+    else if (filter !== "all") qb = qb.eq("status", filter as any);
     const { data } = await qb;
     setBets(data ?? []);
+    setSelectedBets(new Set());
   }
   useEffect(() => { load(); }, [filter]);
   useEffect(() => {
@@ -4178,6 +4207,23 @@ function BetTrackerPanel() {
     return b.tracking_id?.toLowerCase().includes(s) || b.booking_code?.toLowerCase().includes(s) || b.profiles?.email?.toLowerCase().includes(s) || b.profiles?.full_name?.toLowerCase().includes(s);
   });
 
+  const toggleBet = (id: string) => setSelectedBets((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleAllBets = () => setSelectedBets((s) => s.size === filtered.length ? new Set() : new Set(filtered.map((b) => b.id)));
+  async function bulkDelete() {
+    const ok = await confirm({ title: `Delete ${selectedBets.size} ticket${selectedBets.size === 1 ? "" : "s"}?`, description: "All selected tickets will be permanently removed. Optionally refund each stake to its user.", tone: "danger", confirmText: "Delete selected", checkboxLabel: "Refund stakes to users", inputLabel: "Admin note", inputPlaceholder: "Optional reason shown in logs…" });
+    if (!ok || typeof ok !== "object") return;
+    const ids = Array.from(selectedBets);
+    let failed = 0;
+    for (const id of ids) {
+      const { error } = await supabase.rpc("admin_delete_bet", { _bet_id: id, _refund: ok.checked, _reason: ok.value || undefined });
+      if (error) failed++;
+      else await logAudit("bet_delete_bulk", "bet", id, { refunded: !!ok.checked, reason: ok.value });
+    }
+    if (failed > 0) toast.error(`Deleted ${ids.length - failed} of ${ids.length}. ${failed} failed.`);
+    else toast.success(`Deleted ${ids.length} ticket${ids.length === 1 ? "" : "s"}`);
+    load();
+  }
+
   return (
     <div className="space-y-3">
       <Card className="glass p-3 flex flex-wrap items-center gap-2">
@@ -4189,15 +4235,29 @@ function BetTrackerPanel() {
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {["all","open","won","lost","suspended","refunded","cashed_out","void"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            {["all","virtual","real","championship","football_instant","open","won","lost","suspended","refunded","cashed_out","void"].map((s) => <SelectItem key={s} value={s}>{s.replace(/_/g," ")}</SelectItem>)}
           </SelectContent>
         </Select>
       </Card>
+      {filtered.length > 0 && (
+        <Card className="glass p-2 flex items-center gap-3 flex-wrap">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input type="checkbox" checked={selectedBets.size === filtered.length && filtered.length > 0} onChange={toggleAllBets} />
+            Select all ({selectedBets.size}/{filtered.length})
+          </label>
+          {selectedBets.size > 0 && (
+            <Button size="sm" variant="destructive" onClick={bulkDelete}>
+              <Trash2 className="h-3 w-3 mr-1" />Delete selected ({selectedBets.size})
+            </Button>
+          )}
+        </Card>
+      )}
       <div className="space-y-2">
         {filtered.length === 0 && <p className="text-sm text-muted-foreground">No tickets match.</p>}
         {filtered.map((b) => (
           <Card key={b.id} className="glass p-3">
             <div className="flex items-start justify-between gap-3 flex-wrap">
+              <input type="checkbox" checked={selectedBets.has(b.id)} onChange={() => toggleBet(b.id)} className="mt-1 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono text-xs text-primary font-bold">{b.tracking_id}</span>

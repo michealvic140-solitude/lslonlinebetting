@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Upload, Link2, Trash2, Loader2 } from "lucide-react";
+import { validateAndResize, type ImageKind } from "@/lib/image-validation";
+import { ImageCropDialog } from "@/components/admin/ImageCropDialog";
 
 const FIT_OPTIONS = [
   { v: "cover", l: "Cover (fill & crop)" },
@@ -38,6 +40,7 @@ export function ImageSettingControl({
   aspect = "16 / 9",
   showFitControls = true,
   previewBg = "#0b1512",
+  validation,
 }: {
   label: string;
   value: string | null | undefined;
@@ -50,14 +53,32 @@ export function ImageSettingControl({
   aspect?: string;
   showFitControls?: boolean;
   previewBg?: string;
+  /** When set, incoming files are validated + resized to spec before upload. */
+  validation?: ImageKind;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [urlDraft, setUrlDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pendingCrop, setPendingCrop] = useState<File | null>(null);
 
-  async function upload(f: File) {
+  function onPickFile(f: File) {
+    // Open crop dialog first; user can confirm/skip crop.
+    setPendingCrop(f);
+  }
+
+  async function upload(input: File) {
     setBusy(true);
     try {
+      let f = input;
+      if (validation) {
+        try {
+          const v = await validateAndResize(input, validation);
+          f = v.file;
+        } catch (err: any) {
+          toast.error(err?.message || "Image failed validation");
+          return;
+        }
+      }
       const path = `appearance/${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}-${f.name}`;
       const { error } = await supabase.storage.from("ads").upload(path, f, { upsert: true });
       if (error) { toast.error(error.message); return; }
@@ -106,10 +127,20 @@ export function ImageSettingControl({
 
       {/* Direct upload + URL upload */}
       <div className="flex flex-wrap items-center gap-2">
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) onPickFile(f);
+            if (fileRef.current) fileRef.current.value = "";
+          }}
+        />
         <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => fileRef.current?.click()}>
           {busy ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
-          Upload image
+          Upload &amp; crop
         </Button>
         <div className="flex items-center gap-1 flex-1 min-w-[200px]">
           <Input value={urlDraft} onChange={(e) => setUrlDraft(e.target.value)} placeholder="…or paste image URL" className="h-9" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyUrl(); } }} />
@@ -138,6 +169,17 @@ export function ImageSettingControl({
       )}
 
       {help && <p className="text-[10px] text-muted-foreground">{help}</p>}
+
+      {pendingCrop && (
+        <ImageCropDialog
+          file={pendingCrop}
+          onCancel={() => setPendingCrop(null)}
+          onDone={(cropped) => {
+            setPendingCrop(null);
+            void upload(cropped);
+          }}
+        />
+      )}
     </div>
   );
 }

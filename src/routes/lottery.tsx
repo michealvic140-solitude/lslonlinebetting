@@ -13,9 +13,9 @@ import { Dice5, Sparkles, Trophy, Ticket as TicketIcon } from "lucide-react";
 export const Route = createFileRoute("/lottery")({
   head: () => ({
     meta: [
-      { title: "Lucky Numbers Lottery — Lomita Shooters League" },
-      { name: "description", content: "Pick your lucky number, stake your tokens and win big on the LSL lottery draws." },
-      { property: "og:title", content: "Lucky Numbers Lottery — LSL" },
+      { title: "Lucky Numbers Lottery — E-Football Competition Bet" },
+      { name: "description", content: "Pick your lucky number, stake your tokens and win big on the ECB lottery draws." },
+      { property: "og:title", content: "Lucky Numbers Lottery — ECB" },
       { property: "og:description", content: "Pick a number, stake tokens, win multiplied payouts." },
     ],
   }),

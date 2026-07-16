@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Vote, Trash2, Gift, ChevronDown, ChevronRight, ShoppingBag, LifeBuoy, Plus } from "lucide-react";
+import { ImageSettingControl } from "@/components/admin/ImageSettingControl";
 
 const sb = supabase as any;
 
@@ -210,8 +211,15 @@ export function ShopAdminPanel() {
           <Input placeholder="Name" value={ni.name} onChange={(e) => setNi({ ...ni, name: e.target.value })} />
           <Input placeholder="Cost (tokens)" type="number" value={ni.cost} onChange={(e) => setNi({ ...ni, cost: e.target.value })} />
           <Input placeholder="Stock (blank = unlimited)" type="number" value={ni.stock} onChange={(e) => setNi({ ...ni, stock: e.target.value })} />
-          <Input placeholder="Image URL (optional)" value={ni.image_url} onChange={(e) => setNi({ ...ni, image_url: e.target.value })} />
         </div>
+        <ImageSettingControl
+          label="Item image (optional)"
+          value={ni.image_url}
+          onChange={(url) => setNi({ ...ni, image_url: url ?? "" })}
+          showFitControls={false}
+          aspect="1 / 1"
+          help="Upload from your device or paste a URL."
+        />
         <Textarea rows={2} placeholder="Description (optional)" value={ni.description} onChange={(e) => setNi({ ...ni, description: e.target.value })} />
         <Button className="btn-luxury" onClick={addItem}><Plus className="h-4 w-4 mr-1" />Add item</Button>
       </Card>

@@ -15,8 +15,8 @@ export const Route = createFileRoute("/surveys")({
   validateSearch: (s: Record<string, unknown>) => ({ s: typeof s.s === "string" ? s.s : undefined }),
   head: () => ({
     meta: [
-      { title: "Surveys — LSL" },
-      { name: "description", content: "Answer ongoing LSL surveys and share your feedback with the team." },
+      { title: "Surveys — ECB" },
+      { name: "description", content: "Answer ongoing ECB surveys and share your feedback with the team." },
     ],
   }),
   component: SurveysPage,

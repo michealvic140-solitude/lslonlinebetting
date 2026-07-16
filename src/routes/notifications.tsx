@@ -5,7 +5,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/Layout";
 import { Card } from "@/components/ui/card";
 
-export const Route = createFileRoute("/notifications")({ component: NotificationsPage });
+export const Route = createFileRoute("/notifications")({
+  head: () => ({
+    meta: [
+      { title: "Notifications — ECB" },
+      { name: "description", content: "Your in-app notifications: match updates, bet results, streak rewards, and league announcements." },
+      { property: "og:title", content: "Notifications — ECB" },
+      { property: "og:description", content: "Your in-app notifications: match updates, bet results, and league announcements." },
+      { property: "og:url", content: "/notifications" },
+      { name: "robots", content: "noindex" },
+    ],
+    links: [{ rel: "canonical", href: "/notifications" }],
+  }),
+  component: NotificationsPage,
+});
 
 function NotificationsPage() {
   const { user } = useAuth();

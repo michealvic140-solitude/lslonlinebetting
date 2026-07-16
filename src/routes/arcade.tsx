@@ -14,9 +14,9 @@ import { Coins, Gamepad2, Sparkles, CircleDollarSign } from "lucide-react";
 export const Route = createFileRoute("/arcade")({
   head: () => ({
     meta: [
-      { title: "Arcade — Coin Flip, Wheel & Scratch Cards | LSL" },
-      { name: "description", content: "Play LSL arcade games: flip a coin, spin the wheel of fortune and reveal scratch cards to multiply your tokens." },
-      { property: "og:title", content: "LSL Arcade" },
+      { title: "Arcade — Coin Flip, Wheel & Scratch Cards | ECB" },
+      { name: "description", content: "Play ECB arcade games: flip a coin, spin the wheel of fortune and reveal scratch cards to multiply your tokens." },
+      { property: "og:title", content: "ECB Arcade" },
       { property: "og:description", content: "Coin flip, wheel of fortune and scratch cards." },
     ],
   }),

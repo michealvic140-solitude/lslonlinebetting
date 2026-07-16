@@ -12,8 +12,8 @@ import { Brain, CheckCircle2, XCircle } from "lucide-react";
 export const Route = createFileRoute("/trivia")({
   head: () => ({
     meta: [
-      { title: "Trivia & Quiz — Win Tokens | LSL" },
-      { name: "description", content: "Answer LSL trivia questions correctly to earn token rewards." },
+      { title: "Trivia & Quiz — Win Tokens | ECB" },
+      { name: "description", content: "Answer ECB trivia questions correctly to earn token rewards." },
     ],
   }),
   component: TriviaPage,

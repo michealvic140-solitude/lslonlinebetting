@@ -222,32 +222,24 @@
 @layer utilities {
   .voucher-bg {
     background:
-      radial-gradient(ellipse at top left, oklch(0.40 0.13 152 / 0.55), transparent 60%),
-      radial-gradient(ellipse at bottom right, oklch(0.42 0.11 78 / 0.45), transparent 64%),
-      radial-gradient(ellipse at center, oklch(0.22 0.08 158 / 0.40), transparent 72%),
+      radial-gradient(ellipse at top left, oklch(0.28 0.09 158 / 0.95), transparent 55%),
+      radial-gradient(ellipse at bottom right, oklch(0.30 0.14 88 / 0.85), transparent 60%),
       linear-gradient(160deg,
-        oklch(0.18 0.07 158) 0%,
-        oklch(0.15 0.06 156) 38%,
-        oklch(0.16 0.06 110) 62%,
-        oklch(0.18 0.07 78) 85%,
-        oklch(0.13 0.06 70) 100%);
-    backdrop-filter: blur(22px) saturate(180%);
+        oklch(0.14 0.05 158) 0%,
+        oklch(0.11 0.04 150) 45%,
+        oklch(0.17 0.09 85) 100%);
   }
   .voucher-frame {
     border-radius: 32px;
     box-shadow:
-      0 0 0 2px oklch(0.85 0.22 152 / 0.80),
-      0 0 0 5px oklch(0.10 0.04 158 / 0.95),
-      0 0 0 8px oklch(0.62 0.15 82 / 0.70),
-      0 0 0 10px oklch(0.45 0.12 80 / 0.55),
-      0 18px 34px -8px oklch(0 0 0 / 0.85),
-      0 34px 70px -14px oklch(0 0 0 / 0.75),
-      0 0 34px -2px oklch(0.85 0.22 152 / 0.55),
-      0 0 90px -8px oklch(0.60 0.16 82 / 0.45),
-      inset 0 3px 0 oklch(0.95 0.16 152 / 0.22),
-      inset 0 -5px 0 oklch(0 0 0 / 0.75),
-      inset 10px 0 18px -10px oklch(0.90 0.18 152 / 0.20),
-      inset -10px 0 18px -10px oklch(0.62 0.15 82 / 0.20);
+      0 0 0 1px oklch(0.85 0.22 152 / 0.55),
+      0 0 0 3px oklch(0.10 0.05 158 / 0.98),
+      0 0 0 4px oklch(0.72 0.18 88 / 0.55),
+      0 24px 60px -18px oklch(0 0 0 / 0.85),
+      0 60px 120px -40px oklch(0 0 0 / 0.75),
+      0 0 60px -12px oklch(0.72 0.18 88 / 0.35),
+      inset 0 2px 0 oklch(1 0 0 / 0.14),
+      inset 0 -2px 0 oklch(0 0 0 / 0.55);
     transition: transform .4s ease, box-shadow .4s ease;
   }
   .voucher-circuit {
@@ -269,15 +261,15 @@
   .voucher-holo {
     background:
       conic-gradient(from 90deg at 50% 50%,
-        oklch(0.85 0.18 30 / 0.55),
-        oklch(0.85 0.18 90 / 0.55),
-        oklch(0.85 0.18 158 / 0.55),
-        oklch(0.85 0.18 240 / 0.55),
-        oklch(0.85 0.18 320 / 0.55),
-        oklch(0.85 0.18 30 / 0.55));
-    filter: blur(2px) saturate(140%);
+        oklch(0.80 0.05 30 / 0.18),
+        oklch(0.80 0.05 90 / 0.18),
+        oklch(0.80 0.05 158 / 0.18),
+        oklch(0.80 0.05 240 / 0.18),
+        oklch(0.80 0.05 320 / 0.18),
+        oklch(0.80 0.05 30 / 0.18));
+    filter: blur(3px);
     mix-blend-mode: screen;
-    opacity: 0.55;
+    opacity: 0.18;
   }
   .voucher-perforation {
     background-image: radial-gradient(circle, var(--background) 4px, transparent 4.5px);
@@ -311,27 +303,23 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    filter: drop-shadow(0 0 10px oklch(0.85 0.22 152 / 0.45)) drop-shadow(0 1px 0 oklch(0 0 0 / 0.4));
+    filter: drop-shadow(0 1px 0 oklch(0 0 0 / 0.4));
   }
   .neon-green {
     color: oklch(0.85 0.22 152);
-    text-shadow:
-      0 0 6px oklch(0.85 0.22 152 / 0.7),
-      0 0 18px oklch(0.65 0.22 152 / 0.5);
   }
   .neon-green-border {
-    box-shadow:
-      0 0 0 1px oklch(0.85 0.22 152 / 0.55),
-      0 0 14px -2px oklch(0.85 0.22 152 / 0.6);
+    box-shadow: 0 0 0 1px oklch(0.85 0.22 152 / 0.40);
   }
   .voucher-row {
-    background: linear-gradient(135deg, oklch(0.22 0.07 158 / 0.58), oklch(0.17 0.06 110 / 0.62), oklch(0.18 0.06 80 / 0.55));
-    border: 1px solid oklch(0.72 0.16 110 / 0.34);
+    background:
+      linear-gradient(180deg, oklch(0.20 0.06 158 / 0.98), oklch(0.13 0.05 158 / 0.98));
+    border: 1px solid oklch(0.72 0.18 88 / 0.35);
     border-radius: 18px;
-    backdrop-filter: blur(10px) saturate(150%);
     box-shadow:
-      inset 0 1px 0 oklch(0.95 0.16 152 / 0.12),
-      0 0 16px -4px oklch(0.72 0.18 110 / 0.35);
+      inset 0 1px 0 oklch(1 0 0 / 0.10),
+      inset 0 -1px 0 oklch(0 0 0 / 0.45),
+      0 6px 16px -8px oklch(0 0 0 / 0.60);
   }
   .voucher-dashed {
     background-image: linear-gradient(90deg, oklch(0.85 0.22 152 / 0.7) 50%, transparent 50%);
@@ -350,40 +338,34 @@
     border-radius: 4px;
   }
   .badge-won {
-    background: oklch(0.18 0.06 158 / 0.85);
+    background: oklch(0.18 0.06 158 / 0.55);
     color: oklch(0.88 0.22 152);
-    border: 1.5px solid oklch(0.85 0.22 152 / 0.85);
-    box-shadow: 0 0 10px oklch(0.85 0.22 152 / 0.45), inset 0 0 8px oklch(0.85 0.22 152 / 0.25);
+    border: 1px solid oklch(0.85 0.22 152 / 0.55);
   }
   .badge-lost {
-    background: oklch(0.18 0.05 25 / 0.7);
+    background: oklch(0.18 0.05 25 / 0.5);
     color: oklch(0.78 0.22 25);
-    border: 1.5px solid oklch(0.78 0.22 25 / 0.85);
-    box-shadow: 0 0 10px oklch(0.78 0.22 25 / 0.45), inset 0 0 8px oklch(0.78 0.22 25 / 0.25);
+    border: 1px solid oklch(0.78 0.22 25 / 0.55);
   }
   .badge-pending {
-    background: oklch(0.18 0.06 90 / 0.7);
+    background: oklch(0.18 0.06 90 / 0.5);
     color: oklch(0.85 0.18 90);
-    border: 1.5px solid oklch(0.82 0.17 90 / 0.85);
-    box-shadow: 0 0 10px oklch(0.82 0.17 90 / 0.45), inset 0 0 8px oklch(0.82 0.17 90 / 0.25);
+    border: 1px solid oklch(0.82 0.17 90 / 0.55);
   }
   .voucher-status-bar-lost {
-    background: linear-gradient(90deg, oklch(0.22 0.08 25 / 0.5), oklch(0.18 0.10 25 / 0.7), oklch(0.22 0.08 25 / 0.5));
-    border: 1.5px solid oklch(0.78 0.22 25 / 0.7);
+    background: oklch(0.20 0.06 25 / 0.35);
+    border: 1px solid oklch(0.78 0.22 25 / 0.45);
     color: oklch(0.85 0.22 25);
-    box-shadow: 0 0 18px -4px oklch(0.78 0.22 25 / 0.6), inset 0 0 14px oklch(0.78 0.22 25 / 0.18);
   }
   .voucher-status-bar-won {
-    background: linear-gradient(90deg, oklch(0.22 0.08 158 / 0.5), oklch(0.18 0.10 158 / 0.7), oklch(0.22 0.08 158 / 0.5));
-    border: 1.5px solid oklch(0.85 0.22 152 / 0.7);
+    background: oklch(0.20 0.06 158 / 0.35);
+    border: 1px solid oklch(0.85 0.22 152 / 0.45);
     color: oklch(0.88 0.22 152);
-    box-shadow: 0 0 18px -4px oklch(0.85 0.22 152 / 0.6), inset 0 0 14px oklch(0.85 0.22 152 / 0.18);
   }
   .voucher-status-bar-pending {
-    background: linear-gradient(90deg, oklch(0.22 0.08 90 / 0.5), oklch(0.18 0.10 90 / 0.7), oklch(0.22 0.08 90 / 0.5));
-    border: 1.5px solid oklch(0.82 0.17 90 / 0.7);
+    background: oklch(0.20 0.06 90 / 0.35);
+    border: 1px solid oklch(0.82 0.17 90 / 0.45);
     color: oklch(0.88 0.17 90);
-    box-shadow: 0 0 18px -4px oklch(0.82 0.17 90 / 0.6), inset 0 0 14px oklch(0.82 0.17 90 / 0.18);
   }
 }
 
@@ -642,14 +624,14 @@
   content: "";
   position: absolute; inset: 0;
   pointer-events: none;
-  background: #00180d;
+  background: oklch(0.14 0.02 260 / 0.55);
   z-index: -2;
 }
 .page-shell--wallet::before {
-  background: #00180d;
+  background: oklch(0.14 0.02 260 / 0.55);
 }
 .page-shell--social::before {
-  background: #00180d;
+  background: oklch(0.14 0.02 260 / 0.55);
 }
 .page-shell-aurora {
   position: absolute; inset: -20%;
@@ -911,3 +893,79 @@
 .streak-ember { animation: streak-ember 1.4s ease-out forwards; }
 .streak-ring  { animation: streak-ring 1.2s ease-out forwards; }
 .streak-backdrop { animation: streak-backdrop 0.3s ease-out both; }
+
+/* ================= WIN TROPHY CELEBRATION ================= */
+@keyframes trophy-pop {
+  0%   { transform: scale(0.2) rotate(-14deg); opacity: 0; }
+  55%  { transform: scale(1.14) rotate(4deg); opacity: 1; }
+  72%  { transform: scale(0.94) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes trophy-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes trophy-shine {
+  0%   { transform: translateX(-140%) skewX(-18deg); }
+  60%, 100% { transform: translateX(240%) skewX(-18deg); }
+}
+@keyframes trophy-ring {
+  0%   { transform: scale(0.55); opacity: 0.7; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes win-text-rise {
+  0%   { transform: translateY(18px) scale(0.96); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes confetti-fall {
+  0%   { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+.trophy-pop   { animation: trophy-pop 0.7s cubic-bezier(.22,1.2,.36,1) both; }
+.trophy-float { animation: trophy-float 2.6s ease-in-out infinite; }
+.trophy-shine { animation: trophy-shine 2.8s ease-in-out infinite; }
+.trophy-ring  { animation: trophy-ring 1.6s ease-out infinite; }
+.win-text-rise { animation: win-text-rise 0.6s ease-out both; }
+.confetti-piece { animation: confetti-fall linear forwards; }
+
+/* ================= LOSS SKULL ANIMATION ================= */
+@keyframes skull-pop {
+  0%   { transform: scale(0.2) rotate(10deg); opacity: 0; }
+  55%  { transform: scale(1.14) rotate(-3deg); opacity: 1; }
+  72%  { transform: scale(0.94) rotate(2deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes skull-shake {
+  0%,100% { transform: translateX(0) rotate(0); }
+  20%     { transform: translateX(-3px) rotate(-1.5deg); }
+  40%     { transform: translateX(3px) rotate(1.5deg); }
+  60%     { transform: translateX(-2px) rotate(-1deg); }
+  80%     { transform: translateX(2px) rotate(1deg); }
+}
+@keyframes skull-shine {
+  0%   { transform: translateX(-140%) skewX(-18deg); }
+  60%, 100% { transform: translateX(240%) skewX(-18deg); }
+}
+@keyframes loss-ring {
+  0%   { transform: scale(0.55); opacity: 0.7; border-color: rgba(244,63,94,0.7); }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes loss-text-rise {
+  0%   { transform: translateY(18px) scale(0.96); opacity: 0; filter: blur(4px); }
+  100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
+}
+@keyframes ash-fall {
+  0%   { transform: translateY(-10vh) rotate(0deg); opacity: 0.9; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+}
+@keyframes skull-crack-draw {
+  0%   { stroke-dashoffset: 1; }
+  100% { stroke-dashoffset: 0; }
+}
+.skull-pop    { animation: skull-pop 0.7s cubic-bezier(.22,1.2,.36,1) both; }
+.skull-shake  { animation: skull-shake 0.55s ease-in-out 0.7s 2 both; }
+.skull-shine  { animation: skull-shine 3s ease-in-out infinite; }
+.loss-ring    { animation: loss-ring 1.8s ease-out infinite; }
+.loss-text-rise { animation: loss-text-rise 0.6s ease-out both; }
+.ash-piece    { animation: ash-fall linear forwards; }
+.skull-crack  { stroke-dasharray: 1; stroke-dashoffset: 1; animation: skull-crack-draw 0.9s ease-out 0.6s forwards; }

@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { Crown, Target, Trophy, Users, Crosshair, Swords } from "lucide-react";
 import { ScaleToFit } from "./ScaleToFit";
-import lslLogo from "@/assets/lsl-logo.png";
+import _ecbLogo from "@/assets/ecb-logo.png.asset.json";
+const lslLogo = _ecbLogo.url;
 
 export type TParticipant = { id: string; name: string; logo_url: string | null; is_eliminated: boolean; current_round: number; is_disqualified?: boolean };
 export type TMatch = {
@@ -102,7 +103,7 @@ export function TournamentBracket({
         {/* ---------- HEADER ---------- */}
         <div className="absolute left-0 right-0 flex items-center justify-between px-9" style={{ top: 22, height: HEADER_H - 40 }}>
           <div className="flex items-center gap-4">
-            <img src={lslLogo} alt="Lomita Shooters League" className="h-20 w-20 object-contain drop-shadow-[0_0_18px_rgba(212,175,55,0.4)]" />
+            <img src={lslLogo} alt="E-Football Competition Bet" className="h-20 w-20 object-contain drop-shadow-[0_0_18px_rgba(212,175,55,0.4)]" />
             <div>
               <div className="text-[24px] font-black tracking-[0.22em] text-emerald-300 leading-none drop-shadow-[0_0_10px_rgba(16,185,129,0.4)]">{tournament.name.toUpperCase()}</div>
               <div className="text-[46px] font-black tracking-tight gradient-gold-text leading-[0.95]">KNOCKOUT BRACKET</div>

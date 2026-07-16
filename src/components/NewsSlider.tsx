@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Carousel, CarouselApi, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { Newspaper, ChevronLeft, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 type NewsRow = {
   id: string;
@@ -17,6 +19,7 @@ export function NewsSlider() {
   const [items, setItems] = useState<NewsRow[]>([]);
   const [api, setApi] = useState<CarouselApi | null>(null);
   const [current, setCurrent] = useState(0);
+  const [selected, setSelected] = useState<NewsRow | null>(null);
 
   async function load() {
     const { data } = await supabase
@@ -48,6 +51,7 @@ export function NewsSlider() {
   if (items.length === 0) return null;
 
   return (
+    <>
     <Card className="glass overflow-hidden border-accent/30">
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border/60 bg-gradient-to-r from-accent/10 via-primary/5 to-transparent">
         <Newspaper className="h-4 w-4 text-accent" />
@@ -67,21 +71,22 @@ export function NewsSlider() {
         <CarouselContent>
           {items.map((n) => {
             const inner = (
-              <div className="block">
+              <div className="block cursor-pointer">
                 {n.image_url && (
                   <img src={n.image_url} alt={n.title} className="h-28 w-full object-cover" loading="lazy" />
                 )}
                 <div className="p-3">
                   <div className="font-bold text-sm leading-snug line-clamp-2">{n.title}</div>
                   {n.body && <div className="mt-1 text-[11px] text-muted-foreground line-clamp-3">{n.body}</div>}
+                  <div className="mt-1.5 text-[10px] font-bold uppercase tracking-widest text-accent">Read more →</div>
                 </div>
               </div>
             );
             return (
               <CarouselItem key={n.id}>
-                {n.link_url ? (
-                  <a href={n.link_url} target="_blank" rel="noreferrer">{inner}</a>
-                ) : inner}
+                <button type="button" onClick={() => setSelected(n)} className="w-full text-left">
+                  {inner}
+                </button>
               </CarouselItem>
             );
           })}
@@ -100,5 +105,27 @@ export function NewsSlider() {
         </div>
       )}
     </Card>
+    <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{selected?.title}</DialogTitle>
+          {selected?.body && <DialogDescription className="sr-only">{selected.body.slice(0, 120)}</DialogDescription>}
+        </DialogHeader>
+        {selected?.image_url && (
+          <img src={selected.image_url} alt={selected.title} className="w-full max-h-72 object-cover rounded-md" />
+        )}
+        {selected?.body && (
+          <div className="text-sm whitespace-pre-wrap text-muted-foreground max-h-[50vh] overflow-y-auto">{selected.body}</div>
+        )}
+        {selected?.link_url && (
+          <DialogFooter>
+            <Button asChild className="btn-luxury">
+              <a href={selected.link_url} target="_blank" rel="noreferrer">Open link</a>
+            </Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

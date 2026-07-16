@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { Coins, Upload, Clock, CheckCircle, XCircle, Tag } from "lucide-react";
 
 export const Route = createFileRoute("/checkout")({
-  head: () => ({ meta: [{ title: "Buy Tokens — LSL" }, { name: "description", content: "Request tokens to wager in the Lomita Shooters League." }] }),
+  head: () => ({ meta: [{ title: "Buy Tokens — ECB" }, { name: "description", content: "Request tokens to wager in the E-Football Competition Bet." }] }),
   component: Page,
 });
 

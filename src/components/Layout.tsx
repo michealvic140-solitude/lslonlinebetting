@@ -7,6 +7,7 @@ import { useAuth, ROLE_COLORS, ROLE_LABELS } from "@/contexts/AuthContext";
 import { NotificationBell } from "@/components/NotificationBell";
 import { LevelUpModal } from "@/components/Spotlight";
 import { GlobalWinAnimation } from "@/components/GlobalWinAnimation";
+import { GlobalLossAnimation } from "@/components/GlobalLossAnimation";
 import { BetSuccessPopout } from "@/components/BetSuccessPopout";
 import { SurveyPopout } from "@/components/SurveyPopout";
 import { PollPopout } from "@/components/PollPopout";
@@ -14,7 +15,8 @@ import { PushPermissionPrompt } from "@/components/PushPermissionPrompt";
 import { ReactNode, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation } from "@tanstack/react-router";
-import lslPlatformBg from "@/assets/lsl-bg-nebula.png.asset.json";
+import lslPlatformBg from "@/assets/ecb-nebula-bg.jpg.asset.json";
+import { useBranding } from "@/lib/branding";
 
 // Site-wide background ticker so virtual rounds keep advancing even when
 // no one is on /virtual. Any authenticated client pings every 15s.
@@ -53,9 +55,12 @@ function useForceReloadBroadcast() {
 export const Layout = ({ children }: { children: ReactNode }) => {
   const { user, profile, roles, isAdmin, isMod, signOut } = useAuth();
   const nav = useNavigate();
+  const location = useLocation();
+  const isHome = location.pathname === "/";
   useVirtualHeartbeat();
   useForceReloadBroadcast();
   const [railOpen, setRailOpen] = useState(false);
+  const branding = useBranding();
   // Admin-configurable site-wide background + branding (fall back to bundled art).
   const [siteBg, setSiteBg] = useState<string | null>(null);
   const [bgFit, setBgFit] = useState<string>("cover");
@@ -109,9 +114,18 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         )}
         <div className="container mx-auto px-4 flex h-16 items-center gap-3 lg:gap-4 relative">
           <Link to="/" className="flex items-center gap-2 group shrink-0">
-            <GangLogo size={38} className="transition-transform group-hover:scale-105 group-hover:rotate-3 duration-300" />
+            {branding.logoUrl ? (
+              <img src={branding.logoUrl} alt={branding.name} className="h-[38px] w-[38px] object-contain rounded transition-transform group-hover:scale-105 group-hover:rotate-3 duration-300" />
+            ) : (
+              <GangLogo size={38} className="transition-transform group-hover:scale-105 group-hover:rotate-3 duration-300" />
+            )}
             <div className="leading-tight">
-              {siteName ? (
+              {branding.name && branding.name !== "ECB" ? (
+                <>
+                  <div className="text-sm font-extrabold tracking-[0.18em] gradient-gold-text uppercase max-w-[160px] truncate">{branding.name}</div>
+                  {branding.tagline && <div className="text-[9px] text-muted-foreground tracking-[0.25em] uppercase max-w-[160px] truncate">{branding.tagline}</div>}
+                </>
+              ) : siteName ? (
                 <div className="text-sm font-extrabold tracking-[0.18em] gradient-gold-text uppercase max-w-[160px] truncate">{siteName}</div>
               ) : (
                 <>
@@ -139,6 +153,14 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             {!isAdmin && isMod && <NavLink to="/mod" icon={Shield} label="Mod" danger />}
           </nav>
           <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
+            {branding.logoCornerUrl && (
+              <img
+                src={branding.logoCornerUrl}
+                alt={branding.name}
+                className="h-8 w-8 rounded-full object-cover border border-primary/30 shadow-gold hidden sm:block"
+                title={`${branding.name} — corner logo`}
+              />
+            )}
             <Link to="/shop" title="Rewards Shop" aria-label="Rewards Shop">
               <Button variant="ghost" size="icon" className="rounded-full border border-transparent hover:border-primary/30">
                 <ShoppingBag className="h-4 w-4 text-primary" />
@@ -175,17 +197,18 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           </div>
         )}
       </header>
-      <main className="relative lg:pl-0 pl-16 overflow-x-hidden">{children}</main>
+      <main className={`relative lg:pl-0 overflow-x-hidden ${isHome ? "pl-0" : "pl-16"}`}>{children}</main>
       <LevelUpModal />
       <GlobalWinAnimation />
+      <GlobalLossAnimation />
       <BetSuccessPopout />
       <SurveyPopout />
       <PollPopout />
       <PushPermissionPrompt />
       <nav
-        className="lg:hidden fixed left-0 inset-y-0 pt-16 z-40 w-16 overflow-y-auto bg-transparent border-0 shadow-none"
+        className={`${isHome ? "hidden" : "lg:hidden"} fixed left-0 inset-y-0 pt-16 z-40 w-16 overflow-y-auto border-r border-primary/25 shadow-[6px_0_28px_-14px_rgba(212,175,55,0.55)] bg-[linear-gradient(180deg,rgba(11,10,20,0.92)_0%,rgba(20,14,32,0.88)_50%,rgba(11,10,20,0.94)_100%)] backdrop-blur-xl before:pointer-events-none before:absolute before:inset-y-0 before:right-0 before:w-px before:bg-gradient-to-b before:from-transparent before:via-primary/60 before:to-transparent after:pointer-events-none after:absolute after:inset-0 after:bg-[radial-gradient(120%_60%_at_0%_0%,rgba(212,175,55,0.14),transparent_55%),radial-gradient(120%_60%_at_0%_100%,rgba(120,80,220,0.14),transparent_55%)]`}
       >
-        <div className="flex flex-col items-stretch gap-4 py-4 px-1">
+        <div className="relative z-10 flex flex-col items-stretch gap-3 py-4 px-1.5">
           <button
             type="button"
             onClick={() => setRailOpen((v) => !v)}
@@ -194,8 +217,9 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             className="group relative flex flex-col items-center justify-center gap-1 px-0 py-1 rounded-xl text-[10px] font-semibold tracking-wide text-primary transition-all hover:text-foreground active:scale-95"
             title="Menu"
           >
-            <span className="relative grid place-items-center h-[52px] w-[52px] rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 shadow-[0_0_18px_-4px_rgba(212,175,55,0.55)]">
-              <SettingsIcon className={`h-7 w-7 transition-transform ${railOpen ? "rotate-180" : ""}`} />
+            <span className="relative grid place-items-center h-[52px] w-[52px] rounded-xl border border-primary/40 bg-gradient-to-br from-primary/35 via-primary/15 to-transparent shadow-[0_0_22px_-4px_rgba(212,175,55,0.7),inset_0_1px_0_rgba(255,255,255,0.15)]">
+              <span className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(60%_60%_at_50%_0%,rgba(255,255,255,0.25),transparent_70%)]" />
+              <SettingsIcon className={`relative h-7 w-7 drop-shadow-[0_0_6px_rgba(212,175,55,0.7)] transition-transform ${railOpen ? "rotate-180" : ""}`} />
             </span>
             <span className="leading-none text-[9px]">{railOpen ? "Less" : "More"}</span>
           </button>
@@ -214,20 +238,20 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             <MobLink to="/settings" icon={SettingsIcon} label="Settings" />
             <MobLink to="/support" icon={LifeBuoy} label="Help" />
           </>}
-          {isAdmin && <MobLink to="/admin" icon={Shield} label="Admin" />}
-          {!isAdmin && isMod && <MobLink to="/mod" icon={Shield} label="Mod" />}
+          {isAdmin && <MobLink to="/admin" icon={Shield} label="Admin" danger />}
+          {!isAdmin && isMod && <MobLink to="/mod" icon={Shield} label="Mod" danger />}
           </>}
         </div>
       </nav>
       <div className="lg:hidden h-0" />
-      <SiteFooter />
+      <SiteFooter isHome={isHome} />
     </div>
   );
 };
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-function SiteFooter() {
+function SiteFooter({ isHome = false }: { isHome?: boolean }) {
   const [s, setS] = useState<any>(null);
   const [open, setOpen] = useState<"terms" | "about" | null>(null);
   useEffect(() => {
@@ -236,17 +260,17 @@ function SiteFooter() {
       .eq("id", 1).maybeSingle().then(({ data }) => setS(data));
   }, []);
   return (
-    <footer className="border-t border-border mt-20 backdrop-blur-xl bg-card/40 lg:pl-0 pl-16">
+    <footer className={`border-t border-border mt-20 backdrop-blur-xl bg-card/40 lg:pl-0 ${isHome ? "pl-0" : "pl-16"}`}>
       <div className="container mx-auto px-4 py-10 grid md:grid-cols-3 gap-6 text-sm">
         <div>
-          <div className="flex items-center gap-2 mb-2"><GangLogo size={28} withGlow={false} /><span className="font-bold tracking-widest gradient-gold-text uppercase">{s?.site_name || "LOMITA SHOOTERS LEAGUE"}</span></div>
+          <div className="flex items-center gap-2 mb-2"><GangLogo size={28} withGlow={false} /><span className="font-bold tracking-widest gradient-gold-text uppercase">{s?.site_name || "E-FOOTBALL COMPETITION BET"}</span></div>
           <p className="text-muted-foreground text-xs">Virtual token-only platform · No real money gambling.</p>
         </div>
         <div>
           <div className="font-bold mb-2">About</div>
           <p className="text-muted-foreground text-xs line-clamp-3">{s?.about_us ?? "The premier virtual shooting circuit."}</p>
           <div className="flex gap-3 mt-2 text-xs">
-            <button className="text-primary hover:underline" onClick={() => setOpen("about")}>Read more</button>
+            <button className="text-primary hover:underline" onClick={() => setOpen("about")}>Read about the league</button>
             <button className="text-primary hover:underline" onClick={() => setOpen("terms")}>Terms & Conditions</button>
             <Link to="/faq" className="text-primary hover:underline">Help & FAQ</Link>
           </div>
@@ -273,24 +297,56 @@ function SiteFooter() {
   );
 }
 
-function MobLink({ to, icon: Icon, label, badge }: { to: string; icon: any; label: string; badge?: number }) {
+function MobLink({ to, icon: Icon, label, badge, danger }: { to: string; icon: any; label: string; badge?: number; danger?: boolean }) {
   return (
     <Link
       to={to}
       activeProps={{ className: "active" }}
-      className="group relative flex flex-col items-center justify-center gap-1 px-0 py-1 rounded-xl text-[10px] font-semibold tracking-wide text-muted-foreground transition-all duration-200 hover:text-foreground active:scale-95 [&.active]:text-primary"
+      className={`group relative flex flex-col items-center justify-center gap-1.5 px-0 py-1 rounded-xl text-[10px] font-semibold tracking-wide transition-all duration-300 active:scale-95
+        ${danger ? "text-destructive/85 hover:text-destructive [&.active]:text-destructive" : "text-foreground/55 hover:text-primary [&.active]:text-primary"}`}
       title={label}
     >
-      <span className="pointer-events-none absolute left-0 inset-y-2 w-[2px] rounded-full bg-gradient-to-b from-transparent via-primary to-transparent opacity-0 group-[.active]:opacity-100 transition-opacity" />
-      <span className="relative grid place-items-center h-[52px] w-[52px] rounded-xl transition-all group-[.active]:bg-gradient-to-br group-[.active]:from-primary/25 group-[.active]:to-primary/5 group-[.active]:shadow-[0_0_18px_-4px_rgba(212,175,55,0.55)]">
-        <Icon className="h-7 w-7 transition-transform group-[.active]:scale-110" />
+      {/* left rail active indicator — thin gold line */}
+      <span className="pointer-events-none absolute -left-1.5 inset-y-3 w-[2px] rounded-full bg-gradient-to-b from-transparent via-primary to-transparent opacity-0 group-[.active]:opacity-100 transition-opacity duration-500 shadow-[0_0_8px_hsl(var(--primary))]" />
+      <span
+        className="relative grid place-items-center h-[50px] w-[50px] rounded-[14px] transition-all duration-300
+          border border-white/[0.06] group-hover:border-primary/40 group-[.active]:border-primary/70
+          bg-[linear-gradient(155deg,rgba(30,26,22,0.9)_0%,rgba(14,12,10,0.95)_50%,rgba(8,7,6,1)_100%)]
+          shadow-[inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-1px_0_rgba(0,0,0,0.6),0_2px_10px_-2px_rgba(0,0,0,0.8)]
+          group-hover:shadow-[inset_0_1px_0_rgba(212,175,55,0.25),inset_0_-1px_0_rgba(0,0,0,0.6),0_4px_18px_-4px_rgba(212,175,55,0.35)]
+          group-[.active]:shadow-[inset_0_1px_0_rgba(212,175,55,0.4),inset_0_-1px_0_rgba(0,0,0,0.6),0_6px_22px_-4px_rgba(212,175,55,0.55)]"
+      >
+        {/* engraved bevel */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-[1px] rounded-[13px] opacity-60"
+          style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.35) 100%)" }}
+        />
+        {/* top gloss highlight */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-2 top-[2px] h-[10px] rounded-full opacity-60"
+          style={{ background: "radial-gradient(60% 100% at 50% 0%, rgba(255,255,255,0.18), transparent 70%)" }}
+        />
+        {/* gold ring on hover/active */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-[14px] opacity-0 group-hover:opacity-100 group-[.active]:opacity-100 transition-opacity duration-500"
+          style={{ background: "radial-gradient(85% 70% at 50% 50%, transparent 55%, rgba(212,175,55,0.12) 78%, transparent 100%)" }}
+        />
+        <Icon
+          className="relative h-[22px] w-[22px] transition-all duration-300 group-hover:scale-110 group-[.active]:scale-110"
+          strokeWidth={1.6}
+        />
         {badge && badge > 0 ? (
-          <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-black grid place-items-center ring-2 ring-card animate-pulse">
+          <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-gradient-to-b from-destructive to-destructive/70 text-destructive-foreground text-[9px] font-black grid place-items-center ring-2 ring-background shadow-[0_2px_8px_rgba(220,38,38,0.5)] animate-pulse">
             {badge > 9 ? "9+" : badge}
           </span>
         ) : null}
       </span>
-      <span className="leading-none text-[9px] truncate max-w-[56px]">{label}</span>
+      <span className="leading-none text-[8.5px] truncate max-w-[56px] uppercase tracking-[0.18em] font-bold text-foreground/60 group-hover:text-foreground/90 group-[.active]:text-primary transition-colors">
+        {label}
+      </span>
     </Link>
   );
 }

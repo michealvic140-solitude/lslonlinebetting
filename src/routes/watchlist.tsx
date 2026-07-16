@@ -11,7 +11,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/watchlist")({
-  head: () => ({ meta: [{ title: "Watchlist — LSL" }] }),
+  head: () => ({
+    meta: [
+      { title: "Watchlist — ECB" },
+      { name: "description", content: "Your saved ECB matches, teams and players — track kickoffs, live scores, and lineup changes in one place." },
+      { property: "og:title", content: "Watchlist — ECB" },
+      { property: "og:description", content: "Your saved ECB matches, teams and players in one place." },
+      { property: "og:url", content: "/watchlist" },
+      { name: "robots", content: "noindex" },
+    ],
+    links: [{ rel: "canonical", href: "/watchlist" }],
+  }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/login" });

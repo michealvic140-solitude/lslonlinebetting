@@ -12,9 +12,13 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/tasks")({
   head: () => ({
     meta: [
-      { title: "Tasks — LSL" },
-      { name: "description", content: "Complete LSL tasks and claim token rewards for your daily challenges." },
+      { title: "Tasks — ECB" },
+      { name: "description", content: "Complete ECB tasks and claim token rewards for your daily challenges." },
+      { property: "og:title", content: "Tasks — ECB" },
+      { property: "og:description", content: "Complete ECB tasks and claim token rewards for your daily challenges." },
+      { property: "og:url", content: "/tasks" },
     ],
+    links: [{ rel: "canonical", href: "/tasks" }],
   }),
   component: TasksPage,
 });
@@ -85,7 +89,7 @@ function TasksPage() {
         <div className="mb-6">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Earn rewards</p>
           <h1 className="text-3xl md:text-4xl font-extrabold gradient-gold-text flex items-center gap-2 mt-1"><ListChecks className="h-7 w-7 text-primary" />Tasks</h1>
-          <p className="text-sm text-muted-foreground mt-1">Complete tasks assigned by the LSL team to claim token bonuses.</p>
+          <p className="text-sm text-muted-foreground mt-1">Complete tasks assigned by the ECB team to claim token bonuses.</p>
         </div>
 
         {loading && <p className="text-muted-foreground text-sm">Loading…</p>}

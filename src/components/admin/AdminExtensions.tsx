@@ -823,7 +823,7 @@ export function ReferralsAdminPanel() {
   async function shareCode() {
     if (!shareLink) return;
     if (typeof navigator !== "undefined" && (navigator as any).share) {
-      try { await (navigator as any).share({ title: "Join LSL", text: `Use my referral code ${myCode}`, url: shareLink }); return; } catch {}
+      try { await (navigator as any).share({ title: "Join ECB", text: `Use my referral code ${myCode}`, url: shareLink }); return; } catch {}
     }
     navigator.clipboard.writeText(shareLink);
     toast.success("Share link copied");

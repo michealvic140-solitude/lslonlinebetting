@@ -51,6 +51,7 @@ export const Route = createFileRoute('/api/public/hooks/process-scheduled-push')
                 title: row.title,
                 body: row.body,
                 link: row.link,
+                image: row.image || undefined,
               })
               await supabaseAdmin.from('scheduled_pushes').update({
                 status: 'sent',
