@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WithdrawRouteImport } from './routes/withdraw'
 import { Route as WatchlistRouteImport } from './routes/watchlist'
-import { Route as VirtualRouteImport } from './routes/virtual'
 import { Route as TriviaRouteImport } from './routes/trivia'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as TournamentRouteImport } from './routes/tournament'
@@ -43,13 +42,18 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TournamentsIndexRouteImport } from './routes/tournaments.index'
+import { Route as VirtualIndexRouteImport } from './routes/virtual.index'
+import { Route as VirtualInstantRouteImport } from './routes/virtual.instant'
 import { Route as VirtualHistoryRouteImport } from './routes/virtual.history'
-import { Route as TournamentsIdRouteImport } from './routes/tournaments.$id'
+import { Route as VirtualFootballInstantRouteImport } from './routes/virtual.football-instant'
+import { Route as VirtualFootballChampionshipRouteImport } from './routes/virtual.football-championship'
+import { Route as VirtualChampionshipRouteImport } from './routes/virtual.championship'
 import { Route as TicketIdRouteImport } from './routes/ticket.$id'
 import { Route as MatchesMatchIdRouteImport } from './routes/matches.$matchId'
+import { Route as GuidesHowItWorksRouteImport } from './routes/guides.how-it-works'
 import { Route as ApiPublicVirtualTickRouteImport } from './routes/api/public/virtual-tick'
 import { Route as ApiPublicHooksSendPushRouteImport } from './routes/api/public/hooks/send-push'
+import { Route as ApiPublicHooksRecurringPushRouteImport } from './routes/api/public/hooks/recurring-push'
 import { Route as ApiPublicHooksProcessScheduledPushRouteImport } from './routes/api/public/hooks/process-scheduled-push'
 import { Route as ApiPublicHooksBroadcastPushRouteImport } from './routes/api/public/hooks/broadcast-push'
 
@@ -61,11 +65,6 @@ const WithdrawRoute = WithdrawRouteImport.update({
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
   path: '/watchlist',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VirtualRoute = VirtualRouteImport.update({
-  id: '/virtual',
-  path: '/virtual',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TriviaRoute = TriviaRouteImport.update({
@@ -223,19 +222,35 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TournamentsIndexRoute = TournamentsIndexRouteImport.update({
-  id: '/tournaments/',
-  path: '/tournaments/',
+const VirtualIndexRoute = VirtualIndexRouteImport.update({
+  id: '/virtual/',
+  path: '/virtual/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VirtualInstantRoute = VirtualInstantRouteImport.update({
+  id: '/virtual/instant',
+  path: '/virtual/instant',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VirtualHistoryRoute = VirtualHistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => VirtualRoute,
+  id: '/virtual/history',
+  path: '/virtual/history',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const TournamentsIdRoute = TournamentsIdRouteImport.update({
-  id: '/tournaments/$id',
-  path: '/tournaments/$id',
+const VirtualFootballInstantRoute = VirtualFootballInstantRouteImport.update({
+  id: '/virtual/football-instant',
+  path: '/virtual/football-instant',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VirtualFootballChampionshipRoute =
+  VirtualFootballChampionshipRouteImport.update({
+    id: '/virtual/football-championship',
+    path: '/virtual/football-championship',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const VirtualChampionshipRoute = VirtualChampionshipRouteImport.update({
+  id: '/virtual/championship',
+  path: '/virtual/championship',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TicketIdRoute = TicketIdRouteImport.update({
@@ -248,6 +263,11 @@ const MatchesMatchIdRoute = MatchesMatchIdRouteImport.update({
   path: '/$matchId',
   getParentRoute: () => MatchesRoute,
 } as any)
+const GuidesHowItWorksRoute = GuidesHowItWorksRouteImport.update({
+  id: '/guides/how-it-works',
+  path: '/guides/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicVirtualTickRoute = ApiPublicVirtualTickRouteImport.update({
   id: '/api/public/virtual-tick',
   path: '/api/public/virtual-tick',
@@ -258,6 +278,12 @@ const ApiPublicHooksSendPushRoute = ApiPublicHooksSendPushRouteImport.update({
   path: '/api/public/hooks/send-push',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksRecurringPushRoute =
+  ApiPublicHooksRecurringPushRouteImport.update({
+    id: '/api/public/hooks/recurring-push',
+    path: '/api/public/hooks/recurring-push',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksProcessScheduledPushRoute =
   ApiPublicHooksProcessScheduledPushRouteImport.update({
     id: '/api/public/hooks/process-scheduled-push',
@@ -303,17 +329,21 @@ export interface FileRoutesByFullPath {
   '/tournament': typeof TournamentRoute
   '/transactions': typeof TransactionsRoute
   '/trivia': typeof TriviaRoute
-  '/virtual': typeof VirtualRouteWithChildren
   '/watchlist': typeof WatchlistRoute
   '/withdraw': typeof WithdrawRoute
+  '/guides/how-it-works': typeof GuidesHowItWorksRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/ticket/$id': typeof TicketIdRoute
-  '/tournaments/$id': typeof TournamentsIdRoute
+  '/virtual/championship': typeof VirtualChampionshipRoute
+  '/virtual/football-championship': typeof VirtualFootballChampionshipRoute
+  '/virtual/football-instant': typeof VirtualFootballInstantRoute
   '/virtual/history': typeof VirtualHistoryRoute
-  '/tournaments/': typeof TournamentsIndexRoute
+  '/virtual/instant': typeof VirtualInstantRoute
+  '/virtual/': typeof VirtualIndexRoute
   '/api/public/virtual-tick': typeof ApiPublicVirtualTickRoute
   '/api/public/hooks/broadcast-push': typeof ApiPublicHooksBroadcastPushRoute
   '/api/public/hooks/process-scheduled-push': typeof ApiPublicHooksProcessScheduledPushRoute
+  '/api/public/hooks/recurring-push': typeof ApiPublicHooksRecurringPushRoute
   '/api/public/hooks/send-push': typeof ApiPublicHooksSendPushRoute
 }
 export interface FileRoutesByTo {
@@ -348,17 +378,21 @@ export interface FileRoutesByTo {
   '/tournament': typeof TournamentRoute
   '/transactions': typeof TransactionsRoute
   '/trivia': typeof TriviaRoute
-  '/virtual': typeof VirtualRouteWithChildren
   '/watchlist': typeof WatchlistRoute
   '/withdraw': typeof WithdrawRoute
+  '/guides/how-it-works': typeof GuidesHowItWorksRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/ticket/$id': typeof TicketIdRoute
-  '/tournaments/$id': typeof TournamentsIdRoute
+  '/virtual/championship': typeof VirtualChampionshipRoute
+  '/virtual/football-championship': typeof VirtualFootballChampionshipRoute
+  '/virtual/football-instant': typeof VirtualFootballInstantRoute
   '/virtual/history': typeof VirtualHistoryRoute
-  '/tournaments': typeof TournamentsIndexRoute
+  '/virtual/instant': typeof VirtualInstantRoute
+  '/virtual': typeof VirtualIndexRoute
   '/api/public/virtual-tick': typeof ApiPublicVirtualTickRoute
   '/api/public/hooks/broadcast-push': typeof ApiPublicHooksBroadcastPushRoute
   '/api/public/hooks/process-scheduled-push': typeof ApiPublicHooksProcessScheduledPushRoute
+  '/api/public/hooks/recurring-push': typeof ApiPublicHooksRecurringPushRoute
   '/api/public/hooks/send-push': typeof ApiPublicHooksSendPushRoute
 }
 export interface FileRoutesById {
@@ -394,17 +428,21 @@ export interface FileRoutesById {
   '/tournament': typeof TournamentRoute
   '/transactions': typeof TransactionsRoute
   '/trivia': typeof TriviaRoute
-  '/virtual': typeof VirtualRouteWithChildren
   '/watchlist': typeof WatchlistRoute
   '/withdraw': typeof WithdrawRoute
+  '/guides/how-it-works': typeof GuidesHowItWorksRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/ticket/$id': typeof TicketIdRoute
-  '/tournaments/$id': typeof TournamentsIdRoute
+  '/virtual/championship': typeof VirtualChampionshipRoute
+  '/virtual/football-championship': typeof VirtualFootballChampionshipRoute
+  '/virtual/football-instant': typeof VirtualFootballInstantRoute
   '/virtual/history': typeof VirtualHistoryRoute
-  '/tournaments/': typeof TournamentsIndexRoute
+  '/virtual/instant': typeof VirtualInstantRoute
+  '/virtual/': typeof VirtualIndexRoute
   '/api/public/virtual-tick': typeof ApiPublicVirtualTickRoute
   '/api/public/hooks/broadcast-push': typeof ApiPublicHooksBroadcastPushRoute
   '/api/public/hooks/process-scheduled-push': typeof ApiPublicHooksProcessScheduledPushRoute
+  '/api/public/hooks/recurring-push': typeof ApiPublicHooksRecurringPushRoute
   '/api/public/hooks/send-push': typeof ApiPublicHooksSendPushRoute
 }
 export interface FileRouteTypes {
@@ -441,17 +479,21 @@ export interface FileRouteTypes {
     | '/tournament'
     | '/transactions'
     | '/trivia'
-    | '/virtual'
     | '/watchlist'
     | '/withdraw'
+    | '/guides/how-it-works'
     | '/matches/$matchId'
     | '/ticket/$id'
-    | '/tournaments/$id'
+    | '/virtual/championship'
+    | '/virtual/football-championship'
+    | '/virtual/football-instant'
     | '/virtual/history'
-    | '/tournaments/'
+    | '/virtual/instant'
+    | '/virtual/'
     | '/api/public/virtual-tick'
     | '/api/public/hooks/broadcast-push'
     | '/api/public/hooks/process-scheduled-push'
+    | '/api/public/hooks/recurring-push'
     | '/api/public/hooks/send-push'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -486,17 +528,21 @@ export interface FileRouteTypes {
     | '/tournament'
     | '/transactions'
     | '/trivia'
-    | '/virtual'
     | '/watchlist'
     | '/withdraw'
+    | '/guides/how-it-works'
     | '/matches/$matchId'
     | '/ticket/$id'
-    | '/tournaments/$id'
+    | '/virtual/championship'
+    | '/virtual/football-championship'
+    | '/virtual/football-instant'
     | '/virtual/history'
-    | '/tournaments'
+    | '/virtual/instant'
+    | '/virtual'
     | '/api/public/virtual-tick'
     | '/api/public/hooks/broadcast-push'
     | '/api/public/hooks/process-scheduled-push'
+    | '/api/public/hooks/recurring-push'
     | '/api/public/hooks/send-push'
   id:
     | '__root__'
@@ -531,17 +577,21 @@ export interface FileRouteTypes {
     | '/tournament'
     | '/transactions'
     | '/trivia'
-    | '/virtual'
     | '/watchlist'
     | '/withdraw'
+    | '/guides/how-it-works'
     | '/matches/$matchId'
     | '/ticket/$id'
-    | '/tournaments/$id'
+    | '/virtual/championship'
+    | '/virtual/football-championship'
+    | '/virtual/football-instant'
     | '/virtual/history'
-    | '/tournaments/'
+    | '/virtual/instant'
+    | '/virtual/'
     | '/api/public/virtual-tick'
     | '/api/public/hooks/broadcast-push'
     | '/api/public/hooks/process-scheduled-push'
+    | '/api/public/hooks/recurring-push'
     | '/api/public/hooks/send-push'
   fileRoutesById: FileRoutesById
 }
@@ -577,15 +627,20 @@ export interface RootRouteChildren {
   TournamentRoute: typeof TournamentRoute
   TransactionsRoute: typeof TransactionsRoute
   TriviaRoute: typeof TriviaRoute
-  VirtualRoute: typeof VirtualRouteWithChildren
   WatchlistRoute: typeof WatchlistRoute
   WithdrawRoute: typeof WithdrawRoute
+  GuidesHowItWorksRoute: typeof GuidesHowItWorksRoute
   TicketIdRoute: typeof TicketIdRoute
-  TournamentsIdRoute: typeof TournamentsIdRoute
-  TournamentsIndexRoute: typeof TournamentsIndexRoute
+  VirtualChampionshipRoute: typeof VirtualChampionshipRoute
+  VirtualFootballChampionshipRoute: typeof VirtualFootballChampionshipRoute
+  VirtualFootballInstantRoute: typeof VirtualFootballInstantRoute
+  VirtualHistoryRoute: typeof VirtualHistoryRoute
+  VirtualInstantRoute: typeof VirtualInstantRoute
+  VirtualIndexRoute: typeof VirtualIndexRoute
   ApiPublicVirtualTickRoute: typeof ApiPublicVirtualTickRoute
   ApiPublicHooksBroadcastPushRoute: typeof ApiPublicHooksBroadcastPushRoute
   ApiPublicHooksProcessScheduledPushRoute: typeof ApiPublicHooksProcessScheduledPushRoute
+  ApiPublicHooksRecurringPushRoute: typeof ApiPublicHooksRecurringPushRoute
   ApiPublicHooksSendPushRoute: typeof ApiPublicHooksSendPushRoute
 }
 
@@ -603,13 +658,6 @@ declare module '@tanstack/react-router' {
       path: '/watchlist'
       fullPath: '/watchlist'
       preLoaderRoute: typeof WatchlistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/virtual': {
-      id: '/virtual'
-      path: '/virtual'
-      fullPath: '/virtual'
-      preLoaderRoute: typeof VirtualRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trivia': {
@@ -829,25 +877,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tournaments/': {
-      id: '/tournaments/'
-      path: '/tournaments'
-      fullPath: '/tournaments/'
-      preLoaderRoute: typeof TournamentsIndexRouteImport
+    '/virtual/': {
+      id: '/virtual/'
+      path: '/virtual'
+      fullPath: '/virtual/'
+      preLoaderRoute: typeof VirtualIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/virtual/instant': {
+      id: '/virtual/instant'
+      path: '/virtual/instant'
+      fullPath: '/virtual/instant'
+      preLoaderRoute: typeof VirtualInstantRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/virtual/history': {
       id: '/virtual/history'
-      path: '/history'
+      path: '/virtual/history'
       fullPath: '/virtual/history'
       preLoaderRoute: typeof VirtualHistoryRouteImport
-      parentRoute: typeof VirtualRoute
+      parentRoute: typeof rootRouteImport
     }
-    '/tournaments/$id': {
-      id: '/tournaments/$id'
-      path: '/tournaments/$id'
-      fullPath: '/tournaments/$id'
-      preLoaderRoute: typeof TournamentsIdRouteImport
+    '/virtual/football-instant': {
+      id: '/virtual/football-instant'
+      path: '/virtual/football-instant'
+      fullPath: '/virtual/football-instant'
+      preLoaderRoute: typeof VirtualFootballInstantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/virtual/football-championship': {
+      id: '/virtual/football-championship'
+      path: '/virtual/football-championship'
+      fullPath: '/virtual/football-championship'
+      preLoaderRoute: typeof VirtualFootballChampionshipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/virtual/championship': {
+      id: '/virtual/championship'
+      path: '/virtual/championship'
+      fullPath: '/virtual/championship'
+      preLoaderRoute: typeof VirtualChampionshipRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ticket/$id': {
@@ -864,6 +933,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MatchesMatchIdRouteImport
       parentRoute: typeof MatchesRoute
     }
+    '/guides/how-it-works': {
+      id: '/guides/how-it-works'
+      path: '/guides/how-it-works'
+      fullPath: '/guides/how-it-works'
+      preLoaderRoute: typeof GuidesHowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/virtual-tick': {
       id: '/api/public/virtual-tick'
       path: '/api/public/virtual-tick'
@@ -876,6 +952,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/send-push'
       fullPath: '/api/public/hooks/send-push'
       preLoaderRoute: typeof ApiPublicHooksSendPushRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/recurring-push': {
+      id: '/api/public/hooks/recurring-push'
+      path: '/api/public/hooks/recurring-push'
+      fullPath: '/api/public/hooks/recurring-push'
+      preLoaderRoute: typeof ApiPublicHooksRecurringPushRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/process-scheduled-push': {
@@ -905,17 +988,6 @@ const MatchesRouteChildren: MatchesRouteChildren = {
 
 const MatchesRouteWithChildren =
   MatchesRoute._addFileChildren(MatchesRouteChildren)
-
-interface VirtualRouteChildren {
-  VirtualHistoryRoute: typeof VirtualHistoryRoute
-}
-
-const VirtualRouteChildren: VirtualRouteChildren = {
-  VirtualHistoryRoute: VirtualHistoryRoute,
-}
-
-const VirtualRouteWithChildren =
-  VirtualRoute._addFileChildren(VirtualRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -949,28 +1021,23 @@ const rootRouteChildren: RootRouteChildren = {
   TournamentRoute: TournamentRoute,
   TransactionsRoute: TransactionsRoute,
   TriviaRoute: TriviaRoute,
-  VirtualRoute: VirtualRouteWithChildren,
   WatchlistRoute: WatchlistRoute,
   WithdrawRoute: WithdrawRoute,
+  GuidesHowItWorksRoute: GuidesHowItWorksRoute,
   TicketIdRoute: TicketIdRoute,
-  TournamentsIdRoute: TournamentsIdRoute,
-  TournamentsIndexRoute: TournamentsIndexRoute,
+  VirtualChampionshipRoute: VirtualChampionshipRoute,
+  VirtualFootballChampionshipRoute: VirtualFootballChampionshipRoute,
+  VirtualFootballInstantRoute: VirtualFootballInstantRoute,
+  VirtualHistoryRoute: VirtualHistoryRoute,
+  VirtualInstantRoute: VirtualInstantRoute,
+  VirtualIndexRoute: VirtualIndexRoute,
   ApiPublicVirtualTickRoute: ApiPublicVirtualTickRoute,
   ApiPublicHooksBroadcastPushRoute: ApiPublicHooksBroadcastPushRoute,
   ApiPublicHooksProcessScheduledPushRoute:
     ApiPublicHooksProcessScheduledPushRoute,
+  ApiPublicHooksRecurringPushRoute: ApiPublicHooksRecurringPushRoute,
   ApiPublicHooksSendPushRoute: ApiPublicHooksSendPushRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
