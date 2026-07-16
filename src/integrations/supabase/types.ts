@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_events: {
+        Row: {
+          created_at: string
+          event_name: string
+          id: string
+          path: string | null
+          properties: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          id?: string
+          path?: string | null
+          properties?: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          id?: string
+          path?: string | null
+          properties?: Json
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           body: string | null
@@ -77,6 +104,7 @@ export type Database = {
           admin_hero_position: string | null
           admin_hero_url: string | null
           allow_rebet: boolean
+          auth_hero_image_url: string | null
           challenge_reward_multiplier: number
           closed_image: string | null
           closed_message: string
@@ -138,6 +166,14 @@ export type Database = {
           nav_bg_fit: string | null
           nav_bg_position: string | null
           nav_bg_url: string | null
+          platform_description: string | null
+          platform_logo_auth_url: string | null
+          platform_logo_corner_url: string | null
+          platform_logo_url: string | null
+          platform_logo_voucher_url: string | null
+          platform_name: string | null
+          platform_og_image_url: string | null
+          platform_tagline: string | null
           polls_enabled: boolean | null
           popup_ad_active: boolean
           popup_ad_image: string | null
@@ -173,9 +209,13 @@ export type Database = {
           vip_enabled: boolean
           vip_token_multipliers: Json
           virtual_animation_seconds: number
+          virtual_championship_auto_restart: boolean
+          virtual_championship_enabled: boolean
+          virtual_championship_football_enabled: boolean
           virtual_concurrent_rounds: number
           virtual_cycle_last_tick: string | null
           virtual_cycle_running: boolean
+          virtual_football_instant_enabled: boolean
           virtual_lock_window_seconds: number
           virtual_matches_per_round: number
           virtual_max_payout: number | null
@@ -205,6 +245,7 @@ export type Database = {
           admin_hero_position?: string | null
           admin_hero_url?: string | null
           allow_rebet?: boolean
+          auth_hero_image_url?: string | null
           challenge_reward_multiplier?: number
           closed_image?: string | null
           closed_message?: string
@@ -266,6 +307,14 @@ export type Database = {
           nav_bg_fit?: string | null
           nav_bg_position?: string | null
           nav_bg_url?: string | null
+          platform_description?: string | null
+          platform_logo_auth_url?: string | null
+          platform_logo_corner_url?: string | null
+          platform_logo_url?: string | null
+          platform_logo_voucher_url?: string | null
+          platform_name?: string | null
+          platform_og_image_url?: string | null
+          platform_tagline?: string | null
           polls_enabled?: boolean | null
           popup_ad_active?: boolean
           popup_ad_image?: string | null
@@ -301,9 +350,13 @@ export type Database = {
           vip_enabled?: boolean
           vip_token_multipliers?: Json
           virtual_animation_seconds?: number
+          virtual_championship_auto_restart?: boolean
+          virtual_championship_enabled?: boolean
+          virtual_championship_football_enabled?: boolean
           virtual_concurrent_rounds?: number
           virtual_cycle_last_tick?: string | null
           virtual_cycle_running?: boolean
+          virtual_football_instant_enabled?: boolean
           virtual_lock_window_seconds?: number
           virtual_matches_per_round?: number
           virtual_max_payout?: number | null
@@ -333,6 +386,7 @@ export type Database = {
           admin_hero_position?: string | null
           admin_hero_url?: string | null
           allow_rebet?: boolean
+          auth_hero_image_url?: string | null
           challenge_reward_multiplier?: number
           closed_image?: string | null
           closed_message?: string
@@ -394,6 +448,14 @@ export type Database = {
           nav_bg_fit?: string | null
           nav_bg_position?: string | null
           nav_bg_url?: string | null
+          platform_description?: string | null
+          platform_logo_auth_url?: string | null
+          platform_logo_corner_url?: string | null
+          platform_logo_url?: string | null
+          platform_logo_voucher_url?: string | null
+          platform_name?: string | null
+          platform_og_image_url?: string | null
+          platform_tagline?: string | null
           polls_enabled?: boolean | null
           popup_ad_active?: boolean
           popup_ad_image?: string | null
@@ -429,9 +491,13 @@ export type Database = {
           vip_enabled?: boolean
           vip_token_multipliers?: Json
           virtual_animation_seconds?: number
+          virtual_championship_auto_restart?: boolean
+          virtual_championship_enabled?: boolean
+          virtual_championship_football_enabled?: boolean
           virtual_concurrent_rounds?: number
           virtual_cycle_last_tick?: string | null
           virtual_cycle_running?: boolean
+          virtual_football_instant_enabled?: boolean
           virtual_lock_window_seconds?: number
           virtual_matches_per_round?: number
           virtual_max_payout?: number | null
@@ -779,6 +845,76 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      championship_bets: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          odds: number
+          payout: number
+          settled_at: string | null
+          stage: string | null
+          stake: number
+          status: string
+          team_id: string
+          tournament_id: string
+          tournament_match_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          odds?: number
+          payout?: number
+          settled_at?: string | null
+          stage?: string | null
+          stake: number
+          status?: string
+          team_id: string
+          tournament_id: string
+          tournament_match_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          odds?: number
+          payout?: number
+          settled_at?: string | null
+          stage?: string | null
+          stake?: number
+          status?: string
+          team_id?: string
+          tournament_id?: string
+          tournament_match_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "championship_bets_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "championship_bets_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "championship_bets_tournament_match_id_fkey"
+            columns: ["tournament_match_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_matches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_message_reactions: {
         Row: {
@@ -1476,6 +1612,7 @@ export type Database = {
           featured_bg_fit: string | null
           featured_bg_position: string | null
           featured_bg_url: string | null
+          featured_image_url: string | null
           home_player_id: string | null
           home_present: boolean
           home_score: number
@@ -1495,6 +1632,7 @@ export type Database = {
           restrict_repeat_contender: boolean
           settled_at: string | null
           settled_by: string | null
+          sport: string
           start_time: string
           status: Database["public"]["Enums"]["match_status"]
           updated_at: string
@@ -1515,6 +1653,7 @@ export type Database = {
           featured_bg_fit?: string | null
           featured_bg_position?: string | null
           featured_bg_url?: string | null
+          featured_image_url?: string | null
           home_player_id?: string | null
           home_present?: boolean
           home_score?: number
@@ -1534,6 +1673,7 @@ export type Database = {
           restrict_repeat_contender?: boolean
           settled_at?: string | null
           settled_by?: string | null
+          sport?: string
           start_time: string
           status?: Database["public"]["Enums"]["match_status"]
           updated_at?: string
@@ -1554,6 +1694,7 @@ export type Database = {
           featured_bg_fit?: string | null
           featured_bg_position?: string | null
           featured_bg_url?: string | null
+          featured_image_url?: string | null
           home_player_id?: string | null
           home_present?: boolean
           home_score?: number
@@ -1573,6 +1714,7 @@ export type Database = {
           restrict_repeat_contender?: boolean
           settled_at?: string | null
           settled_by?: string | null
+          sport?: string
           start_time?: string
           status?: Database["public"]["Enums"]["match_status"]
           updated_at?: string
@@ -1625,6 +1767,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      motivational_content: {
+        Row: {
+          active: boolean
+          body: string
+          created_at: string
+          id: string
+          image_url: string | null
+          kind: string
+          sort_order: number
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          body: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          kind?: string
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          kind?: string
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       news: {
         Row: {
@@ -2641,6 +2819,7 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          sport: string
         }
         Insert: {
           created_at?: string
@@ -2648,6 +2827,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          sport?: string
         }
         Update: {
           created_at?: string
@@ -2655,6 +2835,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          sport?: string
         }
         Relationships: []
       }
@@ -3009,17 +3190,24 @@ export type Database = {
           background_image_url: string | null
           champion_id: string | null
           champion_participant_id: string | null
+          champion_team_id: string | null
           created_at: string
           created_by: string | null
+          current_stage: string | null
           event_date: string | null
           futures_match_id: string | null
           id: string
           is_featured: boolean
+          kind: string
           name: string
+          next_stage_at: string | null
           opening_round_size: number
+          runner_up_team_id: string | null
+          stage_gap_seconds: number
           status: string
           subtitle: string | null
           tagline: string | null
+          team_ids: string[] | null
           total_rounds: number
           tournament_date: string | null
           updated_at: string
@@ -3028,17 +3216,24 @@ export type Database = {
           background_image_url?: string | null
           champion_id?: string | null
           champion_participant_id?: string | null
+          champion_team_id?: string | null
           created_at?: string
           created_by?: string | null
+          current_stage?: string | null
           event_date?: string | null
           futures_match_id?: string | null
           id?: string
           is_featured?: boolean
+          kind?: string
           name: string
+          next_stage_at?: string | null
           opening_round_size?: number
+          runner_up_team_id?: string | null
+          stage_gap_seconds?: number
           status?: string
           subtitle?: string | null
           tagline?: string | null
+          team_ids?: string[] | null
           total_rounds?: number
           tournament_date?: string | null
           updated_at?: string
@@ -3047,17 +3242,24 @@ export type Database = {
           background_image_url?: string | null
           champion_id?: string | null
           champion_participant_id?: string | null
+          champion_team_id?: string | null
           created_at?: string
           created_by?: string | null
+          current_stage?: string | null
           event_date?: string | null
           futures_match_id?: string | null
           id?: string
           is_featured?: boolean
+          kind?: string
           name?: string
+          next_stage_at?: string | null
           opening_round_size?: number
+          runner_up_team_id?: string | null
+          stage_gap_seconds?: number
           status?: string
           subtitle?: string | null
           tagline?: string | null
+          team_ids?: string[] | null
           total_rounds?: number
           tournament_date?: string | null
           updated_at?: string
@@ -3068,6 +3270,20 @@ export type Database = {
             columns: ["champion_id"]
             isOneToOne: false
             referencedRelation: "tournament_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournaments_champion_team_id_fkey"
+            columns: ["champion_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournaments_runner_up_team_id_fkey"
+            columns: ["runner_up_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -3313,6 +3529,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_virtual_rounds: {
+        Row: {
+          away_kicks: boolean[]
+          away_score: number
+          created_at: string
+          home_kicks: boolean[]
+          home_score: number
+          id: string
+          match_label: string
+          odds: number
+          payout: number
+          result: string
+          side: string
+          stake: number
+          user_id: string
+        }
+        Insert: {
+          away_kicks: boolean[]
+          away_score: number
+          created_at?: string
+          home_kicks: boolean[]
+          home_score: number
+          id?: string
+          match_label: string
+          odds?: number
+          payout?: number
+          result: string
+          side: string
+          stake: number
+          user_id: string
+        }
+        Update: {
+          away_kicks?: boolean[]
+          away_score?: number
+          created_at?: string
+          home_kicks?: boolean[]
+          home_score?: number
+          id?: string
+          match_label?: string
+          odds?: number
+          payout?: number
+          result?: string
+          side?: string
+          stake?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       virtual_house_transactions: {
         Row: {
@@ -4034,6 +4298,7 @@ export type Database = {
         | "moderator"
         | "admin"
         | "sponsor"
+        | "super_admin"
       bet_status:
         | "open"
         | "won"
@@ -4183,6 +4448,7 @@ export const Constants = {
         "moderator",
         "admin",
         "sponsor",
+        "super_admin",
       ],
       bet_status: [
         "open",
